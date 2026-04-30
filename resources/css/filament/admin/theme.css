@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Navy Theme */
+:root {
+    --primary-color: #0f1f45;
+}

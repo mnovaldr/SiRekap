@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Premium Notification Styles */
+.fi-no-notification {
+    @apply backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 border border-gray-100 dark:border-gray-800 shadow-2xl rounded-2xl !important;
+}
+
+.fi-no-notification-title {
+    @apply font-black tracking-tight text-gray-900 dark:text-white !important;
+}
+
+.fi-no-notification-body {
+    @apply text-xs font-medium text-gray-500 dark:text-gray-400 !important;
+}
+
+/* Custom Login Page Polish */
+.fi-auth-login-form {
+    @apply space-y-6 !important;
+}
+
+.fi-auth-login-form input {
+    @apply rounded-xl border-gray-200 dark:border-gray-700 focus:ring-primary-500 !important;
+}
