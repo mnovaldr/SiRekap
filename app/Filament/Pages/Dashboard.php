@@ -12,6 +12,11 @@ class Dashboard extends BaseDashboard
 {
     use HasFiltersForm;
 
+    public function getHeader(): ?\Illuminate\Contracts\View\View
+    {
+        return view('filament.dashboard.custom-styles');
+    }
+
     public function getColumns(): int | string | array
     {
         return 2;

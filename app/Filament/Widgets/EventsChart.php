@@ -149,42 +149,48 @@ class EventsChart extends ChartWidget
         return [
             'plugins' => [
                 'legend' => [
+                    'display' => true,
                     'position' => 'bottom',
+                    'align' => 'center',
                     'labels' => [
                         'usePointStyle' => true,
-                        'color' => '#0f172a', // Slate-900
+                        'padding' => 20,
+                        'font' => [
+                            'family' => "'Inter', 'sans-serif'",
+                            'size' => 11,
+                        ],
+                        'color' => '#64748b',
                     ],
                 ],
+                'tooltip' => [
+                    'backgroundColor' => '#1e293b',
+                    'padding' => 12,
+                    'titleFont' => ['size' => 14],
+                    'cornerRadius' => 8,
+                ]
             ],
             'scales' => [
                 'x' => [
-                    'grid' => [
-                        'display' => false,
-                    ],
+                    'grid' => ['display' => false],
                     'ticks' => [
-                        'color' => '#64748b', // Slate-500
+                        'color' => '#94a3b8',
+                        'font' => ['family' => "'Inter', 'sans-serif'", 'size' => 10]
                     ],
                 ],
                 'y' => [
-                    'type' => 'linear',
-                    'display' => true,
                     'position' => 'left',
-                    'title' => [
-                        'display' => false,
-                    ],
-                    'grid' => [
-                        'color' => '#f1f5f9', // Slate-100
+                    'grid' => ['color' => '#f1f5f9'],
+                    'ticks' => [
+                        'color' => '#94a3b8',
+                        'font' => ['family' => "'Inter', 'sans-serif'", 'size' => 10]
                     ],
                 ],
                 'y1' => [
-                    'type' => 'linear',
-                    'display' => true,
                     'position' => 'right',
-                    'grid' => [
-                        'display' => false,
-                    ],
-                    'title' => [
-                        'display' => false,
+                    'grid' => ['display' => false],
+                    'ticks' => [
+                        'color' => '#10b981',
+                        'font' => ['family' => "'Inter', 'sans-serif'", 'size' => 10]
                     ],
                 ],
             ],

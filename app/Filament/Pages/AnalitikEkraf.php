@@ -80,7 +80,7 @@ class AnalitikEkraf extends Page
                 'bulan',
                 DB::raw('count(*) as total_event'),
                 // SUM peserta hanya dari is_primary_row=1 agar tidak double-count multi-ruangan
-                DB::raw('sum(case when is_primary_row = 1 then jumlah_peserta else 0 end) as total_pengunjung'),
+                DB::raw('sum(jumlah_peserta) as total_pengunjung'),
                 DB::raw('count(case when komersial = "Komersial" then 1 end) as total_komersil'),
                 DB::raw('count(case when komersial = "Non Komersial" then 1 end) as total_non_komersil'),
                 DB::raw('count(distinct nama_organisasi) as total_pelaku')

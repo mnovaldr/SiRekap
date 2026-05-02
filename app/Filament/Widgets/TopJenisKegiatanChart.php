@@ -71,10 +71,12 @@ class TopJenisKegiatanChart extends ChartWidget
                     'label' => 'Jumlah Event',
                     'data' => $data->pluck('count')->toArray(),
                     'backgroundColor' => $this->getChartColors(count($data)),
-                    'borderWidth' => 1,
+                    'borderWidth' => 2,
+                    'borderColor' => '#ffffff',
+                    'hoverOffset' => 20,
                 ],
             ],
-            'labels' => $data->pluck('jenis_kegiatan')->toArray(),
+            'labels' => $data->map(fn($item) => $item->jenis_kegiatan . ' (' . number_format($item->count) . ')')->toArray(),
         ];
     }
 

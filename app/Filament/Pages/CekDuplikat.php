@@ -28,34 +28,34 @@ class CekDuplikat extends Page
         $this->analyze();
     }
 
+    // ... properti tetap sama seperti kode sebelumnya ...
+
     public function analyze(): void
     {
         $this->isLoading = true;
         $this->duplikatGroups = [];
 
-        $events = Event::select('id','nama_organisasi','judul_kegiatan','tanggal','lokasi','lantai','status_data','catatan_review','bulan')
-            ->orderBy('tanggal')
+        // Gunakan cursor atau get untuk mengambil data
+        $events = Event::select('id','nama_organisasi','judul_kegiatan','tanggal','lokasi','lantai','status_data','jumlah_peserta')
+            ->orderBy('tanggal', 'desc')
             ->get()
             ->toArray();
-
-        $this->totalData = count($events);
 
         $fullMap  = [];
         $shortMap = [];
 
         foreach ($events as $row) {
-            $kf = strtoupper(trim($row['nama_organisasi'])) . '||' .
-                  strtoupper(trim($row['judul_kegiatan']))  . '||' .
-                  ($row['tanggal'] ?? '')                   . '||' .
-                  strtoupper(trim($row['lokasi']))          . '||' .
-                  strtoupper(trim($row['lantai']));
+            // Key untuk Duplikat Identik (Semua Field Utama Sama)
+            $kf = strtoupper(trim($row['nama_organisasi'])) . '|' .
+                strtoupper(trim($row['judul_kegiatan']))   . '|' .
+                ($row['tanggal'] ?? '')                  . '|' .
+                strtoupper(trim($row['lokasi']))           . '|' .
+                strtoupper(trim($row['lantai']));
 
-            $ks = strtoupper(trim($row['nama_organisasi'])) . '||' .
-                  strtoupper(trim($row['judul_kegiatan']))  . '||' .
-                  ($row['tanggal'] ?? '');
-
-            $row['_kf'] = $kf;
-            $row['_ks'] = $ks;
+            // Key untuk Review (Nama & Tanggal Sama tapi Ruang Beda)
+            $ks = strtoupper(trim($row['nama_organisasi'])) . '|' .
+                strtoupper(trim($row['judul_kegiatan']))   . '|' .
+                ($row['tanggal'] ?? '');
 
             $fullMap[$kf][]  = $row;
             $shortMap[$ks][] = $row;
@@ -64,12 +64,12 @@ class CekDuplikat extends Page
         $groups   = [];
         $addedIds = [];
 
-        // DUPLIKAT FULL
+        // 1. Deteksi Duplikat Penuh
         foreach ($fullMap as $key => $rows) {
             if (count($rows) > 1) {
                 $groups[] = [
                     'type'   => 'DUPLIKAT – Hapus',
-                    'reason' => 'KEY FULL identik (Nama Org, Judul, Tanggal, Ruangan, Lantai sama)',
+                    'reason' => 'Data Terduplikasi Identik',
                     'key'    => $key,
                     'items'  => $rows,
                 ];
@@ -77,14 +77,14 @@ class CekDuplikat extends Page
             }
         }
 
-        // REVIEW SHORT
+        // 2. Deteksi Konflik Lokasi (Review)
         foreach ($shortMap as $key => $rows) {
             if (count($rows) > 1) {
                 $notAlreadyFull = array_filter($rows, fn($r) => !in_array($r['id'], $addedIds));
                 if (count($notAlreadyFull) > 1) {
                     $groups[] = [
-                        'type'   => 'REVIEW – Multi Ruangan',
-                        'reason' => 'KEY SHORT identik (Nama Org, Judul, Tanggal sama — Ruangan berbeda)',
+                        'type'   => 'REVIEW – Konflik Lokasi',
+                        'reason' => 'Organisasi & Judul Sama di Ruangan Berbeda',
                         'key'    => $key,
                         'items'  => array_values($rows),
                     ];
@@ -93,13 +93,13 @@ class CekDuplikat extends Page
         }
 
         $this->duplikatGroups = $groups;
-        $this->totalIssues    = array_sum(array_map(fn($g) => count($g['items']), $groups));
-        $this->duplikatCount  = array_sum(array_map(fn($g) => str_contains($g['type'], 'Hapus') ? count($g['items']) : 0, $groups));
-        $this->reviewCount    = array_sum(array_map(fn($g) => str_contains($g['type'], 'Review') ? count($g['items']) : 0, $groups));
+        $this->duplikatCount  = collect($groups)->where('type', 'DUPLIKAT – Hapus')->sum(fn($g) => count($g['items']));
+        $this->reviewCount    = collect($groups)->where('type', 'REVIEW – Konflik Lokasi')->sum(fn($g) => count($g['items']));
+        $this->totalIssues    = $this->duplikatCount + $this->reviewCount;
 
         $this->isLoading = false;
     }
-
+    
     public function deleteRow(string $id): void
     {
         Event::find($id)?->delete();

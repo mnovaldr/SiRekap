@@ -30,6 +30,7 @@ class ExportData extends Page
 
     public array $formats = [
         ['id' => 'xlsx', 'icon' => '📊', 'name' => 'Excel (.xlsx)', 'desc' => 'Standard spreadsheet format.'],
+        ['id' => 'pdf',  'icon' => '📕', 'name' => 'PDF (.pdf)',     'desc' => 'Document for report printing.'],
         ['id' => 'csv',  'icon' => '📄', 'name' => 'CSV (.csv)',     'desc' => 'Plain text data format.'],
         ['id' => 'json', 'icon' => '🔷', 'name' => 'JSON (.json)',   'desc' => 'Structured data for API.'],
     ];
@@ -54,7 +55,9 @@ class ExportData extends Page
     protected function refreshCount(): void
     {
         [$start, $end] = $this->getDateRange();
-        $this->totalRows = Event::whereBetween('tanggal', [$start, $end])->count();
+        $this->totalRows = Event::valid()
+            ->whereBetween('tanggal', [$start, $end])
+            ->count();
     }
 
     protected function getDateRange(): array
@@ -71,12 +74,13 @@ class ExportData extends Page
     public function getPreviewData()
     {
         [$start, $end] = $this->getDateRange();
-        return Event::whereBetween('tanggal', [$start, $end])
+        return Event::valid()
+            ->whereBetween('tanggal', [$start, $end])
             ->orderBy('tanggal', 'desc')
             ->paginate($this->perPage);
     }
 
-    public function export(): StreamedResponse|null
+    public function export(): StreamedResponse|\Symfony\Component\HttpFoundation\Response|null
     {
         if ($this->totalRows === 0) {
             Notification::make()->title('Tidak ada data untuk diekspor')->warning()->send();
@@ -84,9 +88,11 @@ class ExportData extends Page
         }
 
         [$start, $end] = $this->getDateRange();
-        $data = Event::whereBetween('tanggal', [$start, $end])
-            ->orderBy('tanggal')
-            ->get([
+        $query = Event::valid()
+            ->whereBetween('tanggal', [$start, $end])
+            ->orderBy('tanggal');
+
+        $data = $query->get([
                 'nama_organisasi','bidang','jenis_kegiatan','sub_sektor','komersial',
                 'judul_kegiatan','tanggal','bulan','lantai','lokasi',
                 'jumlah_peserta','email','no_telepon','pic','status_data'
@@ -94,6 +100,18 @@ class ExportData extends Page
             ->toArray();
 
         $filename = 'MCC_Export_' . ($this->selectedMonth === 'Semua' ? "Tahun_{$this->selectedYear}" : "{$this->selectedMonth}_{$this->selectedYear}");
+
+        // PDF EXPORT
+        if ($this->selectedFormat === 'pdf') {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.events-pdf', [
+                'data' => $data,
+                'period' => ($this->selectedMonth !== 'Semua' ? Event::getBulanIndonesia($this->selectedMonth) . ' ' : '') . $this->selectedYear
+            ])->setPaper('a4', 'landscape');
+
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->stream();
+            }, "{$filename}.pdf");
+        }
 
         if ($this->selectedFormat === 'json') {
             return response()->streamDownload(function () use ($data) {

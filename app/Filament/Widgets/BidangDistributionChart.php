@@ -64,6 +64,7 @@ class BidangDistributionChart extends ChartWidget
         }
 
         $data = $query->get();
+        $totalAll = $data->sum('count');
 
         return [
             'datasets' => [
@@ -71,10 +72,12 @@ class BidangDistributionChart extends ChartWidget
                     'label' => 'Jumlah Event',
                     'data' => $data->pluck('count')->toArray(),
                     'backgroundColor' => $this->getChartColors(count($data)),
-                    'borderWidth' => 1,
+                    'borderWidth' => 2,
+                    'borderColor' => '#ffffff',
+                    'hoverOffset' => 20,
                 ],
             ],
-            'labels' => $data->pluck('bidang')->toArray(),
+            'labels' => $data->map(fn($item) => $item->bidang . ' (' . number_format($item->count) . ')')->toArray(),
         ];
     }
 

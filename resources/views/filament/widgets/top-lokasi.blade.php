@@ -1,7 +1,12 @@
 <x-filament-widgets::widget>
-    <x-filament::section>
+    <x-filament::section class="rounded-[2rem] shadow-sm border-gray-100 dark:border-gray-800">
         <x-slot name="heading">
-            Top 10 Lokasi Paling Aktif
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                    <x-heroicon-o-map-pin class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                </div>
+                <span class="text-lg font-black tracking-tight">Top 10 Lokasi Paling Aktif</span>
+            </div>
         </x-slot>
 
         <x-slot name="description">
@@ -11,60 +16,63 @@
                 $period = ($month ? \App\Models\Event::getBulanIndonesia($month) : '') . ($year ? ' ' . $year : '');
                 $period = trim($period) ?: 'Semua Periode';
             @endphp
-            Lokasi dengan event terbanyak: {{ $period }}
+            <span class="text-xs text-gray-500">Data penggunaan ruangan: {{ $period }}</span>
         </x-slot>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+        <div class="overflow-x-auto mt-4">
+            <table class="w-full text-left">
                 <thead>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <th class="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Rank</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Lokasi</th>
-                        <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Total Event</th>
-                        <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Total Peserta</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Utilitas</th>
+                    <tr class="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                        <th class="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Rank</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Lokasi</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Event</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Peserta</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Utilitas</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
                     @php
                         $maxTotal = collect($this->getTopLokasi())->max('total') ?: 1;
                     @endphp
                     @forelse($this->getTopLokasi() as $index => $item)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        <td class="px-4 py-3">
-                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full 
-                                {{ $index === 0 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : '' }}
-                                {{ $index === 1 ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' : '' }}
-                                {{ $index === 2 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : '' }}
-                                {{ $index > 2 ? 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400' : '' }}
-                                font-bold text-sm">
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-primary-900/5 transition-all group">
+                        <td class="px-4 py-4">
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg font-black text-xs
+                                {{ $index === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' : '' }}
+                                {{ $index === 1 ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' : '' }}
+                                {{ $index === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' : '' }}
+                                {{ $index > 2 ? 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400' : '' }}">
                                 {{ $index + 1 }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                            {{ $item['lokasi'] }}
+                        <td class="px-4 py-4">
+                            <span class="text-sm font-black dark:text-gray-200 group-hover:text-primary-600 transition-colors">{{ $item['lokasi'] }}</span>
                         </td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <td class="px-4 py-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-1 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-xs font-black text-primary-700 dark:text-primary-400 tabular-nums">
                                 {{ number_format($item['total']) }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
-                            {{ number_format($item['total_peserta']) }}
+                        <td class="px-4 py-4 text-center">
+                            <span class="text-sm font-black dark:text-gray-300 tabular-nums">{{ number_format($item['total_peserta']) }}</span>
                         </td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center gap-2">
-                                <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                    <div class="bg-primary-600 h-2 rounded-full" 
+                        <td class="px-4 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-primary-500 h-full rounded-full transition-all duration-1000" 
                                          style="width: {{ ($item['total'] / $maxTotal) * 100 }}%"></div>
                                 </div>
-                                <span class="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
+                                <span class="text-[10px] font-black text-gray-400 w-8 text-right tabular-nums">
                                     {{ round(($item['total'] / $maxTotal) * 100) }}%
                                 </span>
                             </div>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-400 text-sm italic">Tidak ada data ditemukan</td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

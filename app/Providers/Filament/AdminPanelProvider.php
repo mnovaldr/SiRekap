@@ -24,6 +24,19 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::HEAD_END,
+                fn (): string => \Illuminate\Support\Facades\Blade::render('
+                    <style>
+                        ::-webkit-scrollbar { width: 5px; height: 5px; }
+                        ::-webkit-scrollbar-track { background: transparent; }
+                        ::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.5); border-radius: 10px; }
+                        ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.8); }
+                        .dark ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.5); }
+                        .dark ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 0.8); }
+                    </style>
+                '),
+            )
             ->id('admin')
             ->path('admin')
             ->login(\App\Filament\Pages\Auth\Login::class)

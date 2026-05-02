@@ -74,10 +74,12 @@ class SubSektorDistributionChart extends ChartWidget
                     'label' => 'Jumlah Event',
                     'data' => $data->pluck('count')->toArray(),
                     'backgroundColor' => $this->getChartColors(count($data)),
-                    'borderWidth' => 1,
+                    'borderWidth' => 2,
+                    'borderColor' => '#ffffff',
+                    'hoverOffset' => 20,
                 ],
             ],
-            'labels' => $data->pluck('sub_sektor')->toArray(),
+            'labels' => $data->map(fn($item) => ($item->sub_sektor ?: 'Non Kategori') . ' (' . number_format($item->count) . ')')->toArray(),
         ];
     }
 

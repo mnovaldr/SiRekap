@@ -1,9 +1,31 @@
-﻿<x-filament-panels::page>
+<x-filament-panels::page>
 @php $data = $this->getAnalyticsData(); @endphp
 
 <style>
 /* ── Base ── */
 .dashboard-wrap { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #374151;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+}
 
 /* ── Summary Cards ── */
 .stat-card {
@@ -138,7 +160,7 @@
     $totalPeserta     = $data['bulanan']->sum('total_pengunjung');
     $totalKomersil    = $data['bulanan']->sum('total_komersil');
     $totalNonKomersil = $data['bulanan']->sum('total_non_komersil');
-    $avgPeserta       = $totalEvents > 0 ? round($totalPeserta / $totalEvents, 1) : 0;
+    $avgPeserta       = $totalEvents > 0 ? round($totalPeserta / $totalEvents) : 0;
 
     $komPct    = ($totalKomersil + $totalNonKomersil) > 0
                     ? round($totalKomersil    / ($totalKomersil + $totalNonKomersil) * 100, 1) : 0;
@@ -171,16 +193,21 @@
          HEADER
     ══════════════════════════════════════════ --}}
     <div class="chart-card">
-        <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                    Analitik Ekonomi Kreatif
-                </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Laporan performa ekosistem MCC &mdash; Tahun <strong class="text-indigo-600">{{ $data['year'] }}</strong>
-                </p>
+        <div class="p-6 space-y-4">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl">
+                    <x-heroicon-o-chart-bar class="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                        Analitik Ekonomi Kreatif
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        Laporan performa ekosistem MCC &mdash; Tahun <strong class="text-indigo-600">{{ $data['year'] }}</strong>
+                    </p>
+                </div>
             </div>
-            <div class="shrink-0 w-full sm:w-64">
+            <div class="max-w-xs">
                 {{ $this->filtersForm }}
             </div>
         </div>
@@ -189,7 +216,7 @@
     {{-- ══════════════════════════════════════════
          SUMMARY CARDS
     ══════════════════════════════════════════ --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
         {{-- Card 1: Pelaku --}}
         <div class="stat-card">
@@ -411,7 +438,7 @@
                 <tbody>
                     @foreach($data['bulanan'] as $row)
                     @php
-                        $rowAvg = $row->total_event > 0 ? round($row->total_pengunjung / $row->total_event, 1) : 0;
+                        $rowAvg = $row->total_event > 0 ? round($row->total_pengunjung / $row->total_event) : 0;
                         $rowKomPct = ($row->total_komersil + $row->total_non_komersil) > 0
                             ? round($row->total_komersil / ($row->total_komersil + $row->total_non_komersil) * 100) : 0;
                     @endphp

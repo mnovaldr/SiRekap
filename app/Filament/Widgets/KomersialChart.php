@@ -70,10 +70,15 @@ class KomersialChart extends ChartWidget
                         '#4f46e5', // Indigo
                         '#10b981', // Emerald
                     ],
-                    'borderWidth' => 1,
+                    'borderWidth' => 2,
+                    'borderColor' => '#ffffff',
+                    'hoverOffset' => 20,
                 ],
             ],
-            'labels' => ['Komersial', 'Non-Komersial'],
+            'labels' => [
+                'Komersial (' . number_format($komersial) . ')',
+                'Non Komersial (' . number_format($nonKomersial) . ')',
+            ],
         ];
     }
 
