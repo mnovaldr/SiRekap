@@ -40,7 +40,6 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(\App\Filament\Pages\Auth\Login::class)
-            ->favicon(asset('favicon.png'))
             ->colors([
                 'primary' => Color::hex('#4f46e5'), // Indigo
                 'danger' => Color::hex('#e63946'),  
@@ -83,7 +82,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('images/logo.png'))
             ->darkModeBrandLogo(asset('images/logo-white.png'))
             ->brandLogoHeight('3rem')
-            ->favicon(asset('favicon.ico'))
+            ->favicon(asset('favicon.png'))
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications();
     }
