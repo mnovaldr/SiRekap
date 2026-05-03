@@ -1,0 +1,54 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Node
+node_modules
+
+# PHP / Composer
+vendor
+
+# Laravel generated / runtime files
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*.php
+
+# Built assets (rebuilt inside Docker)
+public/build
+public/hot
+public/storage
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE / editor
+.idea
+.vscode
+.cursor
+.nova
+.zed
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker build files (Dockerfile and .dockerignore don't need to be in the image)
+Dockerfile
+.dockerignore
+
+# Tests
+tests/
+phpunit.xml
+.phpunit.cache
+.phpunit.result.cache
+
+# Docs / misc
+README.md
+CHANGELOG.md
+*.log
