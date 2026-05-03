@@ -135,7 +135,7 @@ class ImportData extends Page
 
         try {
             $service = new ExcelImportService();
-            $toInsert = array_filter($data, fn($r) => $r['status_data'] !== 'Duplikat');
+            $toInsert = $data; // Sertakan semua data, termasuk duplikat untuk direview nanti
 
             DB::transaction(function() use ($toInsert, $service) {
                 foreach (array_chunk(array_values($toInsert), 100) as $chunk) {

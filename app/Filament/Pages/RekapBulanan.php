@@ -12,7 +12,7 @@ class RekapBulanan extends Page
     protected static ?string $navigationLabel = 'Rekap Bulanan';
     protected static ?string $navigationGroup = 'Laporan & Analitik';
     protected static ?int $navigationSort = 2;
-    protected static ?string $title = 'Rekap Bulanan';
+    protected static ?string $title = 'Monthly Pulse';
 
     public string $selectedYear;
     public array $rekap = [];
@@ -32,23 +32,24 @@ class RekapBulanan extends Page
     protected function loadRekap(): void
     {
         $months = [
-            1 => 'Januari',   2 => 'Februari', 3 => 'Maret',    4 => 'April',
-            5 => 'Mei',       6 => 'Juni',      7 => 'Juli',     8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober',  11 => 'November',12 => 'Desember',
+            1 => 'January',   2 => 'February',  3 => 'March',     4 => 'April',
+            5 => 'May',       6 => 'June',       7 => 'July',      8 => 'August',
+            9 => 'September', 10 => 'October',   11 => 'November', 12 => 'December',
         ];
 
         $rekap = [];
         $grandTotal     = 0;
         $grandPeserta   = 0;
-        $grandEkraf     = 0;
         $grandNonKom    = 0;
 
         foreach ($months as $num => $name) {
-            $base = Event::byYear($this->selectedYear)->byMonth($num)->where('status_data', '!=', 'Duplikat');
+            $base = Event::byYear($this->selectedYear)
+                ->byMonth($num)
+                ->where('status_data', '!=', 'Duplikat');
 
             $totalEvent   = $base->count();
             $totalPeserta = $base->sum('jumlah_peserta');
-            $ekrafUnik    = $base->distinct('nama_organisasi')->count('nama_organisasi');
+            $ekrafUnik    = $base->count(\Illuminate\Support\Facades\DB::raw('DISTINCT UPPER(TRIM(nama_organisasi))'));
             $nonKom       = $base->where('komersial', 'Non Komersial')->count();
             $pctNonKom    = $totalEvent > 0 ? round($nonKom / $totalEvent * 100) : 0;
 
@@ -63,7 +64,6 @@ class RekapBulanan extends Page
 
             $grandTotal   += $totalEvent;
             $grandPeserta += $totalPeserta;
-            $grandEkraf   = max($grandEkraf, $ekrafUnik); // rough max
             $grandNonKom  += $nonKom;
         }
 
@@ -78,6 +78,8 @@ class RekapBulanan extends Page
 
     public function getAvailableYears(): array
     {
-        return array_combine(range(2022, 2027), range(2022, 2027));
+        $currentYear = (int) date('Y');
+        $years = range(2022, $currentYear + 1);
+        return array_combine($years, $years);
     }
 }

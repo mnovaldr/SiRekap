@@ -2,66 +2,58 @@
 
 SiRekap MCC adalah sistem backend berbasis Laravel dan FilamentPHP yang digunakan untuk mengelola dan merekapitulasi data event di Malang Creative Center (MCC). Sistem ini mendukung import data dari Excel, pembersihan data otomatis (handling multi-ruangan/lantai), dan dashboard analitik yang interaktif.
 
-## Fitur Utama
-- **Dashboard Analitik**: Visualisasi data menggunakan Doughnut Chart (Kategori Ekraf, Pelaku, Kegiatan) dan Line Chart (Tren Performa).
-- **Import Excel Cerdas**: Mendukung split data otomatis jika satu event menggunakan banyak ruangan atau lantai.
-- **Akumulasi Peserta**: Sistem otomatis menduplikasi jumlah peserta ke setiap ruangan yang di-split untuk perhitungan total yang akurat.
-- **Manajemen Event**: CRUD data event dengan status validasi (Valid, Review, Duplikat).
-- **Filtering Dinamis**: Filter dashboard berdasarkan tahun dan bulan secara global.
+## 🚀 Fitur Utama
+- **Dashboard Analitik**: Visualisasi data interaktif (Doughnut Chart, Bar Chart, Line Chart).
+- **Import Excel Cerdas**: Split data otomatis untuk multi-ruangan/lantai dan akumulasi peserta.
+- **Export Multi-Format**: Dukungan export ke Excel, CSV, JSON, dan PDF profesional.
+- **Manajemen Event**: CRUD lengkap dengan deteksi duplikat otomatis.
+- **Analitik Ekonomi Kreatif**: Laporan mendalam per sub-sektor dan kategori pelaku.
 
-## Persyaratan Sistem
+## 🛠️ Persyaratan Sistem
 - PHP >= 8.1
 - Composer
 - MySQL / MariaDB (Direkomendasikan menggunakan Laragon)
-- Node.js & NPM (Untuk compile asset)
+- Node.js & NPM
 
-## Panduan Instalasi
+## ⚙️ Panduan Instalasi
 
-### 1. Clone Repository
+### 1. Clone & Install
 ```powershell
 git clone https://github.com/mnovaldr/SiRekap.git
 cd SiRekap
-```
-
-### 2. Instalasi Dependency
-```powershell
 composer install
-npm install
-npm run build
+npm install && npm run build
 ```
 
-### 3. Konfigurasi Environment
-Salin file `.env.example` menjadi `.env` dan sesuaikan konfigurasi database Anda.
+### 2. Konfigurasi
 ```powershell
 cp .env.example .env
 php artisan key:generate
 ```
 
-### 4. Setup Database
-Pastikan MySQL (Laragon/XAMPP) sudah berjalan. Anda bisa menggunakan script otomatis yang sudah disediakan:
+### 3. Setup Database
+Pastikan MySQL sudah berjalan, lalu jalankan script otomatis:
 ```powershell
 ./setup-db.bat
 ```
-*Script ini akan membuat database `mcc_rekap`, menjalankan migration, dan membuat akun admin default.*
+*Script ini akan membuat database `mcc_rekap`, menjalankan migration, dan membuat akun admin.*
 
 **Akun Admin Default:**
-- **Email:** admin@mcc.com
-- **Password:** password
+- **Email:** `admin@mcc.com`
+- **Password:** `password`
 
-### 5. Menjalankan Aplikasi
+### 4. Menjalankan Aplikasi
 ```powershell
 php artisan serve
 ```
 Akses dashboard di: `http://localhost:8000/admin`
 
-## Penggunaan Import Excel
-1. Masuk ke menu **Import Data**.
-2. Upload file Excel rekapitulasi.
-3. Sistem akan mendeteksi baris dengan multi-ruangan (misal: "Studio 1, Studio 2") dan membaginya menjadi baris terpisah secara otomatis.
-4. Jumlah peserta akan disalin ke setiap baris agar total di dashboard sesuai dengan akumulasi penggunaan ruangan.
+## 📚 Dokumentasi Lengkap
+Informasi lebih detail mengenai fitur-fitur sistem dapat ditemukan di folder `docs/`:
+- [📊 Fitur Dashboard](docs/DASHBOARD_FEATURES.md)
+- [📈 Analitik Ekonomi Kreatif](docs/EXPORT_ANALYTICS_FEATURE.md)
+- [📥 Panduan Export Data](docs/EXPORT_FEATURE_GUIDE.md)
+- [📄 Spesifikasi Template PDF](docs/PDF_TEMPLATE_FINAL.md)
 
-## Kontribusi
-Project ini dikembangkan untuk kebutuhan magang/PKL di Malang Creative Center.
-
-## Lisensi
+## ⚖️ Lisensi
 [MIT license](https://opensource.org/licenses/MIT).

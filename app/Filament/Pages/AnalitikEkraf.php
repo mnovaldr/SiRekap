@@ -83,7 +83,7 @@ class AnalitikEkraf extends Page
                 DB::raw('sum(jumlah_peserta) as total_pengunjung'),
                 DB::raw('count(case when komersial = "Komersial" then 1 end) as total_komersil'),
                 DB::raw('count(case when komersial = "Non Komersial" then 1 end) as total_non_komersil'),
-                DB::raw('count(distinct nama_organisasi) as total_pelaku')
+                DB::raw('count(distinct UPPER(TRIM(nama_organisasi))) as total_pelaku')
             )
             ->groupBy('bulan')
             ->orderBy(DB::raw('FIELD(bulan, "Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember")'))
@@ -91,7 +91,8 @@ class AnalitikEkraf extends Page
 
         // 5. Organisasi Unik lifetime (hanya Valid)
         $totalPelakuLifetime = Event::valid()
-            ->count(DB::raw('DISTINCT nama_organisasi'));
+            ->select(DB::raw('COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as total'))
+            ->value('total') ?? 0;
 
         return [
             'kategoriEkraf'       => $kategoriEkraf,

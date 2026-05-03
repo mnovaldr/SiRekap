@@ -22,6 +22,7 @@ class CekDuplikat extends Page
     public int $totalIssues = 0;
     public int $duplikatCount = 0;
     public int $reviewCount = 0;
+    public int $currentPage = 1;
 
     public function mount(): void
     {
@@ -61,13 +62,14 @@ class CekDuplikat extends Page
             $shortMap[$ks][] = $row;
         }
 
-        $groups   = [];
-        $addedIds = [];
+        $duplikatGroups   = [];
+        $reviewGroups     = [];
+        $addedIds         = [];
 
         // 1. Deteksi Duplikat Penuh
         foreach ($fullMap as $key => $rows) {
             if (count($rows) > 1) {
-                $groups[] = [
+                $duplikatGroups[] = [
                     'type'   => 'DUPLIKAT – Hapus',
                     'reason' => 'Data Terduplikasi Identik',
                     'key'    => $key,
@@ -82,7 +84,7 @@ class CekDuplikat extends Page
             if (count($rows) > 1) {
                 $notAlreadyFull = array_filter($rows, fn($r) => !in_array($r['id'], $addedIds));
                 if (count($notAlreadyFull) > 1) {
-                    $groups[] = [
+                    $reviewGroups[] = [
                         'type'   => 'REVIEW – Konflik Lokasi',
                         'reason' => 'Organisasi & Judul Sama di Ruangan Berbeda',
                         'key'    => $key,
@@ -92,12 +94,26 @@ class CekDuplikat extends Page
             }
         }
 
+        $groups = array_merge($reviewGroups, $duplikatGroups);
         $this->duplikatGroups = $groups;
         $this->duplikatCount  = collect($groups)->where('type', 'DUPLIKAT – Hapus')->sum(fn($g) => count($g['items']));
         $this->reviewCount    = collect($groups)->where('type', 'REVIEW – Konflik Lokasi')->sum(fn($g) => count($g['items']));
         $this->totalIssues    = $this->duplikatCount + $this->reviewCount;
 
+        // Reset page if current page exceeds total groups
+        $totalGroups = count($groups);
+        if ($this->currentPage > $totalGroups && $totalGroups > 0) {
+            $this->currentPage = $totalGroups;
+        } elseif ($totalGroups === 0) {
+            $this->currentPage = 1;
+        }
+
         $this->isLoading = false;
+    }
+
+    public function setPage(int $page): void
+    {
+        $this->currentPage = $page;
     }
     
     public function deleteRow(string $id): void
