@@ -41,21 +41,9 @@ class Event extends Model
     protected static function boot()
     {
         parent::boot();
-
-        static::creating(function ($event) {
-            $event->bulan = self::getBulanIndonesia($event->tanggal);
-            $event->key_full = self::makeKeyFull($event);
-            $event->key_short = self::makeKeyShort($event);
-            
-            // Check for duplicates
-            $event->checkDuplicates();
-        });
-
-        static::updating(function ($event) {
-            $event->bulan = self::getBulanIndonesia($event->tanggal);
-            $event->key_full = self::makeKeyFull($event);
-            $event->key_short = self::makeKeyShort($event);
-        });
+        
+        // Logika pengisian otomatis (bulan, key, duplikat) 
+        // sekarang ditangani oleh Database Trigger di Supabase.
     }
 
     public static function getBulanIndonesia($date)

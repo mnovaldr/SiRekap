@@ -45,7 +45,7 @@ class RekapBulananWidget extends BaseWidget
                 ->byYear($year)
                 ->whereNotNull('bulan')
                 ->groupBy('bulan')
-                ->orderBy(DB::raw('FIELD(bulan, "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember")'))
+                ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\', \'Februari\', \'Maret\', \'April\', \'Mei\', \'Juni\', \'Juli\', \'Agustus\', \'September\', \'Oktober\', \'November\', \'Desember\'], bulan)'))
             )
             ->columns([
                 Tables\Columns\TextColumn::make('bulan')

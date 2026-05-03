@@ -69,12 +69,12 @@ class ExportData extends Page
     public function mount(): void
     {
         // Get the most recent year with data, or current year as fallback
-        $latestYear = Event::selectRaw('YEAR(tanggal) as year')
+        $latestYear = Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->value('year');
         
-        $earliestYear = Event::selectRaw('YEAR(tanggal) as year')
+        $earliestYear = Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
             ->distinct()
             ->orderBy('year', 'asc')
             ->value('year');
@@ -215,7 +215,7 @@ class ExportData extends Page
     // ── Public Methods ──
     public function getAvailableYears(): array
     {
-        $years = Event::selectRaw('YEAR(tanggal) as year')
+        $years = Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year', 'year')
@@ -246,7 +246,7 @@ class ExportData extends Page
         $yearEnd = (int) $this->selectedYearEnd;
 
         // Base query for year range
-        $baseQuery = fn() => Event::whereBetween(DB::raw('YEAR(tanggal)'), [$yearStart, $yearEnd])
+        $baseQuery = fn() => Event::whereBetween(DB::raw('EXTRACT(YEAR FROM tanggal)'), [$yearStart, $yearEnd])
             ->where('status_data', 'Valid');
 
         // 1. Sub Sektor
@@ -274,23 +274,40 @@ class ExportData extends Page
 
         // 4. Rekap Bulanan per Tahun
         $bulanan = [];
-        for ($year = $yearStart; $year <= $yearEnd; $year++) {
-            $yearData = Event::whereYear('tanggal', $year)
-                ->where('status_data', 'Valid')
+        foreach (range($yearStart, $yearEnd) as $year) {
+            // Gunakan clone agar query tidak saling bertabrakan
+            $baseYearQuery = Event::whereYear('tanggal', $year)->where('status_data', 'Valid');
+            
+            $yearData = (clone $baseYearQuery)
                 ->whereNotNull('bulan')
                 ->select(
                     'bulan',
                     DB::raw('count(*) as total_event'),
                     DB::raw('sum(jumlah_peserta) as total_pengunjung'),
-                    DB::raw('count(case when komersial = "Komersial" then 1 end) as total_komersil'),
-                    DB::raw('count(case when komersial = "Non Komersial" then 1 end) as total_non_komersil'),
+                    DB::raw('count(case when komersial = \'Komersial\' then 1 end) as total_komersil'),
+                    DB::raw('count(case when komersial = \'Non Komersial\' then 1 end) as total_non_komersil'),
                     DB::raw('count(distinct UPPER(TRIM(nama_organisasi))) as total_pelaku')
                 )
                 ->groupBy('bulan')
-                ->orderBy(DB::raw('FIELD(bulan, "Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember")'))
+                ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\',\'Februari\',\'Maret\',\'April\',\'Mei\',\'Juni\',\'Juli\',\'Agustus\',\'September\',\'Oktober\',\'November\',\'Desember\'], bulan)'))
                 ->get();
+
+            // Hitung total tahunan yang sebenarnya (Unique per year)
+            $yearlyUniquePelaku = (clone $baseYearQuery)
+                ->select(DB::raw('COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as total'))
+                ->value('total') ?? 0;
             
-            $bulanan[$year] = $yearData;
+            $yearlyTotalEvents = $yearData->sum('total_event');
+            $yearlyTotalPengunjung = $yearData->sum('total_pengunjung');
+            
+            $bulanan[$year] = [
+                'data' => $yearData,
+                'totals' => [
+                    'event' => $yearlyTotalEvents,
+                    'pengunjung' => $yearlyTotalPengunjung,
+                    'pelaku' => $yearlyUniquePelaku,
+                ]
+            ];
         }
 
         // 5. Total Pelaku Unik dalam periode
@@ -900,7 +917,10 @@ class ExportData extends Page
         ]);
         $row += 2;
         
-        foreach ($data['bulanan'] as $year => $monthlyData) {
+        foreach ($data['bulanan'] as $year => $yearGroup) {
+            $monthlyData = $yearGroup['data'];
+            $totals = $yearGroup['totals'];
+
             $sheet->setCellValue("A{$row}", "Tahun {$year}");
             $sheet->getStyle("A{$row}")->applyFromArray([
                 'font' => ['bold' => true, 'size' => 12],
@@ -920,16 +940,30 @@ class ExportData extends Page
             foreach ($monthlyData as $month) {
                 $sheet->fromArray([[
                     $month->bulan,
-                    number_format($month->total_event),
-                    number_format($month->total_pengunjung),
-                    number_format($month->total_komersil),
-                    number_format($month->total_non_komersil),
-                    number_format($month->total_pelaku),
+                    (int) $month->total_event,
+                    (int) $month->total_pengunjung,
+                    (int) $month->total_komersil,
+                    (int) $month->total_non_komersil,
+                    (int) $month->total_pelaku,
                 ]], null, "A{$row}");
                 $row++;
             }
+
+            // TOTAL ROW (PENTING: Menghitung Unique Pelaku per Tahun)
+            $sheet->setCellValue("A{$row}", 'TOTAL ' . $year);
+            $sheet->setCellValue("B{$row}", $totals['event']);
+            $sheet->setCellValue("C{$row}", $totals['pengunjung']);
+            $sheet->setCellValue("F{$row}", $totals['pelaku']);
             
-            $row += 2;
+            $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
+                'borders' => [
+                    'top' => ['borderStyle' => Border::BORDER_THICK],
+                ],
+            ]);
+            
+            $row += 3;
         }
         
         // Set column widths

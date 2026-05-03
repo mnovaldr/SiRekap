@@ -51,36 +51,41 @@ class EventsChart extends ChartWidget
         $month = $this->filters['month'] ?? null;
 
         // Force Annual if filter is 'annual' OR if no global filters are set
-        if ($this->filter === 'annual' || (!$month && !$year)) {
-            // VIEW TAHUNAN (Multi-Tahun)
-            $eventData = Event::select(DB::raw('YEAR(tanggal) as year'), DB::raw('count(*) as count'))
+        // VIEW TAHUNAN (Dinamis 5 Tahun Terakhir)
+        if ($this->filter === 'annual' && !$year && !$month) {
+            $currentYear = (int) date('Y');
+            $startYear = $currentYear - 4;
+            $labels = range($startYear, $currentYear);
+
+            $eventData = Event::select(DB::raw('EXTRACT(YEAR FROM tanggal) as year'), DB::raw('count(*) as count'))
                 ->valid()
+                ->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$startYear, $currentYear])
                 ->groupBy('year')->orderBy('year')
                 ->get()->pluck('count', 'year')->toArray();
 
-            $pesertaData = Event::select(DB::raw('YEAR(tanggal) as year'), DB::raw('sum(jumlah_peserta) as total'))
+            $pesertaData = Event::select(DB::raw('EXTRACT(YEAR FROM tanggal) as year'), DB::raw('sum(jumlah_peserta) as total'))
                 ->valid()
+                ->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$startYear, $currentYear])
                 ->groupBy('year')->orderBy('year')
                 ->get()->pluck('total', 'year')->toArray();
 
-            $labels = array_keys($eventData);
-            if (empty($labels)) {
-                $labels = [date('Y')];
+            $eventCounts = [];
+            $pesertaCounts = [];
+            foreach ($labels as $y) {
+                $eventCounts[] = $eventData[$y] ?? 0;
+                $pesertaCounts[] = $pesertaData[$y] ?? 0;
             }
-            
-            $eventCounts = array_values($eventData);
-            $pesertaCounts = array_values($pesertaData);
         } elseif ($month) {
             // VIEW HARIAN (Jika Bulan dipilih)
             $y = $year ?: date('Y');
             $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$month, (int)$y);
             
-            $eventData = Event::select(DB::raw('DAY(tanggal) as day'), DB::raw('count(*) as count'))
+            $eventData = Event::select(DB::raw('EXTRACT(DAY FROM tanggal) as day'), DB::raw('count(*) as count'))
                 ->valid()->byYear($y)->byMonth($month)
                 ->groupBy('day')->orderBy('day')
                 ->get()->pluck('count', 'day')->toArray();
 
-            $pesertaData = Event::select(DB::raw('DAY(tanggal) as day'), DB::raw('sum(jumlah_peserta) as total'))
+            $pesertaData = Event::select(DB::raw('EXTRACT(DAY FROM tanggal) as day'), DB::raw('sum(jumlah_peserta) as total'))
                 ->valid()->byYear($y)->byMonth($month)
                 ->groupBy('day')->orderBy('day')
                 ->get()->pluck('total', 'day')->toArray();
@@ -94,14 +99,16 @@ class EventsChart extends ChartWidget
                 $pesertaCounts[] = $pesertaData[$i] ?? 0;
             }
         } else {
-            // VIEW BULANAN (Jika Tahun dipilih & filter dynamic)
-            $eventData = Event::select(DB::raw('MONTH(tanggal) as month'), DB::raw('count(*) as count'))
-                ->valid()->byYear($year)
+            // VIEW BULANAN (Jika Tahun dipilih ATAU Default Tahun Sekarang)
+            $y = $year ?: date('Y');
+            
+            $eventData = Event::select(DB::raw('EXTRACT(MONTH FROM tanggal) as month'), DB::raw('count(*) as count'))
+                ->valid()->byYear($y)
                 ->groupBy('month')->orderBy('month')
                 ->get()->pluck('count', 'month')->toArray();
 
-            $pesertaData = Event::select(DB::raw('MONTH(tanggal) as month'), DB::raw('sum(jumlah_peserta) as total'))
-                ->valid()->byYear($year)
+            $pesertaData = Event::select(DB::raw('EXTRACT(MONTH FROM tanggal) as month'), DB::raw('sum(jumlah_peserta) as total'))
+                ->valid()->byYear($y)
                 ->groupBy('month')->orderBy('month')
                 ->get()->pluck('total', 'month')->toArray();
 

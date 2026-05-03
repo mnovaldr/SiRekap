@@ -171,11 +171,10 @@ class ExcelImportService
     {
         $fullCounts = [];
         $shortCounts = [];
-        
-        // Get existing short keys from DB to prevent duplication against existing data
-        $existingShortKeys = Event::pluck('key_short')->toArray();
         $batchShortKeys = [];
+        $batchFullKeys = [];
 
+        // Pre-calculate keys for the entire batch
         foreach ($data as &$item) {
             $org   = strtoupper(trim((string) ($item['nama_organisasi'] ?? '')));
             $judul = strtoupper(trim((string) ($item['judul_kegiatan'] ?? '')));
@@ -188,30 +187,42 @@ class ExcelImportService
 
             $fullCounts[$item['_key_full']]   = ($fullCounts[$item['_key_full']]   ?? 0) + 1;
             $shortCounts[$item['_key_short']] = ($shortCounts[$item['_key_short']] ?? 0) + 1;
+            
+            $batchFullKeys[] = $item['_key_full'];
+            $batchShortKeys[] = $item['_key_short'];
         }
         unset($item);
+
+        // Fetch existing keys from DB in BULK (only 2 queries total)
+        $existingFullKeys = Event::whereIn('key_full', array_unique($batchFullKeys))->pluck('key_full')->toArray();
+        $existingShortKeys = Event::whereIn('key_short', array_unique($batchShortKeys))->pluck('key_short')->toArray();
+        
+        $existingFullKeysMap = array_flip($existingFullKeys);
+        $existingShortKeysMap = array_flip($existingShortKeys);
+
+        $processedShortKeys = [];
 
         foreach ($data as &$item) {
             $ks = $item['_key_short'];
             $kf = $item['_key_full'];
 
             // 1. Check Full Duplicate (Identical Row)
-            if ($fullCounts[$kf] > 1 || in_array($kf, Event::where('key_full', $kf)->pluck('key_full')->toArray())) {
+            if ($fullCounts[$kf] > 1 || isset($existingFullKeysMap[$kf])) {
                 $item['status_data']    = 'Duplikat';
                 $item['catatan_review'] = 'Duplikat FULL';
+                $item['is_primary_row'] = false;
             } 
             // 2. Check Short Duplicate (Multi Ruangan / Event Sama)
-            elseif ($shortCounts[$ks] > 1 || in_array($ks, $existingShortKeys)) {
+            elseif ($shortCounts[$ks] > 1 || isset($existingShortKeysMap[$ks])) {
                 $item['status_data']    = 'Review';
                 $item['catatan_review'] = 'Duplikat SHORT (Multi Ruangan)';
                 
-                // FIX: Jika ini adalah duplikat short, pastikan hanya satu yang jadi primary
-                // Namun jumlah_peserta tetap dipertahankan sesuai permintaan user
-                if (in_array($ks, $existingShortKeys) || in_array($ks, $batchShortKeys)) {
+                // Jika sudah ada di DB atau sudah diproses di batch ini, maka bukan primary
+                if (isset($existingShortKeysMap[$ks]) || isset($processedShortKeys[$ks])) {
                     $item['is_primary_row'] = false;
                 } else {
                     $item['is_primary_row'] = true;
-                    $batchShortKeys[] = $ks;
+                    $processedShortKeys[$ks] = true;
                 }
             } 
             // 3. Valid
@@ -219,10 +230,9 @@ class ExcelImportService
                 $item['status_data']    = 'Valid';
                 $item['catatan_review'] = null;
                 $item['is_primary_row'] = true;
-                $batchShortKeys[] = $ks;
+                $processedShortKeys[$ks] = true;
             }
 
-            // Build key_full & key_short for DB
             $item['key_full']  = $kf;
             $item['key_short'] = $ks;
             unset($item['_key_full'], $item['_key_short']);
@@ -384,16 +394,25 @@ class ExcelImportService
         if (!$raw) return 'Unknown';
         
         $s = trim((string) $raw);
+        $s = strtolower($s);
+
+        // 1. Standarisasi Singkatan Sekolah & Instansi
+        $s = preg_replace('/\bsman\b|\bsma\b/i', 'SMAN', $s);
+        $s = preg_replace('/\bsmkn\b|\bsmk\b/i', 'SMKN', $s);
+        $s = preg_replace('/\buniv\b/i', 'Universitas', $s);
         
-        // Remove common prefixes/suffixes for better uniqueness (optional but helpful)
-        // e.g. "PT. " -> "PT "
-        $s = preg_replace('/^(pt|cv|yayasan|komunitas|perkumpulan)\.?\s+/i', '$1 ', $s);
+        // 2. Bersihkan karakter spesial yang tidak perlu
+        $s = str_replace(['.', ',', '(', ')', '-'], ' ', $s);
         
-        // Remove extra spaces
+        // 3. Normalisasi Prefiks (PT, CV, dll)
+        $s = preg_replace('/^(pt|cv|yayasan|komunitas|perkumpulan|himpunan|hmj|hmt|hima)\s+/i', '', $s);
+        
+        // 4. Hapus spasi ganda
         $s = preg_replace('/\s+/', ' ', $s);
+        $s = trim($s);
         
-        // Convert to Title Case for consistency
-        return ucwords(strtolower($s));
+        // 5. Kembalikan ke Title Case untuk tampilan rapi
+        return ucwords($s);
     }
 
     public function getBulanIndonesia(string $date): string

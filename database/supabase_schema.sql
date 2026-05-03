@@ -7,35 +7,61 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- ============================================================
--- ENUM
+-- ENUM (WITH EXISTENCE CHECK)
 -- ============================================================
-CREATE TYPE bidang_enum AS ENUM (
-  'Komunitas','Bisnis','Akademisi','Pemerintah',
-  'Media','Perorangan','Institusi Finansial'
-);
 
-CREATE TYPE jenis_kegiatan_enum AS ENUM (
-  'Pertunjukan','Meeting','Workshop','Pelatihan',
-  'Talkshow/Podcast','Take Konten Foto & Video',
-  'Produksi Musik','Pameran','Kunjungan','Sosialisasi',
-  'Kompetisi','Produksi Film','Voice Over','Interview',
-  'Penelitian','Produksi Olahan','Konsultasi','Lainnya'
-);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'bidang_enum') THEN
+        CREATE TYPE bidang_enum AS ENUM (
+          'Komunitas','Bisnis','Akademisi','Pemerintah',
+          'Media','Perorangan','Institusi Finansial'
+        );
+    END IF;
+END $$;
 
-CREATE TYPE komersial_enum AS ENUM ('Komersial','Non Komersial');
-CREATE TYPE status_data_enum AS ENUM ('Valid','Review','Duplikat');
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'jenis_kegiatan_enum') THEN
+        CREATE TYPE jenis_kegiatan_enum AS ENUM (
+          'Pertunjukan','Meeting','Workshop','Pelatihan',
+          'Talkshow/Podcast','Take Konten Foto & Video',
+          'Produksi Musik','Pameran','Kunjungan','Sosialisasi',
+          'Kompetisi','Produksi Film','Voice Over','Interview',
+          'Penelitian','Produksi Olahan','Konsultasi','Lainnya'
+        );
+    END IF;
+END $$;
 
-CREATE TYPE lokasi_enum AS ENUM (
-  'Studio Musik','Studio Foto',
-  'Co-Working Space 1','Co-Working Space 2',
-  'Food Lab','Multi Purpose Area',
-  'Amphitheater 1','Amphitheater 2',
-  'Multifunction Room',
-  'Open Public Space Barat','Open Public Space Utara',
-  'Ruang Meeting','Ruang Fashion','KIDZONE'
-);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'komersial_enum') THEN
+        CREATE TYPE komersial_enum AS ENUM ('Komersial','Non Komersial');
+    END IF;
+END $$;
 
-CREATE TYPE lantai_enum AS ENUM ('2','3','4','5');
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_data_enum') THEN
+        CREATE TYPE status_data_enum AS ENUM ('Valid','Review','Duplikat');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lokasi_enum') THEN
+        CREATE TYPE lokasi_enum AS ENUM (
+          'Studio Musik','Studio Foto',
+          'Co-Working Space 1','Co-Working Space 2',
+          'Food Lab','Multi Purpose Area',
+          'Amphitheater 1','Amphitheater 2',
+          'Multifunction Room',
+          'Open Public Space Barat','Open Public Space Utara',
+          'Ruang Meeting','Ruang Fashion','KIDZONE'
+        );
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lantai_enum') THEN
+        CREATE TYPE lantai_enum AS ENUM ('2','3','4','5');
+    END IF;
+END $$;
 
 -- ============================================================
 -- USERS

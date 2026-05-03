@@ -135,14 +135,25 @@ class ImportData extends Page
 
         try {
             $service = new ExcelImportService();
-            $toInsert = $data; // Sertakan semua data, termasuk duplikat untuk direview nanti
+            $toInsert = array_values($data);
+            $now = now();
 
-            DB::transaction(function() use ($toInsert, $service) {
-                foreach (array_chunk(array_values($toInsert), 100) as $chunk) {
+            DB::transaction(function() use ($toInsert, $now) {
+                // Gunakan chunk yang lebih besar untuk cloud DB (misal 500 baris per query)
+                foreach (array_chunk($toInsert, 500) as $chunk) {
+                    $bulkData = [];
                     foreach ($chunk as $row) {
-                        $row['bulan'] = $service->getBulanIndonesia($row['tanggal']);
-                        Event::create($row);
+                        // Pastikan ID dan Timestamps terisi karena insert() tidak otomatis mengisinya
+                        $row['id'] = (string) \Illuminate\Support\Str::uuid();
+                        $row['created_at'] = $now;
+                        $row['updated_at'] = $now;
+                        
+                        // Hapus kolom temporary jika ada
+                        unset($row['bulan_label']); 
+                        
+                        $bulkData[] = $row;
                     }
+                    Event::insert($bulkData);
                 }
             });
 

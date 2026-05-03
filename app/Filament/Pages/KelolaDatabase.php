@@ -148,7 +148,7 @@ class KelolaDatabase extends Page
 
     public function getAvailableYears(): array
     {
-        return Event::selectRaw('YEAR(tanggal) as year')
+        return Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year')

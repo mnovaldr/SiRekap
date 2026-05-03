@@ -22,11 +22,18 @@ class StatsOverview extends BaseWidget
         
         $query = Event::valid()->byYear($year)->byMonth($month);
         
-        $totalEvents    = (clone $query)->count();
-        $totalPeserta   = (clone $query)->sum('jumlah_peserta');
-        $ekrafUnik      = (clone $query)->count(DB::raw('DISTINCT nama_organisasi'));
+        $stats = $query->selectRaw('
+            COUNT(*) as total_events,
+            SUM(jumlah_peserta) as total_peserta,
+            COUNT(DISTINCT nama_organisasi) as ekraf_unik,
+            COUNT(CASE WHEN komersial = \'Non Komersial\' THEN 1 END) as total_non_komersial
+        ')->first();
         
-        $totalNonKomersial  = (clone $query)->where('komersial', 'Non Komersial')->count();
+        $totalEvents         = $stats->total_events ?? 0;
+        $totalPeserta        = $stats->total_peserta ?? 0;
+        $ekrafUnik           = $stats->ekraf_unik ?? 0;
+        $totalNonKomersial   = $stats->total_non_komersial ?? 0;
+
         $percentNonKomersial = $totalEvents > 0
             ? round(($totalNonKomersial / $totalEvents) * 100, 1)
             : 0;

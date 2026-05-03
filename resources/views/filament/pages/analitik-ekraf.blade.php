@@ -226,10 +226,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 4a4 4 0 10-8 0"/>
                     </svg>
                 </div>
-                <span class="badge badge-indigo">Lifetime</span>
+                <span class="badge badge-indigo">{{ $data['year'] }}</span>
             </div>
             <div class="stat-label">Total Pelaku Ekraf</div>
-            <div class="stat-value">{{ number_format($data['totalPelakuLifetime']) }}</div>
+            <div class="stat-value">{{ number_format($data['totalPelakuYear']) }}</div>
             <div class="stat-sub">Organisasi unik tercatat</div>
         </div>
 
@@ -468,7 +468,7 @@
                         <td class="td-num">{{ number_format($totalPeserta) }}</td>
                         <td class="td-num">{{ number_format($totalKomersil) }}</td>
                         <td class="td-num">{{ number_format($totalNonKomersil) }}</td>
-                        <td class="td-num">—</td>
+                        <td class="td-num">{{ number_format($data['totalPelakuYear']) }}</td>
                         <td class="td-num">{{ $avgPeserta }}</td>
                     </tr>
                 </tfoot>

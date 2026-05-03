@@ -30,13 +30,13 @@ class AnalitikEkraf extends Page
                         Select::make('year')
                             ->label('Tahun Analisis')
                             ->options(
-                                Event::selectRaw('YEAR(tanggal) as year')
+                                Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
                                     ->distinct()
                                     ->orderBy('year', 'desc')
                                     ->pluck('year', 'year')
                                     ->toArray()
                             )
-                            ->default(Event::selectRaw('YEAR(MAX(tanggal)) as max_year')->value('max_year') ?? date('Y'))
+                            ->default(Event::selectRaw('EXTRACT(YEAR FROM MAX(tanggal)) as max_year')->value('max_year') ?? date('Y'))
                             ->selectablePlaceholder(false),
                     ])
                     ->columns(1),
@@ -81,16 +81,16 @@ class AnalitikEkraf extends Page
                 DB::raw('count(*) as total_event'),
                 // SUM peserta hanya dari is_primary_row=1 agar tidak double-count multi-ruangan
                 DB::raw('sum(jumlah_peserta) as total_pengunjung'),
-                DB::raw('count(case when komersial = "Komersial" then 1 end) as total_komersil'),
-                DB::raw('count(case when komersial = "Non Komersial" then 1 end) as total_non_komersil'),
+                DB::raw('count(case when komersial = \'Komersial\' then 1 end) as total_komersil'),
+                DB::raw('count(case when komersial = \'Non Komersial\' then 1 end) as total_non_komersil'),
                 DB::raw('count(distinct UPPER(TRIM(nama_organisasi))) as total_pelaku')
             )
             ->groupBy('bulan')
-            ->orderBy(DB::raw('FIELD(bulan, "Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember")'))
+            ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\',\'Februari\',\'Maret\',\'April\',\'Mei\',\'Juni\',\'Juli\',\'Agustus\',\'September\',\'Oktober\',\'November\',\'Desember\'], bulan)'))
             ->get();
 
-        // 5. Organisasi Unik lifetime (hanya Valid)
-        $totalPelakuLifetime = Event::valid()
+        // 5. Total Pelaku Unik dalam tahun yang dipilih (hanya Valid)
+        $totalPelakuYear = $baseQuery()
             ->select(DB::raw('COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as total'))
             ->value('total') ?? 0;
 
@@ -99,7 +99,7 @@ class AnalitikEkraf extends Page
             'kategoriKegiatan'    => $kategoriKegiatan,
             'kategoriPelaku'      => $kategoriPelaku,
             'bulanan'             => $bulanan,
-            'totalPelakuLifetime' => $totalPelakuLifetime,
+            'totalPelakuYear'     => $totalPelakuYear,
             'year'                => $year,
         ];
     }

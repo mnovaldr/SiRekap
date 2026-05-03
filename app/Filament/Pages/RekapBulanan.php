@@ -31,26 +31,38 @@ class RekapBulanan extends Page
 
     protected function loadRekap(): void
     {
-        $months = [
-            1 => 'January',   2 => 'February',  3 => 'March',     4 => 'April',
-            5 => 'May',       6 => 'June',       7 => 'July',      8 => 'August',
-            9 => 'September', 10 => 'October',   11 => 'November', 12 => 'December',
+        $monthsMap = [
+            1 => 'Januari',   2 => 'Februari',  3 => 'Maret',     4 => 'April',
+            5 => 'Mei',       6 => 'Juni',       7 => 'Juli',      8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober',   11 => 'November', 12 => 'Desember',
         ];
+
+        // Ambil semua data dalam satu query agregasi (Sangat Cepat!)
+        $stats = Event::byYear($this->selectedYear)
+            ->where('status_data', '!=', 'Duplikat')
+            ->selectRaw("
+                bulan,
+                COUNT(*) as total_event,
+                SUM(jumlah_peserta) as total_peserta,
+                COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as ekraf_unik,
+                COUNT(CASE WHEN komersial = 'Non Komersial' THEN 1 END) as non_komersial
+            ")
+            ->groupBy('bulan')
+            ->get()
+            ->keyBy('bulan');
 
         $rekap = [];
         $grandTotal     = 0;
         $grandPeserta   = 0;
         $grandNonKom    = 0;
 
-        foreach ($months as $num => $name) {
-            $base = Event::byYear($this->selectedYear)
-                ->byMonth($num)
-                ->where('status_data', '!=', 'Duplikat');
-
-            $totalEvent   = $base->count();
-            $totalPeserta = $base->sum('jumlah_peserta');
-            $ekrafUnik    = $base->count(\Illuminate\Support\Facades\DB::raw('DISTINCT UPPER(TRIM(nama_organisasi))'));
-            $nonKom       = $base->where('komersial', 'Non Komersial')->count();
+        foreach ($monthsMap as $num => $name) {
+            $data = $stats->get($name);
+            
+            $totalEvent   = $data->total_event ?? 0;
+            $totalPeserta = $data->total_peserta ?? 0;
+            $ekrafUnik    = $data->ekraf_unik ?? 0;
+            $nonKom       = $data->non_komersial ?? 0;
             $pctNonKom    = $totalEvent > 0 ? round($nonKom / $totalEvent * 100) : 0;
 
             $rekap[] = [

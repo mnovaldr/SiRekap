@@ -29,7 +29,7 @@ class Dashboard extends BaseDashboard
                 Select::make('year')
                     ->label('Tahun')
                     ->options(function () {
-                        $years = Event::selectRaw('YEAR(tanggal) as year')
+                        $years = Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
                             ->whereNotNull('tanggal')
                             ->distinct()
                             ->orderBy('year', 'desc')
@@ -42,7 +42,7 @@ class Dashboard extends BaseDashboard
                     ->default(function () {
                         $latestYear = Event::whereNotNull('tanggal')
                             ->orderBy('tanggal', 'desc')
-                            ->value(DB::raw('YEAR(tanggal)'));
+                            ->value(DB::raw('EXTRACT(YEAR FROM tanggal)'));
                         
                         return $latestYear ?: date('Y');
                     }),

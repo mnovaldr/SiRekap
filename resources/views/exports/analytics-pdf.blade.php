@@ -298,7 +298,11 @@
     </table>
 
     {{-- Rekap Bulanan --}}
-    @foreach($data['bulanan'] as $year => $monthlyData)
+    @foreach($data['bulanan'] as $year => $yearGroup)
+    @php 
+        $monthlyData = $yearGroup['data'];
+        $totals = $yearGroup['totals'];
+    @endphp
     <div class="section-title">Rekapitulasi Bulanan Tahun {{ $year }}</div>
     <table>
         <thead>
@@ -323,12 +327,12 @@
             </tr>
             @endforeach
             <tr class="highlight-row">
-                <td class="font-bold">TOTAL</td>
-                <td class="text-center font-bold">{{ number_format($monthlyData->sum('total_event')) }}</td>
-                <td class="text-center font-bold">{{ number_format($monthlyData->sum('total_pengunjung')) }}</td>
+                <td class="font-bold">TOTAL {{ $year }}</td>
+                <td class="text-center font-bold">{{ number_format($totals['event']) }}</td>
+                <td class="text-center font-bold">{{ number_format($totals['pengunjung']) }}</td>
                 <td class="text-center font-bold">{{ number_format($monthlyData->sum('total_komersil')) }}</td>
                 <td class="text-center font-bold">{{ number_format($monthlyData->sum('total_non_komersil')) }}</td>
-                <td class="text-center">-</td>
+                <td class="text-center font-bold">{{ number_format($totals['pelaku']) }}</td>
             </tr>
         </tbody>
     </table>
