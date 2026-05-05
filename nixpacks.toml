@@ -7,4 +7,4 @@ cmds = ["composer install --optimize-autoloader --no-dev", "npm install && npm r
 
 [phases.deploy]
 dependsOn = ["build"]
-cmds = ["php artisan migrate --force", "php artisan optimize", "php artisan serve --host 0.0.0.0 --port $PORT"]
+cmds = ["php artisan migrate --force", "php artisan optimize", "php artisan icons:cache", "php artisan storage:link --force", "php artisan serve --host 0.0.0.0 --port $PORT"]

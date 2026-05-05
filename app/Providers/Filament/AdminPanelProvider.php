@@ -194,10 +194,10 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->brandName('SiREKAP MCC')
-            ->brandLogo(asset('images/logo.png'))
-            ->darkModeBrandLogo(asset('images/logo-white.png'))
+            ->brandLogo(url('/images/logo.png'))
+            ->darkModeBrandLogo(url('/images/logo-white.png'))
             ->brandLogoHeight('3rem')
-            ->favicon(asset('favicon.png'))
+            ->favicon(url('/favicon.png'))
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications();
     }
