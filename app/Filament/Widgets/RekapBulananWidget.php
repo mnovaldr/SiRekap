@@ -16,6 +16,7 @@ class RekapBulananWidget extends BaseWidget
     protected static ?string $heading = 'Rekapitulasi Performa Bulanan';
     protected int | string | array $columnSpan = 'full';
     protected static ?int $sort = 8;
+    protected static bool $isLazy = true;
 
     protected function getListeners(): array
     {
@@ -31,18 +32,19 @@ class RekapBulananWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
-        $year = $this->filters['year'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
 
         return $table
             ->query(
                 Event::select(
                     'bulan',
-                    DB::raw('count(*) as total_event'),
-                    DB::raw('sum(jumlah_peserta) as total_peserta'),
-                    DB::raw('count(distinct nama_organisasi) as total_organisasi')
+                    DB::raw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event'),
+                    DB::raw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_peserta'),
+                    DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total_organisasi')
                 )
                 ->valid()
-                ->byYear($year)
+                ->byYearRange($yearStart, $yearEnd)
                 ->whereNotNull('bulan')
                 ->groupBy('bulan')
                 ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\', \'Februari\', \'Maret\', \'April\', \'Mei\', \'Juni\', \'Juli\', \'Agustus\', \'September\', \'Oktober\', \'November\', \'Desember\'], bulan)'))

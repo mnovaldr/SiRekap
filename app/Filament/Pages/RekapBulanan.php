@@ -42,10 +42,10 @@ class RekapBulanan extends Page
             ->where('status_data', '!=', 'Duplikat')
             ->selectRaw("
                 bulan,
-                COUNT(*) as total_event,
-                SUM(jumlah_peserta) as total_peserta,
-                COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as ekraf_unik,
-                COUNT(CASE WHEN komersial = 'Non Komersial' THEN 1 END) as non_komersial
+                COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event,
+                SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_peserta,
+                COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != '' THEN UPPER(TRIM(nama_organisasi)) END) as ekraf_unik,
+                COUNT(CASE WHEN is_primary_row = true AND komersial = 'Non Komersial' THEN 1 END) as non_komersial
             ")
             ->groupBy('bulan')
             ->get()

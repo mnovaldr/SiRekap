@@ -13,7 +13,7 @@ class TopLokasiWidget extends Widget
     protected static string $view = 'filament.widgets.top-lokasi';
     protected static ?int $sort = 7;
     protected int | string | array $columnSpan = 'full';
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
 
     protected function getListeners(): array
     {
@@ -22,28 +22,39 @@ class TopLokasiWidget extends Widget
         ];
     }
 
-    public function getTopLokasi(): array
+    public function getTopLokasiData(): array
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
 
         $query = Event::query()->valid();
 
-        if ($year) {
-            $query->whereYear('tanggal', $year);
+        if ($yearStart && $yearEnd) {
+            $query->byYearRange($yearStart, $yearEnd);
         }
 
         if ($month) {
             $query->whereMonth('tanggal', $month);
         }
 
-        return $query->select('lokasi')
+        // Hitung Grand Total Event Unik (Primary Row)
+        $grandTotal = (clone $query)
+            ->where('is_primary_row', true)
+            ->count() ?: 1;
+
+        $data = $query->select('lokasi')
+            ->where('is_primary_row', true)
             ->selectRaw('count(*) as total')
             ->selectRaw('sum(jumlah_peserta) as total_peserta')
             ->groupBy('lokasi')
             ->orderBy('total', 'desc')
             ->limit(10)
-            ->get()
-            ->toArray();
+            ->get();
+
+        return [
+            'data' => $data,
+            'grandTotal' => $grandTotal,
+        ];
     }
 }

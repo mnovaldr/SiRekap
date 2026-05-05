@@ -12,6 +12,7 @@ class KomersialChart extends ChartWidget
     use InteractsWithPageFilters;
 
     public ?string $filter = 'snapshot';
+    protected static bool $isLazy = true;
 
     protected function getFilters(): ?array
     {
@@ -29,17 +30,18 @@ class KomersialChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
         
-        $query = Event::valid();
+        $query = Event::valid()->where('is_primary_row', true);
         if ($this->filter === 'snapshot') {
-            $query->byYear($year)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)->byMonth($month);
         } elseif ($this->filter === 'monthly') {
-            $query->byYear($year);
+            $query->byYearRange($yearStart, $yearEnd);
         }
 
-        $total = $query->count();
+        $total = $query->where('is_primary_row', true)->count();
         return "Total: " . number_format($total) . " Event";
     }
 
@@ -48,18 +50,23 @@ class KomersialChart extends ChartWidget
 
     protected function getData(): array
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
 
-        $query = Event::valid();
+        $query = Event::valid()->where('is_primary_row', true);
         if ($this->filter === 'snapshot') {
-            $query->byYear($year)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)->byMonth($month);
         } elseif ($this->filter === 'monthly') {
-            $query->byYear($year);
+            $query->byYearRange($yearStart, $yearEnd);
         }
 
         $komersial = (clone $query)->where('komersial', 'Komersial')->count();
         $nonKomersial = (clone $query)->where('komersial', 'Non Komersial')->count();
+
+        $total = $komersial + $nonKomersial;
+        $pctKomersial = $total > 0 ? round(($komersial / $total) * 100, 1) : 0;
+        $pctNonKomersial = $total > 0 ? round(($nonKomersial / $total) * 100, 1) : 0;
 
         return [
             'datasets' => [
@@ -76,8 +83,8 @@ class KomersialChart extends ChartWidget
                 ],
             ],
             'labels' => [
-                'Komersial (' . number_format($komersial) . ')',
-                'Non Komersial (' . number_format($nonKomersial) . ')',
+                'Komersial: ' . number_format($komersial) . ' (' . $pctKomersial . '%)',
+                'Non Komersial: ' . number_format($nonKomersial) . ' (' . $pctNonKomersial . '%)',
             ],
         ];
     }

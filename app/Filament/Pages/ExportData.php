@@ -251,6 +251,7 @@ class ExportData extends Page
 
         // 1. Sub Sektor
         $kategoriEkraf = $baseQuery()
+            ->where('is_primary_row', true)
             ->whereNotNull('sub_sektor')
             ->where('sub_sektor', '!=', '')
             ->select('sub_sektor as label', DB::raw('count(*) as total'))
@@ -260,6 +261,7 @@ class ExportData extends Page
 
         // 2. Jenis Kegiatan
         $kategoriKegiatan = $baseQuery()
+            ->where('is_primary_row', true)
             ->select('jenis_kegiatan as label', DB::raw('count(*) as total'))
             ->groupBy('jenis_kegiatan')
             ->orderBy('total', 'desc')
@@ -267,6 +269,7 @@ class ExportData extends Page
 
         // 3. Bidang Pelaku
         $kategoriPelaku = $baseQuery()
+            ->where('is_primary_row', true)
             ->select('bidang as label', DB::raw('count(*) as total'))
             ->groupBy('bidang')
             ->orderBy('total', 'desc')
@@ -282,11 +285,11 @@ class ExportData extends Page
                 ->whereNotNull('bulan')
                 ->select(
                     'bulan',
-                    DB::raw('count(*) as total_event'),
-                    DB::raw('sum(jumlah_peserta) as total_pengunjung'),
-                    DB::raw('count(case when komersial = \'Komersial\' then 1 end) as total_komersil'),
-                    DB::raw('count(case when komersial = \'Non Komersial\' then 1 end) as total_non_komersil'),
-                    DB::raw('count(distinct UPPER(TRIM(nama_organisasi))) as total_pelaku')
+                    DB::raw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event'),
+                    DB::raw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_pengunjung'),
+                    DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Komersial\' THEN 1 END) as total_komersil'),
+                    DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Non Komersial\' THEN 1 END) as total_non_komersil'),
+                    DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total_pelaku')
                 )
                 ->groupBy('bulan')
                 ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\',\'Februari\',\'Maret\',\'April\',\'Mei\',\'Juni\',\'Juli\',\'Agustus\',\'September\',\'Oktober\',\'November\',\'Desember\'], bulan)'))
@@ -294,7 +297,7 @@ class ExportData extends Page
 
             // Hitung total tahunan yang sebenarnya (Unique per year)
             $yearlyUniquePelaku = (clone $baseYearQuery)
-                ->select(DB::raw('COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as total'))
+                ->select(DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total'))
                 ->value('total') ?? 0;
             
             $yearlyTotalEvents = $yearData->sum('total_event');
@@ -312,17 +315,18 @@ class ExportData extends Page
 
         // 5. Total Pelaku Unik dalam periode
         $totalPelaku = $baseQuery()
-            ->select(DB::raw('COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as total'))
+            ->select(DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total'))
             ->value('total') ?? 0;
 
-        // 6. Total Events
-        $totalEvents = $baseQuery()->count();
+        // 6. Total Events (Primary Only)
+        $totalEvents = $baseQuery()->where('is_primary_row', true)->count();
 
-        // 7. Total Pengunjung
-        $totalPengunjung = $baseQuery()->sum('jumlah_peserta');
+        // 7. Total Pengunjung (Primary Only)
+        $totalPengunjung = $baseQuery()->where('is_primary_row', true)->sum('jumlah_peserta');
 
-        // 8. Komersial vs Non Komersial
+        // 8. Komersial vs Non Komersial (Primary Only)
         $komersial = $baseQuery()
+            ->where('is_primary_row', true)
             ->select('komersial', DB::raw('count(*) as total'))
             ->groupBy('komersial')
             ->get();

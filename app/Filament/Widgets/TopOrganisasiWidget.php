@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Event;
 use Filament\Widgets\Widget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\DB;
 
 class TopOrganisasiWidget extends Widget
 {
@@ -13,7 +14,7 @@ class TopOrganisasiWidget extends Widget
     protected static string $view = 'filament.widgets.top-organisasi';
     protected static ?int $sort = 6;
     protected int | string | array $columnSpan = 'full';
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
 
     protected function getListeners(): array
     {
@@ -22,29 +23,41 @@ class TopOrganisasiWidget extends Widget
         ];
     }
 
-    public function getTopOrganisasi(): array
+    public function getTopOrganisasiData(): array
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
 
         $query = Event::query()->valid();
 
-        if ($year) {
-            $query->whereYear('tanggal', $year);
+        if ($yearStart && $yearEnd) {
+            $query->byYearRange($yearStart, $yearEnd);
         }
 
         if ($month) {
             $query->whereMonth('tanggal', $month);
         }
 
-        return $query->select('nama_organisasi')
-            ->selectRaw('count(*) as total_event')
-            ->selectRaw('sum(jumlah_peserta) as total_peserta')
-            ->selectRaw('count(DISTINCT judul_kegiatan) as jenis_event')
-            ->groupBy('nama_organisasi')
+        // Hitung Grand Total Event Unik (Primary Row)
+        $grandTotal = (clone $query)
+            ->where('is_primary_row', true)
+            ->count() ?: 1;
+
+        $data = $query->select(DB::raw('UPPER(TRIM(nama_organisasi)) as nama_organisasi'))
+            ->whereNotNull('nama_organisasi')
+            ->where('nama_organisasi', '!=', '')
+            ->selectRaw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event')
+            ->selectRaw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_peserta')
+            ->selectRaw('COUNT(DISTINCT judul_kegiatan) as jenis_event')
+            ->groupBy(DB::raw('UPPER(TRIM(nama_organisasi))'))
             ->orderBy('total_event', 'desc')
             ->limit(10)
-            ->get()
-            ->toArray();
+            ->get();
+
+        return [
+            'data' => $data,
+            'grandTotal' => $grandTotal,
+        ];
     }
 }

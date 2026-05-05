@@ -12,6 +12,7 @@ class BidangDistributionChart extends ChartWidget
     use InteractsWithPageFilters;
 
     public ?string $filter = 'snapshot';
+    protected static bool $isLazy = true;
 
     protected function getFilters(): ?array
     {
@@ -29,17 +30,18 @@ class BidangDistributionChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
-        
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
+
         $query = Event::valid();
         if ($this->filter === 'snapshot') {
-            $query->byYear($year)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)->byMonth($month);
         } elseif ($this->filter === 'monthly') {
-            $query->byYear($year);
+            $query->byYearRange($yearStart, $yearEnd);
         }
 
-        $total = $query->count();
+        $total = $query->where('is_primary_row', true)->count();
         return "Total: " . number_format($total) . " Event";
     }
 
@@ -48,19 +50,21 @@ class BidangDistributionChart extends ChartWidget
 
     protected function getData(): array
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
 
         $query = Event::select('bidang')
+            ->where('is_primary_row', true)
             ->selectRaw('count(*) as count')
             ->valid()
             ->groupBy('bidang')
             ->orderBy('count', 'desc');
 
         if ($this->filter === 'snapshot') {
-            $query->byYear($year)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)->byMonth($month);
         } elseif ($this->filter === 'monthly') {
-            $query->byYear($year);
+            $query->byYearRange($yearStart, $yearEnd);
         }
 
         $data = $query->get();

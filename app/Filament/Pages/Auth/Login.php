@@ -8,6 +8,19 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class Login extends BaseLogin
 {
+    public function mount(): void
+    {
+        parent::mount();
+
+        if (request()->query('logged_out')) {
+            Notification::make()
+                ->title('Berhasil Keluar')
+                ->body('Anda telah aman keluar dari sistem SiREKAP MCC.')
+                ->success()
+                ->send();
+        }
+    }
+
     public function getHeading(): string | Htmlable
     {
         return 'Selamat Datang';
@@ -29,7 +42,6 @@ class Login extends BaseLogin
             ->danger()
             ->title('Akses Ditolak')
             ->body($this->getCredentialsDoNotMatchMessage())
-            ->persistent()
             ->send();
 
         parent::throwFailureValidationException();

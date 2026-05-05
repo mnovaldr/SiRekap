@@ -24,29 +24,39 @@ class Dashboard extends BaseDashboard
 
     public function filtersForm(\Filament\Forms\Form $form): \Filament\Forms\Form
     {
+        $yearOptions = function () {
+            $years = Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
+                ->whereNotNull('tanggal')
+                ->distinct()
+                ->orderBy('year', 'desc')
+                ->pluck('year', 'year')
+                ->toArray();
+            
+            return count($years) > 0 ? $years : [date('Y') => date('Y')];
+        };
+
+        $defaultYear = function () {
+            $latestYear = Event::whereNotNull('tanggal')
+                ->orderBy('tanggal', 'desc')
+                ->value(DB::raw('EXTRACT(YEAR FROM tanggal)'));
+            
+            return (string) ($latestYear ?: date('Y'));
+        };
+
         return $form
             ->schema([
-                Select::make('year')
-                    ->label('Tahun')
-                    ->options(function () {
-                        $years = Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
-                            ->whereNotNull('tanggal')
-                            ->distinct()
-                            ->orderBy('year', 'desc')
-                            ->pluck('year', 'year')
-                            ->toArray();
-                        
-                        return count($years) > 0 ? $years : [date('Y') => date('Y')];
-                    })
-                    ->placeholder('Semua Tahun')
-                    ->default(function () {
-                        $latestYear = Event::whereNotNull('tanggal')
-                            ->orderBy('tanggal', 'desc')
-                            ->value(DB::raw('EXTRACT(YEAR FROM tanggal)'));
-                        
-                        return $latestYear ?: date('Y');
-                    }),
+                Select::make('year_start')
+                    ->label('Tahun Mulai')
+                    ->options($yearOptions)
+                    ->default($defaultYear)
+                    ->required(),
                 
+                Select::make('year_end')
+                    ->label('Tahun Selesai')
+                    ->options($yearOptions)
+                    ->default($defaultYear)
+                    ->required(),
+
                 Select::make('month')
                     ->label('Bulan')
                     ->options([
@@ -57,6 +67,6 @@ class Dashboard extends BaseDashboard
                     ])
                     ->placeholder('Semua Bulan'),
             ])
-            ->columns(2);
+            ->columns(3);
     }
 }

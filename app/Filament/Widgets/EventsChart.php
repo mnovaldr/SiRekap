@@ -12,6 +12,7 @@ class EventsChart extends ChartWidget
     use InteractsWithPageFilters;
 
     public ?string $filter = 'annual';
+    protected static bool $isLazy = true;
 
     protected function getFilters(): ?array
     {
@@ -23,19 +24,24 @@ class EventsChart extends ChartWidget
 
     public function getHeading(): ?string
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
 
-        if ($this->filter === 'annual') {
+        if ($this->filter === 'annual' && !$yearStart && !$yearEnd) {
             return "Tren Performa Tahunan";
         }
 
         if ($month) {
-            return "Tren Harian - " . Event::getBulanIndonesia($month) . " " . ($year ?: '');
+            return "Tren Harian - " . Event::getBulanIndonesia($month) . " " . ($yearEnd ?: '');
         }
 
-        if ($year) {
-            return "Tren Bulanan Tahun " . $year;
+        if ($yearStart && $yearEnd && $yearStart === $yearEnd) {
+            return "Tren Bulanan Tahun " . $yearEnd;
+        }
+
+        if ($yearStart && $yearEnd) {
+            return "Tren Tahunan (" . $yearStart . " - " . $yearEnd . ")";
         }
 
         return "Tren Performa Tahunan";
@@ -47,48 +53,70 @@ class EventsChart extends ChartWidget
 
     protected function getData(): array
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        $yearStart = $this->filters['year_start'] ?? null;
+        $yearEnd   = $this->filters['year_end'] ?? null;
+        $month     = $this->filters['month'] ?? null;
 
-        // Force Annual if filter is 'annual' OR if no global filters are set
-        // VIEW TAHUNAN (Dinamis 5 Tahun Terakhir)
-        if ($this->filter === 'annual' && !$year && !$month) {
-            $currentYear = (int) date('Y');
-            $startYear = $currentYear - 4;
-            $labels = range($startYear, $currentYear);
+        // Force Annual if filter is 'annual' OR if a range is selected
+        if (($this->filter === 'annual' && !$yearStart) || ($yearStart && $yearEnd && $yearStart !== $yearEnd && !$month)) {
+            // Jika filter tidak diisi, cari rentang dari data asli di DB
+            if (!$yearStart || !$yearEnd) {
+                $years = Event::valid()
+                    ->selectRaw('MIN(EXTRACT(YEAR FROM tanggal))::integer as min_year, MAX(EXTRACT(YEAR FROM tanggal))::integer as max_year')
+                    ->first();
+                
+                $sY = (int) ($yearStart ?: ($years->min_year ?: date('Y') - 4));
+                $eY = (int) ($yearEnd ?: ($years->max_year ?: date('Y')));
+            } else {
+                $sY = (int) $yearStart;
+                $eY = (int) $yearEnd;
+            }
 
-            $eventData = Event::select(DB::raw('EXTRACT(YEAR FROM tanggal) as year'), DB::raw('count(*) as count'))
-                ->valid()
-                ->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$startYear, $currentYear])
-                ->groupBy('year')->orderBy('year')
-                ->get()->pluck('count', 'year')->toArray();
+            // Batasi agar rentang tidak terlalu ekstrem
+            if (!$yearStart && !$yearEnd && ($eY - $sY) > 10) {
+                $sY = $eY - 9;
+            }
 
-            $pesertaData = Event::select(DB::raw('EXTRACT(YEAR FROM tanggal) as year'), DB::raw('sum(jumlah_peserta) as total'))
-                ->valid()
-                ->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$startYear, $currentYear])
-                ->groupBy('year')->orderBy('year')
-                ->get()->pluck('total', 'year')->toArray();
+            $labels = range($sY, $eY);
+
+            // Query Event dengan GROUP BY yang benar untuk PostgreSQL
+            $eventData = Event::valid()
+                ->where('is_primary_row', true)
+                ->selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year_val, count(*) as count')
+                ->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$sY, $eY])
+                ->groupBy(DB::raw('EXTRACT(YEAR FROM tanggal)'))
+                ->get()->pluck('count', 'year_val')->toArray();
+
+            // Query Peserta
+            $pesertaData = Event::valid()
+                ->where('is_primary_row', true)
+                ->selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year_val, sum(jumlah_peserta) as total')
+                ->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$sY, $eY])
+                ->groupBy(DB::raw('EXTRACT(YEAR FROM tanggal)'))
+                ->get()->pluck('total', 'year_val')->toArray();
 
             $eventCounts = [];
             $pesertaCounts = [];
             foreach ($labels as $y) {
-                $eventCounts[] = $eventData[$y] ?? 0;
-                $pesertaCounts[] = $pesertaData[$y] ?? 0;
+                $eventCounts[] = (int) ($eventData[$y] ?? 0);
+                $pesertaCounts[] = (int) ($pesertaData[$y] ?? 0);
             }
         } elseif ($month) {
             // VIEW HARIAN (Jika Bulan dipilih)
-            $y = $year ?: date('Y');
+            $y = $yearEnd ?: date('Y');
             $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$month, (int)$y);
             
-            $eventData = Event::select(DB::raw('EXTRACT(DAY FROM tanggal) as day'), DB::raw('count(*) as count'))
-                ->valid()->byYear($y)->byMonth($month)
-                ->groupBy('day')->orderBy('day')
-                ->get()->pluck('count', 'day')->toArray();
+            $eventData = Event::valid()->byYear($y)->byMonth($month)
+                ->where('is_primary_row', true)
+                ->selectRaw('EXTRACT(DAY FROM tanggal)::integer as day_val, count(*) as count')
+                ->groupBy(DB::raw('EXTRACT(DAY FROM tanggal)'))
+                ->get()->pluck('count', 'day_val')->toArray();
 
-            $pesertaData = Event::select(DB::raw('EXTRACT(DAY FROM tanggal) as day'), DB::raw('sum(jumlah_peserta) as total'))
-                ->valid()->byYear($y)->byMonth($month)
-                ->groupBy('day')->orderBy('day')
-                ->get()->pluck('total', 'day')->toArray();
+            $pesertaData = Event::valid()->byYear($y)->byMonth($month)
+                ->where('is_primary_row', true)
+                ->selectRaw('EXTRACT(DAY FROM tanggal)::integer as day_val, sum(jumlah_peserta) as total')
+                ->groupBy(DB::raw('EXTRACT(DAY FROM tanggal)'))
+                ->get()->pluck('total', 'day_val')->toArray();
 
             $labels = [];
             $eventCounts = [];
@@ -99,18 +127,20 @@ class EventsChart extends ChartWidget
                 $pesertaCounts[] = $pesertaData[$i] ?? 0;
             }
         } else {
-            // VIEW BULANAN (Jika Tahun dipilih ATAU Default Tahun Sekarang)
-            $y = $year ?: date('Y');
+            // VIEW BULANAN (Jika Tahun Start == Tahun End ATAU Default Tahun Sekarang)
+            $y = $yearEnd ?: date('Y');
             
-            $eventData = Event::select(DB::raw('EXTRACT(MONTH FROM tanggal) as month'), DB::raw('count(*) as count'))
-                ->valid()->byYear($y)
-                ->groupBy('month')->orderBy('month')
-                ->get()->pluck('count', 'month')->toArray();
+            $eventData = Event::valid()->byYear($y)
+                ->where('is_primary_row', true)
+                ->selectRaw('EXTRACT(MONTH FROM tanggal)::integer as month_val, count(*) as count')
+                ->groupBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
+                ->get()->pluck('count', 'month_val')->toArray();
 
-            $pesertaData = Event::select(DB::raw('EXTRACT(MONTH FROM tanggal) as month'), DB::raw('sum(jumlah_peserta) as total'))
-                ->valid()->byYear($y)
-                ->groupBy('month')->orderBy('month')
-                ->get()->pluck('total', 'month')->toArray();
+            $pesertaData = Event::valid()->byYear($y)
+                ->where('is_primary_row', true)
+                ->selectRaw('EXTRACT(MONTH FROM tanggal)::integer as month_val, sum(jumlah_peserta) as total')
+                ->groupBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
+                ->get()->pluck('total', 'month_val')->toArray();
 
             $labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
             $eventCounts = [];

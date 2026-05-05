@@ -78,20 +78,22 @@ class AnalitikEkraf extends Page
             ->whereNotNull('bulan')
             ->select(
                 'bulan',
-                DB::raw('count(*) as total_event'),
-                // SUM peserta hanya dari is_primary_row=1 agar tidak double-count multi-ruangan
-                DB::raw('sum(jumlah_peserta) as total_pengunjung'),
-                DB::raw('count(case when komersial = \'Komersial\' then 1 end) as total_komersil'),
-                DB::raw('count(case when komersial = \'Non Komersial\' then 1 end) as total_non_komersil'),
-                DB::raw('count(distinct UPPER(TRIM(nama_organisasi))) as total_pelaku')
+                DB::raw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event'),
+                DB::raw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_pengunjung'),
+                DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Komersial\' THEN 1 END) as total_komersil'),
+                DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Non Komersial\' THEN 1 END) as total_non_komersil'),
+                DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total_pelaku')
             )
             ->groupBy('bulan')
             ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\',\'Februari\',\'Maret\',\'April\',\'Mei\',\'Juni\',\'Juli\',\'Agustus\',\'September\',\'Oktober\',\'November\',\'Desember\'], bulan)'))
             ->get();
 
-        // 5. Total Pelaku Unik dalam tahun yang dipilih (hanya Valid)
-        $totalPelakuYear = $baseQuery()
-            ->select(DB::raw('COUNT(DISTINCT UPPER(TRIM(nama_organisasi))) as total'))
+        // 5. Total Pelaku (Sum of Monthly Unique Actors) sesuai permintaan user (4.039)
+        $totalPelakuYear = $bulanan->sum('total_pelaku');
+
+        // (Opsional) Jika ingin menampilkan angka unik murni (2.293) bisa gunakan ini:
+        $pureUniquePelaku = $baseQuery()
+            ->select(DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total'))
             ->value('total') ?? 0;
 
         return [
@@ -100,6 +102,7 @@ class AnalitikEkraf extends Page
             'kategoriPelaku'      => $kategoriPelaku,
             'bulanan'             => $bulanan,
             'totalPelakuYear'     => $totalPelakuYear,
+            'pureUniquePelaku'    => $pureUniquePelaku,
             'year'                => $year,
         ];
     }

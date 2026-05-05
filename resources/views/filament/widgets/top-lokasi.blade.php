@@ -32,9 +32,11 @@
                 </thead>
                 <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
                     @php
-                        $maxTotal = collect($this->getTopLokasi())->max('total') ?: 1;
+                        $res = $this->getTopLokasiData();
+                        $items = $res['data'];
+                        $grandTotal = $res['grandTotal'];
                     @endphp
-                    @forelse($this->getTopLokasi() as $index => $item)
+                    @forelse($items as $index => $item)
                     <tr class="hover:bg-gray-50/50 dark:hover:bg-primary-900/5 transition-all group">
                         <td class="px-4 py-4">
                             <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg font-black text-xs
@@ -60,10 +62,10 @@
                             <div class="flex items-center gap-3">
                                 <div class="flex-1 bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
                                     <div class="bg-primary-500 h-full rounded-full transition-all duration-1000" 
-                                         style="width: {{ ($item['total'] / $maxTotal) * 100 }}%"></div>
+                                         style="width: {{ ($item['total'] / $grandTotal) * 100 }}%"></div>
                                 </div>
                                 <span class="text-[10px] font-black text-gray-400 w-8 text-right tabular-nums">
-                                    {{ round(($item['total'] / $maxTotal) * 100) }}%
+                                    {{ round(($item['total'] / $grandTotal) * 100, 1) }}%
                                 </span>
                             </div>
                         </td>

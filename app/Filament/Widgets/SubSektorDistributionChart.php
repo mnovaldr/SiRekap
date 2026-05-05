@@ -12,6 +12,7 @@ class SubSektorDistributionChart extends ChartWidget
     use InteractsWithPageFilters;
 
     public ?string $filter = 'snapshot';
+    protected static bool $isLazy = true;
 
     protected function getFilters(): ?array
     {
@@ -39,7 +40,7 @@ class SubSektorDistributionChart extends ChartWidget
             $query->byYear($year);
         }
 
-        $total = $query->count();
+        $total = $query->where('is_primary_row', true)->count();
         return "Total: " . number_format($total) . " Event";
     }
 
@@ -52,6 +53,7 @@ class SubSektorDistributionChart extends ChartWidget
         $month = $this->filters['month'] ?? null;
 
         $query = Event::select('sub_sektor')
+            ->where('is_primary_row', true)
             ->selectRaw('count(*) as count')
             ->valid()
             ->whereNotNull('sub_sektor')

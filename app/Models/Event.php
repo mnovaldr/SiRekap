@@ -139,6 +139,13 @@ class Event extends Model
         return $query->when($year, fn($q) => $q->whereYear('tanggal', $year));
     }
 
+    public function scopeByYearRange($query, $start, $end)
+    {
+        return $query->when($start && $end, function ($q) use ($start, $end) {
+            $q->whereBetween(\Illuminate\Support\Facades\DB::raw('EXTRACT(YEAR FROM tanggal)'), [$start, $end]);
+        });
+    }
+
     public function scopeByMonth($query, $month)
     {
         return $query->when($month, fn($q) => $q->whereMonth('tanggal', $month));
