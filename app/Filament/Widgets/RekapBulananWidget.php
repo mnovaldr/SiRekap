@@ -53,28 +53,43 @@ class RekapBulananWidget extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('bulan')
-                    ->label('Periode')
-                    ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
-                    ->weight('black')
-                    ->color('primary'),
+                    ->label('Bulan')
+                    ->weight('bold')
+                    ->color('gray')
+                    ->icon('heroicon-m-calendar-days')
+                    ->iconColor('gray'),
+
                 Tables\Columns\TextColumn::make('total_event')
                     ->label('Jumlah Event')
                     ->numeric()
                     ->badge()
-                    ->color('info')
-                    ->alignCenter(),
+                    ->color('indigo')
+                    ->weight('bold')
+                    ->alignCenter()
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Total')),
+
                 Tables\Columns\TextColumn::make('total_peserta')
                     ->label('Total Pengunjung')
                     ->numeric()
                     ->weight('bold')
-                    ->alignCenter(),
+                    ->color('emerald')
+                    ->icon('heroicon-m-users')
+                    ->alignCenter()
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Total')),
+
                 Tables\Columns\TextColumn::make('total_organisasi')
                     ->label('Organisasi Unik')
                     ->numeric()
                     ->badge()
-                    ->color('success')
-                    ->alignCenter(),
+                    ->color('purple')
+                    ->weight('bold')
+                    ->alignCenter()
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Total')),
             ])
-            ->paginated(false);
+            ->paginated(false)
+            ->striped()
+            ->contentGrid([
+                'md' => 1,
+            ]);
     }
 }

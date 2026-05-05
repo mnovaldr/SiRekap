@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use App\Models\Event;
+use Illuminate\Support\Facades\DB;
 
 class RekapBulanan extends Page
 {
@@ -20,7 +21,7 @@ class RekapBulanan extends Page
 
     public function mount(): void
     {
-        $this->selectedYear = (string) date('Y');
+        $this->selectedYear = (string) (Event::whereNotNull('tanggal')->max(DB::raw('EXTRACT(YEAR FROM tanggal)')) ?? date('Y'));
         $this->loadRekap();
     }
 
@@ -90,8 +91,11 @@ class RekapBulanan extends Page
 
     public function getAvailableYears(): array
     {
-        $currentYear = (int) date('Y');
-        $years = range(2022, $currentYear + 1);
-        return array_combine($years, $years);
+        return Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
+            ->whereNotNull('tanggal')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year', 'year')
+            ->toArray() ?: [date('Y') => date('Y')];
     }
 }
