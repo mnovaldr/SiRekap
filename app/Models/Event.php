@@ -142,12 +142,17 @@ class Event extends Model
     public function scopeByYearRange($query, $start, $end)
     {
         return $query->when($start && $end, function ($q) use ($start, $end) {
-            $q->whereBetween(\Illuminate\Support\Facades\DB::raw('EXTRACT(YEAR FROM tanggal)'), [$start, $end]);
+            $q->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$start, $end]);
         });
     }
 
     public function scopeByMonth($query, $month)
     {
         return $query->when($month, fn($q) => $q->whereMonth('tanggal', $month));
+    }
+
+    public function scopeBySubSektor($query, $subSektor)
+    {
+        return $query->when($subSektor, fn($q) => $q->where('sub_sektor', $subSektor));
     }
 }

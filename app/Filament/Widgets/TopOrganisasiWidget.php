@@ -5,16 +5,18 @@ namespace App\Filament\Widgets;
 use App\Models\Event;
 use Filament\Widgets\Widget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use App\Filament\Widgets\Concerns\ResolvesYearFilter;
 use Illuminate\Support\Facades\DB;
 
 class TopOrganisasiWidget extends Widget
 {
     use InteractsWithPageFilters;
+    use ResolvesYearFilter;
 
     protected static string $view = 'filament.widgets.top-organisasi';
     protected static ?int $sort = 6;
     protected int | string | array $columnSpan = 'full';
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
 
     protected function getListeners(): array
     {
@@ -25,15 +27,10 @@ class TopOrganisasiWidget extends Widget
 
     public function getTopOrganisasiData(): array
     {
-        $yearStart = $this->filters['year_start'] ?? null;
-        $yearEnd   = $this->filters['year_end'] ?? null;
-        $month     = $this->filters['month'] ?? null;
+        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
         $query = Event::query()->valid();
-
-        if ($yearStart && $yearEnd) {
-            $query->byYearRange($yearStart, $yearEnd);
-        }
+        $query->byYearRange($yearStart, $yearEnd)->bySubSektor($subSektor);
 
         if ($month) {
             $query->whereMonth('tanggal', $month);

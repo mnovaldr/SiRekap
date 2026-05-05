@@ -7,16 +7,18 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use App\Filament\Widgets\Concerns\ResolvesYearFilter;
 use Illuminate\Support\Facades\DB;
 
 class RekapBulananWidget extends BaseWidget
 {
     use InteractsWithPageFilters;
+    use ResolvesYearFilter;
 
     protected static ?string $heading = 'Rekapitulasi Performa Bulanan';
     protected int | string | array $columnSpan = 'full';
     protected static ?int $sort = 8;
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
 
     protected function getListeners(): array
     {
@@ -32,8 +34,7 @@ class RekapBulananWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
-        $yearStart = $this->filters['year_start'] ?? null;
-        $yearEnd   = $this->filters['year_end'] ?? null;
+        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
         return $table
             ->query(
@@ -45,6 +46,7 @@ class RekapBulananWidget extends BaseWidget
                 )
                 ->valid()
                 ->byYearRange($yearStart, $yearEnd)
+                ->bySubSektor($subSektor)
                 ->whereNotNull('bulan')
                 ->groupBy('bulan')
                 ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\', \'Februari\', \'Maret\', \'April\', \'Mei\', \'Juni\', \'Juli\', \'Agustus\', \'September\', \'Oktober\', \'November\', \'Desember\'], bulan)'))

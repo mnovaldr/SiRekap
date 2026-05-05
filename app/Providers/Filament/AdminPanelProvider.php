@@ -50,7 +50,7 @@ class AdminPanelProvider extends PanelProvider
                             animation: bar-shimmer 1.5s infinite linear;
                             box-shadow: 0 0 8px rgba(79, 70, 229, 0.6), 0 0 20px rgba(79, 70, 229, 0.3);
                         }
-                        @keyframes bar-shimmer {
+                        @@keyframes bar-shimmer {
                             0%   { background-position: 200% 0; }
                             100% { background-position: -200% 0; }
                         }
@@ -69,7 +69,7 @@ class AdminPanelProvider extends PanelProvider
                         .fi-widget-lazy-loading-indicator {
                             animation: pulse-fade 1.2s ease-in-out infinite;
                         }
-                        @keyframes pulse-fade {
+                        @@keyframes pulse-fade {
                             0%, 100% { opacity: 0.4; }
                             50% { opacity: 0.8; }
                         }
@@ -81,7 +81,7 @@ class AdminPanelProvider extends PanelProvider
                         .fi-main {
                             animation: page-in 0.2s ease;
                         }
-                        @keyframes page-in {
+                        @@keyframes page-in {
                             from { opacity: 0; transform: translateY(6px); }
                             to   { opacity: 1; transform: translateY(0); }
                         }
@@ -150,6 +150,100 @@ class AdminPanelProvider extends PanelProvider
                             });
                         })();
                     </script>
+                '),
+            )
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::BODY_END,
+                fn (): string => \Illuminate\Support\Facades\Blade::render('
+                    <script>
+                    (function() {
+                        /* ===== OVERRIDE FILAMENT LOGOUT BUTTON ===== */
+                        /* Replace POST form logout with GET-based logout (no CSRF) */
+                        function patchLogoutButton() {
+                            var forms = document.querySelectorAll("form");
+                            forms.forEach(function(form) {
+                                var action = form.getAttribute("action") || "";
+                                if (action.indexOf("logout") !== -1 && !form.dataset.patched) {
+                                    form.dataset.patched = "1";
+                                    form.addEventListener("submit", function(e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        window.location.href = "/admin/do-logout";
+                                    });
+                                }
+                            });
+                        }
+
+                        /* Run on load and after any Livewire navigation */
+                        document.addEventListener("DOMContentLoaded", patchLogoutButton);
+                        document.addEventListener("livewire:navigated", patchLogoutButton);
+                        setTimeout(patchLogoutButton, 500);
+                        setTimeout(patchLogoutButton, 1500);
+
+                        /* ===== AUTO LOGOUT AFTER INACTIVITY (30 minutes) ===== */
+                        var IDLE_TIMEOUT = 30 * 60 * 1000; // 30 menit
+                        var WARNING_BEFORE = 2 * 60 * 1000; // tampilkan warning 2 menit sebelum
+                        var idleTimer, warnTimer;
+                        var warningShown = false;
+
+                        function createWarningBanner() {
+                            var existing = document.getElementById("si-idle-warning");
+                            if (existing) return;
+                            var banner = document.createElement("div");
+                            banner.id = "si-idle-warning";
+                            banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:999999;background:linear-gradient(90deg,#dc2626,#b91c1c);color:white;text-align:center;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.3);animation:slideDown 0.3s ease;";
+                            banner.innerHTML = "⚠️ Sesi Anda akan berakhir dalam <span id=\'si-countdown\'>2:00</span> karena tidak ada aktivitas. <button onclick=\'resetIdleTimer()\' style=\'margin-left:12px;background:white;color:#dc2626;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:700;\'>Tetap Login</button> <button onclick=\'window.location.href=\"/admin/do-logout\"\' style=\'margin-left:6px;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:600;\'>Keluar Sekarang</button>";
+                            document.body.prepend(banner);
+
+                            var remaining = WARNING_BEFORE;
+                            var countdownEl = document.getElementById("si-countdown");
+                            var countdownInterval = setInterval(function() {
+                                remaining -= 1000;
+                                if (remaining <= 0) {
+                                    clearInterval(countdownInterval);
+                                } else if (countdownEl) {
+                                    var m = Math.floor(remaining / 60000);
+                                    var s = Math.floor((remaining % 60000) / 1000);
+                                    countdownEl.textContent = m + ":" + (s < 10 ? "0" + s : s);
+                                }
+                            }, 1000);
+                        }
+
+                        function removeWarningBanner() {
+                            var banner = document.getElementById("si-idle-warning");
+                            if (banner) banner.remove();
+                            warningShown = false;
+                        }
+
+                        window.resetIdleTimer = function() {
+                            clearTimeout(idleTimer);
+                            clearTimeout(warnTimer);
+                            removeWarningBanner();
+                            warnTimer = setTimeout(function() {
+                                warningShown = true;
+                                createWarningBanner();
+                            }, IDLE_TIMEOUT - WARNING_BEFORE);
+                            idleTimer = setTimeout(function() {
+                                window.location.href = "/admin/do-logout";
+                            }, IDLE_TIMEOUT);
+                        };
+
+                        /* Track user activity */
+                        ["mousemove","keydown","click","scroll","touchstart","focus"].forEach(function(evt) {
+                            document.addEventListener(evt, function() {
+                                if (!warningShown) resetIdleTimer();
+                            }, { passive: true });
+                        });
+
+                        /* Start the timer */
+                        if (document.body.innerHTML.indexOf("filament") !== -1 || window.location.pathname.indexOf("/admin") !== -1) {
+                            resetIdleTimer();
+                        }
+                    })();
+                    </script>
+                    <style>
+                        @@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                    </style>
                 '),
             )
             ->id('admin')

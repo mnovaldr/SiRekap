@@ -12,13 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
-        $middleware->validateCsrfTokens(except: [
-            'admin/logout',
-            'logout',
-            '*logout*',
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Jika CSRF token expired (misal tab dibuka lama), redirect ke login
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
             return redirect('/admin/login?logged_out=1');
         });

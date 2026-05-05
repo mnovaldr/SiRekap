@@ -5,14 +5,16 @@ namespace App\Filament\Widgets;
 use App\Models\Event;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use App\Filament\Widgets\Concerns\ResolvesYearFilter;
 use Illuminate\Support\Facades\DB;
 
 class SubSektorDistributionChart extends ChartWidget
 {
     use InteractsWithPageFilters;
+    use ResolvesYearFilter;
 
     public ?string $filter = 'snapshot';
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
 
     protected function getFilters(): ?array
     {
@@ -23,6 +25,13 @@ class SubSektorDistributionChart extends ChartWidget
         ];
     }
 
+    protected function getListeners(): array
+    {
+        return [
+            'updateFilter' => '$refresh',
+        ];
+    }
+
     public function getHeading(): ?string
     {
         return 'Kategori Ekraf (Sub Sektor)';
@@ -30,14 +39,16 @@ class SubSektorDistributionChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
         
         $query = Event::valid();
         if ($this->filter === 'snapshot') {
-            $query->byYear($year)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->byMonth($month)
+                ->bySubSektor($subSektor);
         } elseif ($this->filter === 'monthly') {
-            $query->byYear($year);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->bySubSektor($subSektor);
         }
 
         $total = $query->where('is_primary_row', true)->count();
@@ -49,8 +60,7 @@ class SubSektorDistributionChart extends ChartWidget
 
     protected function getData(): array
     {
-        $year  = $this->filters['year'] ?? null;
-        $month = $this->filters['month'] ?? null;
+        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
         $query = Event::select('sub_sektor')
             ->where('is_primary_row', true)
@@ -62,11 +72,14 @@ class SubSektorDistributionChart extends ChartWidget
             ->orderBy('count', 'desc');
 
         if ($this->filter === 'snapshot') {
-            $query->byYear($year)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->byMonth($month)
+                ->bySubSektor($subSektor);
         } elseif ($this->filter === 'monthly') {
-            $query->byYear($year);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->bySubSektor($subSektor);
         }
-        // annual filter doesn't add more constraints
+        // annual: no extra constraints
 
         $data = $query->get();
 
@@ -103,7 +116,6 @@ class SubSektorDistributionChart extends ChartWidget
             return array_slice($colors, 0, $count);
         }
 
-        // Jika butuh lebih banyak warna, ulangi atau generate (tapi 24 cukup untuk sub sektor)
         return array_pad([], $count, '#94a3b8');
     }
 
@@ -115,7 +127,7 @@ class SubSektorDistributionChart extends ChartWidget
                 'legend' => [
                     'display' => true,
                     'position' => 'bottom',
-                    'align' => 'start',
+                    'align' => 'center',
                     'labels' => [
                         'usePointStyle' => true,
                         'padding' => 15,

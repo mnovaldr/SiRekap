@@ -5,14 +5,16 @@ namespace App\Filament\Widgets;
 use App\Models\Event;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use App\Filament\Widgets\Concerns\ResolvesYearFilter;
 use Illuminate\Support\Facades\DB;
 
 class TopJenisKegiatanChart extends ChartWidget
 {
     use InteractsWithPageFilters;
+    use ResolvesYearFilter;
 
     public ?string $filter = 'snapshot';
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
 
     protected function getFilters(): ?array
     {
@@ -23,6 +25,13 @@ class TopJenisKegiatanChart extends ChartWidget
         ];
     }
 
+    protected function getListeners(): array
+    {
+        return [
+            'updateFilter' => '$refresh',
+        ];
+    }
+
     public function getHeading(): ?string
     {
         return 'Kategori Kegiatan';
@@ -30,15 +39,16 @@ class TopJenisKegiatanChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        $yearStart = $this->filters['year_start'] ?? null;
-        $yearEnd   = $this->filters['year_end'] ?? null;
-        $month     = $this->filters['month'] ?? null;
+        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
         
         $query = Event::valid();
         if ($this->filter === 'snapshot') {
-            $query->byYearRange($yearStart, $yearEnd)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->byMonth($month)
+                ->bySubSektor($subSektor);
         } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->bySubSektor($subSektor);
         }
 
         $total = $query->where('is_primary_row', true)->count();
@@ -50,9 +60,7 @@ class TopJenisKegiatanChart extends ChartWidget
 
     protected function getData(): array
     {
-        $yearStart = $this->filters['year_start'] ?? null;
-        $yearEnd   = $this->filters['year_end'] ?? null;
-        $month     = $this->filters['month'] ?? null;
+        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
         $query = Event::select('jenis_kegiatan')
             ->where('is_primary_row', true)
@@ -62,9 +70,12 @@ class TopJenisKegiatanChart extends ChartWidget
             ->orderBy('count', 'desc');
 
         if ($this->filter === 'snapshot') {
-            $query->byYearRange($yearStart, $yearEnd)->byMonth($month);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->byMonth($month)
+                ->bySubSektor($subSektor);
         } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd);
+            $query->byYearRange($yearStart, $yearEnd)
+                ->bySubSektor($subSektor);
         }
 
         $data = $query->get();
@@ -111,7 +122,7 @@ class TopJenisKegiatanChart extends ChartWidget
                 'legend' => [
                     'display' => true,
                     'position' => 'bottom',
-                    'align' => 'start',
+                    'align' => 'center',
                     'labels' => [
                         'usePointStyle' => true,
                         'padding' => 15,
