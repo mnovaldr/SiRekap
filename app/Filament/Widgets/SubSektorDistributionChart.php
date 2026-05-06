@@ -25,12 +25,7 @@ class SubSektorDistributionChart extends ChartWidget
         ];
     }
 
-    protected function getListeners(): array
-    {
-        return [
-            'updateFilter' => '$refresh',
-        ];
-    }
+
 
     public function getHeading(): ?string
     {
@@ -41,17 +36,18 @@ class SubSektorDistributionChart extends ChartWidget
     {
         [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
         
-        $query = Event::valid();
+        $query = Event::valid()
+            ->where('is_primary_row', true)
+            ->bySubSektor($subSektor);
+
         if ($this->filter === 'snapshot') {
             $query->byYearRange($yearStart, $yearEnd)
-                ->byMonth($month)
-                ->bySubSektor($subSektor);
+                ->byMonth($month);
         } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd)
-                ->bySubSektor($subSektor);
+            $query->byYearRange($yearStart, $yearEnd);
         }
 
-        $total = $query->where('is_primary_row', true)->count();
+        $total = $query->count();
         return "Total: " . number_format($total) . " Event";
     }
 
@@ -68,18 +64,16 @@ class SubSektorDistributionChart extends ChartWidget
             ->valid()
             ->whereNotNull('sub_sektor')
             ->where('sub_sektor', '!=', '')
+            ->bySubSektor($subSektor)
             ->groupBy('sub_sektor')
             ->orderBy('count', 'desc');
 
         if ($this->filter === 'snapshot') {
             $query->byYearRange($yearStart, $yearEnd)
-                ->byMonth($month)
-                ->bySubSektor($subSektor);
+                ->byMonth($month);
         } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd)
-                ->bySubSektor($subSektor);
+            $query->byYearRange($yearStart, $yearEnd);
         }
-        // annual: no extra constraints
 
         $data = $query->get();
 

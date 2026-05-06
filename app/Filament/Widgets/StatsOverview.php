@@ -19,12 +19,7 @@ class StatsOverview extends BaseWidget
     protected int | string | array $columnSpan = 'full';
     protected static bool $isLazy = false;
 
-    protected function getListeners(): array
-    {
-        return [
-            'updateFilter' => '$refresh',
-        ];
-    }
+
 
     protected function getStats(): array
     {
@@ -34,6 +29,7 @@ class StatsOverview extends BaseWidget
             ->byYearRange($yearStart, $yearEnd)
             ->byMonth($month)
             ->bySubSektor($subSektor);
+        
         $baseQuery = (clone $query);
 
         $statsRow = $query->selectRaw('
@@ -44,6 +40,9 @@ class StatsOverview extends BaseWidget
         ')->first();
 
         $ekrafUnik = $statsRow->ekraf_unik ?? 0;
+        
+        // Jika tidak ada filter bulan, kita hitung akumulasi ekraf unik per bulan (sesuai logika asli)
+        // namun tetap menghormati sub_sektor
         if (!$month) {
             $ekrafUnik = $baseQuery
                 ->whereNotNull('bulan')
@@ -54,17 +53,9 @@ class StatsOverview extends BaseWidget
                 ->sum('count');
         }
 
-        $stats = (object) [
-            'total_events'        => $statsRow->total_events ?? 0,
-            'total_peserta'       => $statsRow->total_peserta ?? 0,
-            'total_non_komersial' => $statsRow->total_non_komersial ?? 0,
-            'ekraf_unik'          => $ekrafUnik,
-        ];
-
-        $totalEvents       = $stats->total_events;
-        $totalPeserta      = $stats->total_peserta;
-        $totalNonKomersial = $stats->total_non_komersial;
-        $ekrafUnik         = $stats->ekraf_unik;
+        $totalEvents       = $statsRow->total_events ?? 0;
+        $totalPeserta      = $statsRow->total_peserta ?? 0;
+        $totalNonKomersial = $statsRow->total_non_komersial ?? 0;
 
         $percentNonKomersial = $totalEvents > 0 ? round(($totalNonKomersial / $totalEvents) * 100, 1) : 0;
 

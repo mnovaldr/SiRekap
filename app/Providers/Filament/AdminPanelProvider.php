@@ -60,6 +60,19 @@ class AdminPanelProvider extends PanelProvider
                             transition: width 0.2s ease, opacity 0.5s ease 0.15s;
                         }
 
+                        /* ===== SINGLE CLICK PROTECTION ===== */
+                        .si-processing { cursor: wait !important; }
+                        .si-processing a, 
+                        .si-processing button { pointer-events: none !important; opacity: 0.7 !important; }
+                        [data-si-loading="true"] { pointer-events: none !important; opacity: 0.6 !important; position: relative; }
+                        [data-si-loading="true"]::after {
+                            content: "";
+                            position: absolute;
+                            inset: 0;
+                            background: rgba(255,255,255,0.1);
+                            cursor: wait;
+                        }
+
                         /* ===== WIDGET SKELETON LOADING ===== */
                         .fi-wi-stats-overview-stat,
                         .fi-chart-widget,
@@ -114,8 +127,11 @@ class AdminPanelProvider extends PanelProvider
 
                             let timer = null;
                             let progress = 0;
+                            window.siProcessing = false;
 
                             function startBar() {
+                                window.siProcessing = true;
+                                document.body.classList.add("si-processing");
                                 bar.classList.remove("done");
                                 progress = 0;
                                 bar.style.opacity = "1";
@@ -135,21 +151,60 @@ class AdminPanelProvider extends PanelProvider
                                 setTimeout(function() {
                                     bar.style.width = "0%";
                                     bar.style.opacity = "0";
+                                    document.body.classList.remove("si-processing");
+                                    window.siProcessing = false;
+                                    // Remove individual button locks
+                                    document.querySelectorAll("[data-si-loading]").forEach(el => {
+                                        el.removeAttribute("data-si-loading");
+                                        el.disabled = false;
+                                    });
                                 }, 700);
                             }
 
                             // Livewire events
                             document.addEventListener("livewire:navigate", startBar);
                             document.addEventListener("livewire:navigated", finishBar);
-                            document.addEventListener("livewire:request", startBar);
+                            document.addEventListener("livewire:request", function(e) {
+                                startBar();
+                                // Try to find the element that triggered it and lock it
+                                if (e.detail && e.detail.dispatchedBy) {
+                                    e.detail.dispatchedBy.setAttribute("data-si-loading", "true");
+                                }
+                            });
                             document.addEventListener("livewire:commit", finishBar);
+
+                            // Global Click Protector
+                            document.addEventListener("click", function(e) {
+                                if (window.siProcessing) {
+                                    // If it is a link or button, prevent it
+                                    const trigger = e.target.closest("a, button");
+                                    if (trigger) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        return false;
+                                    }
+                                }
+                            }, true);
 
                             // Form submits
                             document.addEventListener("submit", function(e) {
-                                if (e.target.tagName === "FORM") startBar();
+                                if (window.siProcessing) {
+                                    e.preventDefault();
+                                    return false;
+                                }
+                                if (e.target.tagName === "FORM") {
+                                    startBar();
+                                    // Disable all submit buttons in this form
+                                    const btn = e.target.querySelector(\'button[type="submit"]\');
+                                    if (btn) {
+                                        btn.setAttribute("data-si-loading", "true");
+                                        setTimeout(() => btn.disabled = true, 50);
+                                    }
+                                }
                             });
                         })();
                     </script>
+
                 '),
             )
             ->renderHook(
@@ -166,6 +221,7 @@ class AdminPanelProvider extends PanelProvider
                                 if (action.indexOf("logout") !== -1 && !form.dataset.patched) {
                                     form.dataset.patched = "1";
                                     form.addEventListener("submit", function(e) {
+                                        if (window.siProcessing) return;
                                         e.preventDefault();
                                         e.stopPropagation();
                                         window.location.href = "/admin/do-logout";

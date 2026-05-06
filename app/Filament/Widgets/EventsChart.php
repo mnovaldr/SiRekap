@@ -18,12 +18,7 @@ class EventsChart extends Widget
     protected int | string | array $columnSpan = 'full';
     protected static string $view = 'filament.widgets.events-chart';
 
-    protected function getListeners(): array
-    {
-        return [
-            'updateFilter' => '$refresh',
-        ];
-    }
+
 
     public function getChartData(): array
     {

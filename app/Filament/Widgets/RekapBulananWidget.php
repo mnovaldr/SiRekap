@@ -18,14 +18,9 @@ class RekapBulananWidget extends BaseWidget
     protected static ?string $heading = 'Rekapitulasi Performa Bulanan';
     protected int | string | array $columnSpan = 'full';
     protected static ?int $sort = 8;
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
 
-    protected function getListeners(): array
-    {
-        return [
-            'updateFilter' => '$refresh',
-        ];
-    }
+
 
     public function getTableRecordKey($record): string
     {

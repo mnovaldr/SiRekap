@@ -85,7 +85,6 @@ class Dashboard extends BaseDashboard
                                 }
                                 // Reset bulan saat tahun berubah
                                 $set('month', null);
-                                $livewire->dispatch('updateFilter');
                             }),
 
                         Select::make('year_end')
@@ -102,7 +101,6 @@ class Dashboard extends BaseDashboard
                                 }
                                 // Reset bulan saat tahun berubah
                                 $set('month', null);
-                                $livewire->dispatch('updateFilter');
                             }),
 
                         Select::make('month')
@@ -140,8 +138,7 @@ class Dashboard extends BaseDashboard
                                 return 'Semua Bulan';
                             })
                             ->disabled(fn (Get $get) => !$get('year_start') || !$get('year_end') || $get('year_start') !== $get('year_end'))
-                            ->live()
-                            ->afterStateUpdated(fn ($livewire) => $livewire->dispatch('updateFilter')),
+                            ->live(),
 
                         Select::make('sub_sektor')
                             ->label('Kategori Ekraf')
@@ -155,8 +152,7 @@ class Dashboard extends BaseDashboard
                                     ->pluck('sub_sektor', 'sub_sektor')
                                     ->toArray()
                             )
-                            ->live()
-                            ->afterStateUpdated(fn ($livewire) => $livewire->dispatch('updateFilter')),
+                            ->live(),
                     ])
                     ->columns(4),
             ]);

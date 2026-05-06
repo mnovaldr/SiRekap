@@ -34,6 +34,7 @@ class ImportData extends Page
     public bool $isProcessing = false;
     public string $processMessage = '';
     public bool $imported = false;
+    public array $foundColumns = [];
 
     // Pagination for preview
     public int $currentPage = 1;
@@ -58,7 +59,43 @@ class ImportData extends Page
     public function updatedFile(): void
     {
         if (!$this->file) return;
-        $this->processFile();
+
+        // Validasi ekstensi secara eksplisit untuk notifikasi yang lebih cepat
+        $extension = strtolower($this->file->getClientOriginalExtension());
+        if (!in_array($extension, ['xlsx', 'xls'])) {
+            Notification::make()
+                ->title('Format File Tidak Didukung')
+                ->body('File yang Anda pilih berformat .' . $extension . '. Sistem hanya mendukung file Excel (.xlsx atau .xls).')
+                ->danger()
+                ->persistent() // Biar tidak cepat hilang
+                ->send();
+            $this->file = null;
+            return;
+        }
+
+        try {
+            $this->validate([
+                'file' => 'max:10240',
+            ], [
+                'file.max' => 'Ukuran file maksimal 10MB',
+            ]);
+            
+            $this->processFile();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->file = null;
+            Notification::make()
+                ->title('Gagal Unggah')
+                ->body($e->validator->errors()->first('file'))
+                ->danger()
+                ->send();
+        } catch (\Throwable $e) {
+            $this->file = null;
+            Notification::make()
+                ->title('Error')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     public function processFile(): void
@@ -72,9 +109,16 @@ class ImportData extends Page
             $path = $this->file->getRealPath();
             $service = new ExcelImportService();
 
-            $raw = $service->parseExcel($path);
+            $result = $service->parseExcel($path);
+            $raw = $result['data'] ?? [];
+            $this->foundColumns = $result['headers'] ?? [];
+
             if (empty($raw)) {
-                Notification::make()->title('File kosong atau tidak valid')->danger()->send();
+                Notification::make()
+                    ->title('Data tidak ditemukan')
+                    ->body('File Excel tidak memiliki sheet dengan nama bulan (Januari-Desember) atau data kosong.')
+                    ->warning()
+                    ->send();
                 $this->resetImport();
                 return;
             }
@@ -88,11 +132,11 @@ class ImportData extends Page
             $this->reviewRows = count(array_filter($withStatus, fn($r) => $r['status_data'] === 'Review'));
 
             session(['import_data' => $withStatus]);
-            $this->currentStep = 3;
+            $this->currentStep = 2; // Move to validation step
             $this->currentPage = 1;
             
-            Notification::make()->title('File siap ditinjau!')->success()->send();
-        } catch (\Exception $e) {
+            Notification::make()->title('File berhasil diproses!')->success()->send();
+        } catch (\Throwable $e) {
             Notification::make()->title('Gagal: ' . $e->getMessage())->danger()->send();
             $this->resetImport();
         }
@@ -194,6 +238,7 @@ class ImportData extends Page
     {
         $this->file = null;
         $this->currentStep = 1;
+        $this->foundColumns = [];
         $this->resetStats();
         session()->forget('import_data');
     }

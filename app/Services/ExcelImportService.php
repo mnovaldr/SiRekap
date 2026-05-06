@@ -34,8 +34,13 @@ class ExcelImportService
      */
     public function parseExcel(string $filePath): array
     {
-        $spreadsheet = IOFactory::load($filePath);
+        try {
+            $spreadsheet = IOFactory::load($filePath);
+        } catch (\Throwable $e) {
+            throw new \Exception('Format file tidak didukung. Harap gunakan file .xlsx atau .xls yang valid.');
+        }
         $allData = [];
+        $foundHeaders = [];
 
         foreach ($spreadsheet->getSheetNames() as $sheetName) {
             if (in_array($sheetName, $this->validMonths)) {
@@ -48,11 +53,14 @@ class ExcelImportService
                 $headers = array_map('trim', $rows[0] ?? []);
                 if (empty(array_filter($headers))) continue;
 
+                $foundHeaders = array_unique(array_merge($foundHeaders, $headers));
+
                 for ($i = 1; $i < count($rows); $i++) {
                     $row = $rows[$i];
                     if (empty(array_filter($row))) continue;
                     $mapped = [];
                     foreach ($headers as $idx => $header) {
+                        if (empty($header)) continue;
                         $mapped[$header] = $row[$idx] ?? '';
                     }
                     $mapped['_sheet'] = $sheetName;
@@ -67,11 +75,13 @@ class ExcelImportService
             $rows = $sheet->toArray(null, true, true, false);
             if (!empty($rows)) {
                 $headers = array_map('trim', $rows[0]);
+                $foundHeaders = $headers;
                 for ($i = 1; $i < count($rows); $i++) {
                     $row = $rows[$i];
                     if (empty(array_filter($row))) continue;
                     $mapped = [];
                     foreach ($headers as $idx => $header) {
+                        if (empty($header)) continue;
                         $mapped[$header] = $row[$idx] ?? '';
                     }
                     $allData[] = $mapped;
@@ -79,7 +89,10 @@ class ExcelImportService
             }
         }
 
-        return $allData;
+        return [
+            'data' => $allData,
+            'headers' => array_values(array_filter($foundHeaders))
+        ];
     }
 
     /**

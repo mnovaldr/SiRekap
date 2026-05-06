@@ -87,192 +87,209 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 @endpush
 
+<div id="chartData_{{ $this->getId() }}" style="display:none;"
+     data-labels='@json($chart['labels'])'
+     data-events='@json($chart['events'])'
+     data-peserta='@json($chart['peserta'])'
+     data-komersil='@json($chart['komersil'])'
+     data-nonkom='@json($chart['nonKom'])'>
+</div>
+
 <script>
-(function () {
-    function initChart() {
-        const canvasId = 'eventsChartWidget_{{ $this->getId() }}';
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
+    window.initEventsChart_{{ $this->getId() }} = function () {
+        function initChart() {
+            const canvasId = 'eventsChartWidget_{{ $this->getId() }}';
+            const canvas = document.getElementById(canvasId);
+            const dataEl = document.getElementById('chartData_{{ $this->getId() }}');
+            if (!canvas || !dataEl) return;
 
-        // Destroy existing chart if Livewire re-renders
-        if (canvas._chartInstance) {
-            canvas._chartInstance.destroy();
-        }
+            if (canvas._chartInstance) {
+                canvas._chartInstance.destroy();
+            }
 
-        const labels   = @json($chart['labels']);
-        const events   = @json($chart['events']);
-        const peserta  = @json($chart['peserta']);
-        const komersil = @json($chart['komersil']);
-        const nonKom   = @json($chart['nonKom']);
+            const labels   = JSON.parse(dataEl.getAttribute('data-labels'));
+            const events   = JSON.parse(dataEl.getAttribute('data-events'));
+            const peserta  = JSON.parse(dataEl.getAttribute('data-peserta'));
+            const komersil = JSON.parse(dataEl.getAttribute('data-komersil'));
+            const nonKom   = JSON.parse(dataEl.getAttribute('data-nonkom'));
 
-        const isDark     = document.documentElement.classList.contains('dark');
-        const gridColor  = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
-        const tickColor  = isDark ? '#6b7280' : '#9ca3af';
-        const tooltipBg  = isDark ? '#1f2937' : '#ffffff';
-        const tooltipBdr = isDark ? '#374151' : '#e5e7eb';
-        const tooltipTxt = isDark ? '#f9fafb' : '#111827';
+            const isDark     = document.documentElement.classList.contains('dark');
+            const gridColor  = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
+            const tickColor  = isDark ? '#6b7280' : '#9ca3af';
+            const tooltipBg  = isDark ? '#1f2937' : '#ffffff';
+            const tooltipBdr = isDark ? '#374151' : '#e5e7eb';
+            const tooltipTxt = isDark ? '#f9fafb' : '#111827';
 
-        const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d');
 
-        function grad(colorTop, colorBot) {
-            const g = ctx.createLinearGradient(0, 0, 0, 320);
-            g.addColorStop(0, colorTop);
-            g.addColorStop(1, colorBot);
-            return g;
-        }
+            function grad(colorTop, colorBot) {
+                const g = ctx.createLinearGradient(0, 0, 0, 320);
+                g.addColorStop(0, colorTop);
+                g.addColorStop(1, colorBot);
+                return g;
+            }
 
-        canvas._chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Event',
-                        data: events,
-                        borderColor: '#4f46e5',
-                        backgroundColor: grad('rgba(79,70,229,.18)', 'rgba(79,70,229,.01)'),
-                        borderWidth: 2.5,
-                        fill: true,
-                        tension: 0.42,
-                        pointBackgroundColor: '#4f46e5',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        yAxisID: 'yLeft',
+            canvas._chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Event',
+                            data: events,
+                            borderColor: '#4f46e5',
+                            backgroundColor: grad('rgba(79,70,229,.18)', 'rgba(79,70,229,.01)'),
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.42,
+                            pointBackgroundColor: '#4f46e5',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            yAxisID: 'yLeft',
+                        },
+                        {
+                            label: 'Peserta',
+                            data: peserta,
+                            borderColor: '#10b981',
+                            backgroundColor: grad('rgba(16,185,129,.15)', 'rgba(16,185,129,.01)'),
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.42,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            yAxisID: 'yRight',
+                        },
+                        {
+                            label: 'Komersial',
+                            data: komersil,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            fill: false,
+                            tension: 0.42,
+                            pointBackgroundColor: '#f59e0b',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            yAxisID: 'yLeft',
+                        },
+                        {
+                            label: 'Non-Komersial',
+                            data: nonKom,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            fill: false,
+                            tension: 0.42,
+                            pointBackgroundColor: '#6366f1',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            yAxisID: 'yLeft',
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: tooltipBg,
+                            borderColor: tooltipBdr,
+                            borderWidth: 1,
+                            titleColor: tooltipTxt,
+                            bodyColor: tickColor,
+                            padding: 12,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: function(ctx) {
+                                    return '  ' + ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('id-ID');
+                                }
+                            }
+                        }
                     },
-                    {
-                        label: 'Peserta',
-                        data: peserta,
-                        borderColor: '#10b981',
-                        backgroundColor: grad('rgba(16,185,129,.15)', 'rgba(16,185,129,.01)'),
-                        borderWidth: 2.5,
-                        fill: true,
-                        tension: 0.42,
-                        pointBackgroundColor: '#10b981',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        yAxisID: 'yRight',
-                    },
-                    {
-                        label: 'Komersial',
-                        data: komersil,
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        borderDash: [6, 3],
-                        fill: false,
-                        tension: 0.42,
-                        pointBackgroundColor: '#f59e0b',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        yAxisID: 'yLeft',
-                    },
-                    {
-                        label: 'Non-Komersial',
-                        data: nonKom,
-                        borderColor: '#6366f1',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        borderDash: [6, 3],
-                        fill: false,
-                        tension: 0.42,
-                        pointBackgroundColor: '#6366f1',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        yAxisID: 'yLeft',
-                    },
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: tooltipBg,
-                        borderColor: tooltipBdr,
-                        borderWidth: 1,
-                        titleColor: tooltipTxt,
-                        bodyColor: tickColor,
-                        padding: 12,
-                        cornerRadius: 10,
-                        callbacks: {
-                            label: function(ctx) {
-                                return '  ' + ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('id-ID');
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: { color: tickColor, font: { size: 11, weight: '600' } }
+                        },
+                        yLeft: {
+                            position: 'left',
+                            grid: { color: gridColor, drawBorder: false },
+                            border: { display: false, dash: [4, 4] },
+                            ticks: {
+                                color: tickColor,
+                                font: { size: 11 },
+                                maxTicksLimit: 6,
+                                callback: v => v.toLocaleString('id-ID')
+                            }
+                        },
+                        yRight: {
+                            position: 'right',
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: {
+                                color: '#10b981',
+                                font: { size: 11 },
+                                maxTicksLimit: 6,
+                                callback: v => v.toLocaleString('id-ID')
                             }
                         }
                     }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        border: { display: false },
-                        ticks: { color: tickColor, font: { size: 11, weight: '600' } }
-                    },
-                    yLeft: {
-                        position: 'left',
-                        grid: { color: gridColor, drawBorder: false },
-                        border: { display: false, dash: [4, 4] },
-                        ticks: {
-                            color: tickColor,
-                            font: { size: 11 },
-                            maxTicksLimit: 6,
-                            callback: v => v.toLocaleString('id-ID')
-                        }
-                    },
-                    yRight: {
-                        position: 'right',
-                        grid: { display: false },
-                        border: { display: false },
-                        ticks: {
-                            color: '#10b981',
-                            font: { size: 11 },
-                            maxTicksLimit: 6,
-                            callback: v => v.toLocaleString('id-ID')
-                        }
-                    }
+                }
+            });
+        }
+
+        function waitAndInit() {
+            if (typeof Chart !== 'undefined') {
+                initChart();
+            } else {
+                if (!document.querySelector('script[src*="chart.js"]')) {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js';
+                    s.onload = initChart;
+                    document.head.appendChild(s);
+                } else {
+                    setTimeout(waitAndInit, 100);
                 }
             }
-        });
-    }
+        }
 
-    // Wait for Chart.js to be available
-    function waitAndInit() {
-        if (typeof Chart !== 'undefined') {
-            initChart();
-        } else {
-            // Load Chart.js dynamically if not available
-            if (!document.querySelector('script[src*="chart.js"]')) {
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js';
-                s.onload = initChart;
-                document.head.appendChild(s);
-            } else {
-                setTimeout(waitAndInit, 100);
-            }
+        waitAndInit();
+    };
+
+    // Initialize immediately
+    window.initEventsChart_{{ $this->getId() }}();
+
+    // Hook for Livewire 3
+    if (typeof window.hasRegisteredEventsChartHook === 'undefined') {
+        window.hasRegisteredEventsChartHook = true;
+        if (typeof Livewire !== 'undefined') {
+            Livewire.hook('commit', ({ succeed }) => {
+                succeed(() => {
+                    setTimeout(() => {
+                        for (let key in window) {
+                            if (key.startsWith('initEventsChart_') && typeof window[key] === 'function') {
+                                window[key]();
+                            }
+                        }
+                    }, 50);
+                });
+            });
         }
     }
-
-    // Init on load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', waitAndInit);
-    } else {
-        waitAndInit();
-    }
-
-    // Re-init after Livewire updates
-    document.addEventListener('livewire:updated', function() {
-        setTimeout(waitAndInit, 50);
-    });
-})();
 </script>
 
 </x-filament-widgets::widget>

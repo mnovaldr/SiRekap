@@ -15,14 +15,9 @@ class TopLokasiWidget extends Widget
     protected static string $view = 'filament.widgets.top-lokasi';
     protected static ?int $sort = 7;
     protected int | string | array $columnSpan = 'full';
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
 
-    protected function getListeners(): array
-    {
-        return [
-            'updateFilter' => '$refresh',
-        ];
-    }
+
 
     public function getTopLokasiData(): array
     {
