@@ -128,7 +128,7 @@
                     </div>
                     
                     <x-filament::button 
-                        wire:click="processGroup({{ $groupIndex }})" 
+                        x-on:click.prevent="if(await window.siConfirm('{{ $isHapus ? 'Hapus Duplikat' : 'Validasi Grup' }}', '{{ $isHapus ? 'Simpan 1 data dan hapus sisanya dalam grup ini?' : 'Tandai semua data dalam grup ini sebagai Valid?' }}')) { $wire.processGroup({{ $groupIndex }}) }" 
                         :color="$isHapus ? 'danger' : 'warning'" 
                         size="sm"
                         class="rounded-lg shadow-sm"
@@ -171,12 +171,11 @@
                                     <td>
                                         <div class="flex justify-center gap-1">
                                             <x-filament::icon-button 
-                                                wire:click="deleteRow('{{ $item['id'] }}')" 
+                                                x-on:click.prevent="if(await window.siConfirm('Hapus Baris', 'Apakah Anda yakin ingin menghapus baris data ini?')) { $wire.deleteRow('{{ $item['id'] }}') }" 
                                                 icon="heroicon-o-trash" 
                                                 color="danger" 
                                                 size="sm"
                                                 tooltip="Hapus Baris"
-                                                wire:confirm="Hapus baris ini?"
                                             />
                                             <x-filament::icon-button 
                                                 wire:click="validateRow('{{ $item['id'] }}')" 

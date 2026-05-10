@@ -41,8 +41,7 @@
                         </p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="recalculateKeys"
-                                wire:confirm="Recalculate keys untuk semua data?"
+                                x-on:click.prevent="if(await window.siConfirm('Recalculate Keys', 'Hitung ulang bulan, key_full, dan key_short untuk semua data?')) { $wire.recalculateKeys() }"
                                 color="info"
                                 size="sm"
                                 icon="heroicon-o-arrow-path"
@@ -65,8 +64,7 @@
                         </p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="redetectDuplikat"
-                                wire:confirm="Scan ulang duplikat? Semua status akan di-reset."
+                                x-on:click.prevent="if(await window.siConfirm('Re-detect Duplikat', 'Scan ulang duplikat? Semua status akan di-reset.')) { $wire.redetectDuplikat() }"
                                 color="warning"
                                 size="sm"
                                 icon="heroicon-o-magnifying-glass"
@@ -89,8 +87,7 @@
                         </p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="recalculatePrimaryRows"
-                                wire:confirm="Set ulang baris primary? Ini memperbaiki chart dashboard."
+                                x-on:click.prevent="if(await window.siConfirm('Fix Chart Dashboard', 'Set ulang baris primary? Ini akan memperbaiki data pada chart dashboard.')) { $wire.recalculatePrimaryRows() }"
                                 color="success"
                                 size="sm"
                                 icon="heroicon-o-check-badge"
@@ -120,8 +117,7 @@
                         </p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="hapusDuplikat"
-                                wire:confirm="Hapus {{ $stats['duplikat'] }} data duplikat? Tindakan ini tidak bisa dibatalkan."
+                                x-on:click.prevent="if(await window.siConfirm('Hapus Duplikat', 'Hapus {{ $stats['duplikat'] }} data duplikat? Tindakan ini tidak bisa dibatalkan.')) { $wire.hapusDuplikat() }"
                                 color="danger"
                                 size="sm"
                                 icon="heroicon-o-trash"
@@ -144,8 +140,7 @@
                         </p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="validasiSemuaReview"
-                                wire:confirm="Validasi {{ $stats['review'] }} data review? Semua akan diubah menjadi Valid."
+                                x-on:click.prevent="if(await window.siConfirm('Validasi Review', 'Validasi {{ $stats['review'] }} data review? Semua akan diubah menjadi Valid.', 'info')) { $wire.validasiSemuaReview() }"
                                 color="warning"
                                 size="sm"
                                 icon="heroicon-o-check-circle"
@@ -174,8 +169,7 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ number_format($yearCount) }} data</p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="hapusDataTahun({{ $year }})"
-                                wire:confirm="Hapus semua {{ $yearCount }} data tahun {{ $year }}? Tindakan ini tidak bisa dibatalkan."
+                                x-on:click.prevent="if(await window.siConfirm('Hapus Data Tahun', 'Hapus semua {{ $yearCount }} data tahun {{ $year }}? Tindakan ini tidak bisa dibatalkan.')) { $wire.hapusDataTahun({{ $year }}) }"
                                 color="danger"
                                 size="sm"
                                 icon="heroicon-o-trash"
@@ -204,8 +198,7 @@
                         </p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="hapusActivityLog"
-                                wire:confirm="Hapus semua activity log? Riwayat aktivitas akan hilang permanen."
+                                x-on:click.prevent="if(await window.siConfirm('Hapus Activity Log', 'Hapus semua activity log? Riwayat aktivitas akan hilang permanen.')) { $wire.hapusActivityLog() }"
                                 color="gray"
                                 size="sm"
                                 icon="heroicon-o-trash"
@@ -228,8 +221,7 @@
                         </p>
                         <div class="mt-3">
                             <x-filament::button
-                                wire:click="hapusSemuaData"
-                                wire:confirm="PERINGATAN! Ini akan menghapus SEMUA {{ $stats['total'] }} data event. Ketik 'HAPUS' untuk konfirmasi."
+                                x-on:click.prevent="if(await window.siConfirm('⚠️ HAPUS SEMUA DATA', 'PERINGATAN! Ini akan menghapus SEMUA {{ $stats['total'] }} data event. Tindakan ini permanen!')) { $wire.hapusSemuaData() }"
                                 color="danger"
                                 size="sm"
                                 icon="heroicon-o-exclamation-triangle"
