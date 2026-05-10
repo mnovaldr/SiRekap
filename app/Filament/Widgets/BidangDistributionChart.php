@@ -16,7 +16,7 @@ class BidangDistributionChart extends ChartWidget
     use ResolvesYearFilter;
 
     public ?string $filter = 'snapshot';
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
 
 
 
@@ -51,7 +51,7 @@ class BidangDistributionChart extends ChartWidget
     {
         [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
-        $cacheKey = "bidang_dist_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$this->filter}";
+        $cacheKey = "bidang_dist_v5_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$this->filter}";
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
             $query = Event::select('bidang')
@@ -63,10 +63,10 @@ class BidangDistributionChart extends ChartWidget
                 ->orderBy('count', 'desc');
 
             if ($this->filter === 'snapshot') {
-                $query->byYearRange($yearStart, $yearEnd)
-                    ->byMonth($month);
+                $query->whereRaw('EXTRACT(YEAR FROM "tanggal") BETWEEN ? AND ?', [(int)$yearStart, (int)$yearEnd])
+                    ->when($month, fn($q) => $q->whereRaw('EXTRACT(MONTH FROM "tanggal") = ?', [(int)$month]));
             } elseif ($this->filter === 'monthly') {
-                $query->byYearRange($yearStart, $yearEnd);
+                $query->whereRaw('EXTRACT(YEAR FROM "tanggal") BETWEEN ? AND ?', [(int)$yearStart, (int)$yearEnd]);
             }
 
             $data = $query->get();
