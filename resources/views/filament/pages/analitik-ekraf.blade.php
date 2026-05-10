@@ -1,4 +1,4 @@
-<x-filament-panels::page>
+﻿<x-filament-panels::page>
 @php $data = $this->getAnalyticsData(); @endphp
 
 <style>
@@ -491,6 +491,8 @@
     const komersil = @json($data['bulanan']->pluck('total_komersil')->map(fn($v) => (int)$v));
     const nonKom   = @json($data['bulanan']->pluck('total_non_komersil')->map(fn($v) => (int)$v));
 
+    console.log('Chart Data:', { labels, events, peserta, komersil, nonKom });
+
     /* ── Detect dark mode ── */
     const isDark = document.documentElement.classList.contains('dark');
     const gridColor  = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
@@ -507,131 +509,160 @@
         return g;
     }
 
-    const canvas = document.getElementById('trendChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    function initChart() {
+        const canvas = document.getElementById('trendChart');
+        if (!canvas) {
+            console.error('Canvas #trendChart not found');
+            return;
+        }
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: 'Event',
-                    data: events,
-                    borderColor: '#4f46e5',
-                    backgroundColor: makeGradient(ctx, 'rgba(79,70,229,.18)', 'rgba(79,70,229,.01)'),
-                    borderWidth: 2.5,
-                    fill: true,
-                    tension: 0.42,
-                    pointBackgroundColor: '#4f46e5',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    yAxisID: 'yLeft',
+        // Destroy existing chart if any
+        if (window.analitikChartInstance) {
+            window.analitikChartInstance.destroy();
+        }
+
+        const ctx = canvas.getContext('2d');
+
+        window.analitikChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Event',
+                        data: events,
+                        borderColor: '#4f46e5',
+                        backgroundColor: makeGradient(ctx, 'rgba(79,70,229,.18)', 'rgba(79,70,229,.01)'),
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.42,
+                        pointBackgroundColor: '#4f46e5',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        yAxisID: 'yLeft',
+                    },
+                    {
+                        label: 'Peserta',
+                        data: peserta,
+                        borderColor: '#10b981',
+                        backgroundColor: makeGradient(ctx, 'rgba(16,185,129,.15)', 'rgba(16,185,129,.01)'),
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.42,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        yAxisID: 'yRight',
+                    },
+                    {
+                        label: 'Komersial',
+                        data: komersil,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [6, 3],
+                        fill: false,
+                        tension: 0.42,
+                        pointBackgroundColor: '#f59e0b',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        yAxisID: 'yLeft',
+                    },
+                    {
+                        label: 'Non-Komersial',
+                        data: nonKom,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [6, 3],
+                        fill: false,
+                        tension: 0.42,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        yAxisID: 'yLeft',
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: tooltipBg,
+                        borderColor: tooltipBdr,
+                        borderWidth: 1,
+                        titleColor: tooltipTxt,
+                        bodyColor: tickColor,
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function(ctx) {
+                                return '  ' + ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('id-ID');
+                            }
+                        }
+                    }
                 },
-                {
-                    label: 'Peserta',
-                    data: peserta,
-                    borderColor: '#10b981',
-                    backgroundColor: makeGradient(ctx, 'rgba(16,185,129,.15)', 'rgba(16,185,129,.01)'),
-                    borderWidth: 2.5,
-                    fill: true,
-                    tension: 0.42,
-                    pointBackgroundColor: '#10b981',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    yAxisID: 'yRight',
-                },
-                {
-                    label: 'Komersial',
-                    data: komersil,
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [6, 3],
-                    fill: false,
-                    tension: 0.42,
-                    pointBackgroundColor: '#f59e0b',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    yAxisID: 'yLeft',
-                },
-                {
-                    label: 'Non-Komersial',
-                    data: nonKom,
-                    borderColor: '#6366f1',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [6, 3],
-                    fill: false,
-                    tension: 0.42,
-                    pointBackgroundColor: '#6366f1',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    yAxisID: 'yLeft',
-                },
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: tooltipBg,
-                    borderColor: tooltipBdr,
-                    borderWidth: 1,
-                    titleColor: tooltipTxt,
-                    bodyColor: tickColor,
-                    padding: 12,
-                    cornerRadius: 10,
-                    callbacks: {
-                        label: function(ctx) {
-                            return '  ' + ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('id-ID');
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: tickColor, font: { size: 11, weight: '600' } }
+                    },
+                    yLeft: {
+                        position: 'left',
+                        grid: { color: gridColor, drawBorder: false },
+                        border: { display: false, dash: [4, 4] },
+                        ticks: {
+                            color: tickColor,
+                            font: { size: 11 },
+                            maxTicksLimit: 6,
+                            callback: v => v.toLocaleString('id-ID')
+                        }
+                    },
+                    yRight: {
+                        position: 'right',
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: {
+                            color: '#10b981',
+                            font: { size: 11 },
+                            maxTicksLimit: 6,
+                            callback: v => v.toLocaleString('id-ID')
                         }
                     }
                 }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    border: { display: false },
-                    ticks: { color: tickColor, font: { size: 11, weight: '600' } }
-                },
-                yLeft: {
-                    position: 'left',
-                    grid: { color: gridColor, drawBorder: false },
-                    border: { display: false, dash: [4, 4] },
-                    ticks: {
-                        color: tickColor,
-                        font: { size: 11 },
-                        maxTicksLimit: 6,
-                        callback: v => v.toLocaleString('id-ID')
-                    }
-                },
-                yRight: {
-                    position: 'right',
-                    grid: { display: false },
-                    border: { display: false },
-                    ticks: {
-                        color: '#10b981',
-                        font: { size: 11 },
-                        maxTicksLimit: 6,
-                        callback: v => v.toLocaleString('id-ID')
-                    }
-                }
             }
-        }
-    });
+        });
+
+        console.log('Chart initialized successfully');
+    }
+
+    // Initialize on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initChart);
+    } else {
+        initChart();
+    }
+
+    // Re-initialize on Livewire updates
+    if (typeof Livewire !== 'undefined') {
+        Livewire.hook('commit', ({ succeed }) => {
+            succeed(() => {
+                setTimeout(initChart, 100);
+            });
+        });
+    }
 })();
 </script>
 

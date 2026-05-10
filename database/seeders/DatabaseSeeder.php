@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Admin MCC',
             'email' => 'admin@mcc.com',
-            'password' => bcrypt('password'),
+            'password' => bcrypt('Admin@12345'),
         ]);
 
         // Seed master data

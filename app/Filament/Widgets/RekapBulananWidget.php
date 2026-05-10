@@ -18,7 +18,8 @@ class RekapBulananWidget extends BaseWidget
     protected static ?string $heading = 'Rekapitulasi Performa Bulanan';
     protected int | string | array $columnSpan = 'full';
     protected static ?int $sort = 8;
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
+
 
 
 
@@ -34,17 +35,30 @@ class RekapBulananWidget extends BaseWidget
         return $table
             ->query(
                 Event::select(
-                    'bulan',
+                    DB::raw('CASE EXTRACT(MONTH FROM tanggal)
+                        WHEN 1 THEN \'Januari\'
+                        WHEN 2 THEN \'Februari\'
+                        WHEN 3 THEN \'Maret\'
+                        WHEN 4 THEN \'April\'
+                        WHEN 5 THEN \'Mei\'
+                        WHEN 6 THEN \'Juni\'
+                        WHEN 7 THEN \'Juli\'
+                        WHEN 8 THEN \'Agustus\'
+                        WHEN 9 THEN \'September\'
+                        WHEN 10 THEN \'Oktober\'
+                        WHEN 11 THEN \'November\'
+                        WHEN 12 THEN \'Desember\'
+                    END as bulan'),
                     DB::raw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event'),
                     DB::raw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_peserta'),
-                    DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total_organisasi')
+                    DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN nama_organisasi END) as total_organisasi')
                 )
                 ->valid()
                 ->byYearRange($yearStart, $yearEnd)
                 ->bySubSektor($subSektor)
-                ->whereNotNull('bulan')
-                ->groupBy('bulan')
-                ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\', \'Februari\', \'Maret\', \'April\', \'Mei\', \'Juni\', \'Juli\', \'Agustus\', \'September\', \'Oktober\', \'November\', \'Desember\'], bulan)'))
+                ->whereNotNull('tanggal')
+                ->groupBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
+                ->orderBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
             )
             ->columns([
                 Tables\Columns\TextColumn::make('bulan')

@@ -7,6 +7,8 @@ use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use App\Filament\Widgets\Concerns\ResolvesYearFilter;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+
 
 class KomersialChart extends ChartWidget
 {
@@ -15,6 +17,7 @@ class KomersialChart extends ChartWidget
 
     public ?string $filter = 'snapshot';
     protected static bool $isLazy = false;
+
 
     protected function getFilters(): ?array
     {
@@ -34,20 +37,9 @@ class KomersialChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
-        
-        $query = Event::valid()
-            ->where('is_primary_row', true)
-            ->bySubSektor($subSektor);
-
-        if ($this->filter === 'snapshot') {
-            $query->byYearRange($yearStart, $yearEnd)
-                ->byMonth($month);
-        } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd);
-        }
-
-        $total = $query->count();
+        // Reuse getData() result to avoid a separate COUNT query
+        $data = $this->getData();
+        $total = array_sum($data['datasets'][0]['data'] ?? []);
         return "Total: " . number_format($total) . " Event";
     }
 
@@ -58,43 +50,53 @@ class KomersialChart extends ChartWidget
     {
         [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
-        $query = Event::valid()
-            ->where('is_primary_row', true)
-            ->bySubSektor($subSektor);
-        
-        if ($this->filter === 'snapshot') {
-            $query->byYearRange($yearStart, $yearEnd)
-                ->byMonth($month);
-        } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd);
-        }
+        $cacheKey = "komersial_chart_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$this->filter}";
 
-        $komersial = (clone $query)->where('komersial', 'Komersial')->count();
-        $nonKomersial = (clone $query)->where('komersial', 'Non Komersial')->count();
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
+            $query = Event::valid()
+                ->where('is_primary_row', true)
+                ->bySubSektor($subSektor);
+            
+            if ($this->filter === 'snapshot') {
+                $query->byYearRange($yearStart, $yearEnd)
+                    ->byMonth($month);
+            } elseif ($this->filter === 'monthly') {
+                $query->byYearRange($yearStart, $yearEnd);
+            }
 
-        $total = $komersial + $nonKomersial;
-        $pctKomersial = $total > 0 ? round(($komersial / $total) * 100, 1) : 0;
-        $pctNonKomersial = $total > 0 ? round(($nonKomersial / $total) * 100, 1) : 0;
+            // Single query instead of 3 separate queries
+            $row = $query->selectRaw("
+                COUNT(CASE WHEN komersial = 'Komersial' THEN 1 END) as komersial,
+                COUNT(CASE WHEN komersial = 'Non Komersial' THEN 1 END) as non_komersial
+            ")->first();
 
-        return [
-            'datasets' => [
-                [
-                    'label' => 'Event',
-                    'data' => [$komersial, $nonKomersial],
-                    'backgroundColor' => [
-                        '#4f46e5', // Indigo
-                        '#10b981', // Emerald
+            $komersial    = (int) ($row->komersial ?? 0);
+            $nonKomersial = (int) ($row->non_komersial ?? 0);
+
+            $total = $komersial + $nonKomersial;
+            $pctKomersial = $total > 0 ? round(($komersial / $total) * 100, 1) : 0;
+            $pctNonKomersial = $total > 0 ? round(($nonKomersial / $total) * 100, 1) : 0;
+
+            return [
+                'datasets' => [
+                    [
+                        'label' => 'Event',
+                        'data' => [$komersial, $nonKomersial],
+                        'backgroundColor' => [
+                            '#4f46e5', // Indigo
+                            '#10b981', // Emerald
+                        ],
+                        'borderWidth' => 2,
+                        'borderColor' => '#ffffff',
+                        'hoverOffset' => 20,
                     ],
-                    'borderWidth' => 2,
-                    'borderColor' => '#ffffff',
-                    'hoverOffset' => 20,
                 ],
-            ],
-            'labels' => [
-                'Komersial: ' . number_format($komersial) . ' (' . $pctKomersial . '%)',
-                'Non Komersial: ' . number_format($nonKomersial) . ' (' . $pctNonKomersial . '%)',
-            ],
-        ];
+                'labels' => [
+                    'Komersial: ' . number_format($komersial) . ' (' . $pctKomersial . '%)',
+                    'Non Komersial: ' . number_format($nonKomersial) . ' (' . $pctNonKomersial . '%)',
+                ],
+            ];
+        });
     }
 
     protected function getType(): string

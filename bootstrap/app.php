@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        
+        // Add response optimization middleware (disabled temporarily if causing issues)
+        // Uncomment line below to enable GZIP compression and cache headers
+        // $middleware->append(\App\Http\Middleware\OptimizeResponse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Jika CSRF token expired (misal tab dibuka lama), redirect ke login

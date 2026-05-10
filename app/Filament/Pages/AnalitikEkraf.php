@@ -23,21 +23,30 @@ class AnalitikEkraf extends Page
 
     public function filtersForm(Form $form): Form
     {
+        $availableYears = \Illuminate\Support\Facades\Cache::remember(
+            'analitik_available_years',
+            now()->addMinutes(30),
+            fn () => Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
+                ->whereNotNull('tanggal')
+                ->distinct()
+                ->orderBy('year', 'desc')
+                ->pluck('year', 'year')
+                ->mapWithKeys(fn ($v, $k) => [(string) $k => (string) $v])
+                ->toArray()
+        );
+
+        $latestYear = array_key_first($availableYears) ?? (string) date('Y');
+
         return $form
             ->schema([
                 Section::make()
                     ->schema([
                         Select::make('year')
                             ->label('Tahun Analisis')
-                            ->options(
-                                Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')
-                                    ->distinct()
-                                    ->orderBy('year', 'desc')
-                                    ->pluck('year', 'year')
-                                    ->toArray()
-                            )
-                            ->default(Event::selectRaw('EXTRACT(YEAR FROM MAX(tanggal)) as max_year')->value('max_year') ?? date('Y'))
-                            ->selectablePlaceholder(false),
+                            ->options($availableYears)
+                            ->default($latestYear)
+                            ->selectablePlaceholder(false)
+                            ->live(),
                     ])
                     ->columns(1),
             ]);
@@ -45,8 +54,32 @@ class AnalitikEkraf extends Page
 
     public function getAnalyticsData(): array
     {
-        $year = $this->filters['year'] ?? date('Y');
+        $year = $this->filters['year'] ?? null;
 
+        if (empty($year)) {
+            $availableYears = \Illuminate\Support\Facades\Cache::remember(
+                'analitik_available_years',
+                now()->addMinutes(30),
+                fn () => Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
+                    ->whereNotNull('tanggal')
+                    ->distinct()
+                    ->orderBy('year', 'desc')
+                    ->pluck('year', 'year')
+                    ->mapWithKeys(fn ($v, $k) => [(string) $k => (string) $v])
+                    ->toArray()
+            );
+            $year = array_key_first($availableYears) ?? date('Y');
+        }
+
+        $cacheKey = "analitik_data_{$year}_v2";
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(15), function () use ($year) {
+            return $this->fetchAnalyticsData($year);
+        });
+    }
+
+    private function fetchAnalyticsData(int|string $year): array
+    {
         // Semua query hanya untuk data Valid
         $baseQuery = fn() => Event::whereYear('tanggal', $year)->where('status_data', 'Valid');
 
@@ -73,27 +106,34 @@ class AnalitikEkraf extends Page
             ->orderBy('total', 'desc')
             ->get();
 
-        // 4. Rekap Bulanan — hanya Valid, peserta hanya dari primary row
+        // 4. Rekap Bulanan — Ambil bulan dari tanggal sebagai fallback utama
         $bulanan = $baseQuery()
-            ->whereNotNull('bulan')
             ->select(
-                'bulan',
+                DB::raw('EXTRACT(MONTH FROM tanggal) as month_num'),
                 DB::raw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event'),
                 DB::raw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_pengunjung'),
                 DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Komersial\' THEN 1 END) as total_komersil'),
                 DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Non Komersial\' THEN 1 END) as total_non_komersil'),
-                DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total_pelaku')
+                DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN nama_organisasi END) as total_pelaku')
             )
-            ->groupBy('bulan')
-            ->orderBy(DB::raw('ARRAY_POSITION(ARRAY[\'Januari\',\'Februari\',\'Maret\',\'April\',\'Mei\',\'Juni\',\'Juli\',\'Agustus\',\'September\',\'Oktober\',\'November\',\'Desember\'], bulan)'))
-            ->get();
+            ->groupBy('month_num')
+            ->orderBy('month_num')
+            ->get()
+            ->map(function ($item) {
+                $months = [
+                    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+                    7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                ];
+                $item->bulan = $months[(int)$item->month_num] ?? 'Unknown';
+                return $item;
+            });
 
         // 5. Total Pelaku (Sum of Monthly Unique Actors) sesuai permintaan user (4.039)
         $totalPelakuYear = $bulanan->sum('total_pelaku');
 
         // (Opsional) Jika ingin menampilkan angka unik murni (2.293) bisa gunakan ini:
         $pureUniquePelaku = $baseQuery()
-            ->select(DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN UPPER(TRIM(nama_organisasi)) END) as total'))
+            ->select(DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN nama_organisasi END) as total'))
             ->value('total') ?? 0;
 
         return [

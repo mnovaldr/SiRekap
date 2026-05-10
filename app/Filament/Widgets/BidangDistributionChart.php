@@ -7,6 +7,8 @@ use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use App\Filament\Widgets\Concerns\ResolvesYearFilter;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+
 
 class BidangDistributionChart extends ChartWidget
 {
@@ -15,6 +17,7 @@ class BidangDistributionChart extends ChartWidget
 
     public ?string $filter = 'snapshot';
     protected static bool $isLazy = false;
+
 
     protected function getFilters(): ?array
     {
@@ -34,20 +37,9 @@ class BidangDistributionChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
-
-        $query = Event::valid()
-            ->bySubSektor($subSektor)
-            ->where('is_primary_row', true);
-
-        if ($this->filter === 'snapshot') {
-            $query->byYearRange($yearStart, $yearEnd)
-                ->byMonth($month);
-        } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd);
-        }
-
-        $total = $query->count();
+        // Reuse getData() result to avoid a separate COUNT query
+        $data = $this->getData();
+        $total = array_sum($data['datasets'][0]['data'] ?? []);
         return "Total: " . number_format($total) . " Event";
     }
 
@@ -58,37 +50,40 @@ class BidangDistributionChart extends ChartWidget
     {
         [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
-        $query = Event::select('bidang')
-            ->where('is_primary_row', true)
-            ->selectRaw('count(*) as count')
-            ->valid()
-            ->bySubSektor($subSektor)
-            ->groupBy('bidang')
-            ->orderBy('count', 'desc');
+        $cacheKey = "bidang_dist_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$this->filter}";
 
-        if ($this->filter === 'snapshot') {
-            $query->byYearRange($yearStart, $yearEnd)
-                ->byMonth($month);
-        } elseif ($this->filter === 'monthly') {
-            $query->byYearRange($yearStart, $yearEnd);
-        }
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
+            $query = Event::select('bidang')
+                ->where('is_primary_row', true)
+                ->selectRaw('count(*) as count')
+                ->valid()
+                ->bySubSektor($subSektor)
+                ->groupBy('bidang')
+                ->orderBy('count', 'desc');
 
-        $data = $query->get();
-        $totalAll = $data->sum('count');
+            if ($this->filter === 'snapshot') {
+                $query->byYearRange($yearStart, $yearEnd)
+                    ->byMonth($month);
+            } elseif ($this->filter === 'monthly') {
+                $query->byYearRange($yearStart, $yearEnd);
+            }
 
-        return [
-            'datasets' => [
-                [
-                    'label' => 'Jumlah Event',
-                    'data' => $data->pluck('count')->toArray(),
-                    'backgroundColor' => $this->getChartColors(count($data)),
-                    'borderWidth' => 2,
-                    'borderColor' => '#ffffff',
-                    'hoverOffset' => 20,
+            $data = $query->get();
+
+            return [
+                'datasets' => [
+                    [
+                        'label' => 'Jumlah Event',
+                        'data' => $data->pluck('count')->toArray(),
+                        'backgroundColor' => $this->getChartColors(count($data)),
+                        'borderWidth' => 2,
+                        'borderColor' => '#ffffff',
+                        'hoverOffset' => 20,
+                    ],
                 ],
-            ],
-            'labels' => $data->map(fn($item) => $item->bidang . ' (' . number_format($item->count) . ')')->toArray(),
-        ];
+                'labels' => $data->map(fn($item) => $item->bidang . ' (' . number_format($item->count) . ')')->toArray(),
+            ];
+        });
     }
 
     protected function getType(): string

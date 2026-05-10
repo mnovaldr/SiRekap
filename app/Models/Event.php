@@ -142,7 +142,7 @@ class Event extends Model
     public function scopeByYearRange($query, $start, $end)
     {
         return $query->when($start && $end, function ($q) use ($start, $end) {
-            $q->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [$start, $end]);
+            $q->whereBetween('tanggal', ["$start-01-01", "$end-12-31"]);
         });
     }
 
