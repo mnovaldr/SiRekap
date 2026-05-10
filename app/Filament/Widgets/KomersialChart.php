@@ -55,7 +55,7 @@ class KomersialChart extends ChartWidget
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
             $query = Event::valid()
-                ->where('is_primary_row', true)
+                ->primary()
                 ->bySubSektor($subSektor);
             
             if ($this->filter === 'snapshot') {

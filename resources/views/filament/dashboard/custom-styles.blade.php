@@ -13,7 +13,7 @@
     $totalYears = $yearRange?->total_years ?? 1;
 
     // Total data ringkas
-    $totalEvents = Event::valid()->where('is_primary_row', true)->count();
+    $totalEvents = Event::valid()->primary()->count();
 @endphp
 
 <style>

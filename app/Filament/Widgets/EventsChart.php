@@ -36,7 +36,7 @@ class EventsChart extends Widget
                     ->byYear($yearEnd)
                     ->byMonth($month)
                     ->bySubSektor($subSektor)
-                    ->where('is_primary_row', true)
+                    ->primary()
                     ->selectRaw('EXTRACT(DAY FROM tanggal)::integer as d, count(*) as cnt, sum(jumlah_peserta) as peserta,
                         COUNT(CASE WHEN komersial = \'Komersial\' THEN 1 END) as komersil,
                         COUNT(CASE WHEN komersial = \'Non Komersial\' THEN 1 END) as non_komersil')
@@ -61,7 +61,7 @@ class EventsChart extends Widget
             // ── ANNUAL range view ────────────────────────────────────────────
             } elseif ($yearStart != $yearEnd) {
                 $rows = Event::valid()
-                    ->where('is_primary_row', true)
+                    ->primary()
                     ->bySubSektor($subSektor)
                     ->selectRaw('EXTRACT(YEAR FROM tanggal)::integer as yr,
                         count(*) as cnt, sum(jumlah_peserta) as peserta,
@@ -91,7 +91,7 @@ class EventsChart extends Widget
                 $rows = Event::valid()
                     ->byYear($yearEnd)
                     ->bySubSektor($subSektor)
-                    ->where('is_primary_row', true)
+                    ->primary()
                     ->selectRaw('EXTRACT(MONTH FROM tanggal)::integer as mo,
                         count(*) as cnt, sum(jumlah_peserta) as peserta,
                         COUNT(CASE WHEN komersial = \'Komersial\' THEN 1 END) as komersil,

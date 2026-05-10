@@ -55,7 +55,7 @@ class SubSektorDistributionChart extends ChartWidget
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
             $query = Event::select('sub_sektor')
-                ->where('is_primary_row', true)
+                ->primary()
                 ->selectRaw('count(*) as count')
                 ->valid()
                 ->whereNotNull('sub_sektor')

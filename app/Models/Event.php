@@ -121,17 +121,22 @@ class Event extends Model
 
     public function scopeValid($query)
     {
-        return $query->where('status_data', 'Valid');
+        return $query->whereRaw("status_data = 'Valid'");
+    }
+
+    public function scopePrimary($query)
+    {
+        return $query->whereRaw('is_primary_row = true');
     }
 
     public function scopeReview($query)
     {
-        return $query->where('status_data', 'Review');
+        return $query->where('status_data', '=', 'Review');
     }
 
     public function scopeDuplikat($query)
     {
-        return $query->where('status_data', 'Duplikat');
+        return $query->where('status_data', '=', 'Duplikat');
     }
 
     public function scopeByYear($query, $year)

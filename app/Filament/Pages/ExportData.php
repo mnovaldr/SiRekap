@@ -251,7 +251,7 @@ class ExportData extends Page
 
         // 1. Sub Sektor
         $kategoriEkraf = $baseQuery()
-            ->where('is_primary_row', true)
+            ->primary()
             ->whereNotNull('sub_sektor')
             ->where('sub_sektor', '!=', '')
             ->select('sub_sektor as label', DB::raw('count(*) as total'))
@@ -261,7 +261,7 @@ class ExportData extends Page
 
         // 2. Jenis Kegiatan
         $kategoriKegiatan = $baseQuery()
-            ->where('is_primary_row', true)
+            ->primary()
             ->select('jenis_kegiatan as label', DB::raw('count(*) as total'))
             ->groupBy('jenis_kegiatan')
             ->orderBy('total', 'desc')
@@ -269,7 +269,7 @@ class ExportData extends Page
 
         // 3. Bidang Pelaku
         $kategoriPelaku = $baseQuery()
-            ->where('is_primary_row', true)
+            ->primary()
             ->select('bidang as label', DB::raw('count(*) as total'))
             ->groupBy('bidang')
             ->orderBy('total', 'desc')
@@ -319,14 +319,14 @@ class ExportData extends Page
             ->value('total') ?? 0;
 
         // 6. Total Events (Primary Only)
-        $totalEvents = $baseQuery()->where('is_primary_row', true)->count();
+        $totalEvents = $baseQuery()->primary()->count();
 
         // 7. Total Pengunjung (Primary Only)
-        $totalPengunjung = $baseQuery()->where('is_primary_row', true)->sum('jumlah_peserta');
+        $totalPengunjung = $baseQuery()->primary()->sum('jumlah_peserta');
 
         // 8. Komersial vs Non Komersial (Primary Only)
         $komersial = $baseQuery()
-            ->where('is_primary_row', true)
+            ->primary()
             ->select('komersial', DB::raw('count(*) as total'))
             ->groupBy('komersial')
             ->get();
