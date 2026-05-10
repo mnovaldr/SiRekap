@@ -146,6 +146,31 @@ class KelolaDatabase extends Page
             ->send();
     }
 
+    // Mark satu baris per event (key_short) sebagai primary_row untuk statistik murni
+    public function recalculatePrimaryRows(): void
+    {
+        // 1. Reset semua ke false dulu
+        Event::query()->update(['is_primary_row' => DB::raw('false')]);
+
+        // 2. Ambil ID pertama untuk setiap key_short yang Valid
+        $primaryIds = Event::valid()
+            ->select(DB::raw('MIN(id::text) as id'))
+            ->groupBy('key_short')
+            ->pluck('id');
+
+        // 3. Update baris-baris tersebut menjadi primary
+        $count = 0;
+        foreach ($primaryIds->chunk(500) as $chunk) {
+            $count += Event::whereIn('id', $chunk)->update(['is_primary_row' => DB::raw('true')]);
+        }
+
+        ActivityLog::logActivity('update', null, "Recalculate Primary Rows: {$count} baris ditandai sebagai primary");
+        Notification::make()
+            ->title("Selesai: {$count} baris berhasil ditandai sebagai primary row.")
+            ->success()
+            ->send();
+    }
+
     public function getAvailableYears(): array
     {
         return Event::selectRaw('EXTRACT(YEAR FROM tanggal) as year')

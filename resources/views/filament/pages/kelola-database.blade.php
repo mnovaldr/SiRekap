@@ -28,7 +28,7 @@
 
     {{-- Maintenance Actions --}}
     <x-filament::section heading="Pemeliharaan Data" description="Perbaiki dan sinkronkan data yang ada di database">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
             {{-- Recalculate Keys --}}
             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
@@ -36,13 +36,13 @@
                     <x-heroicon-o-arrow-path class="w-6 h-6 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
                     <div class="flex-1">
                         <p class="font-semibold text-gray-900 dark:text-white">Recalculate Keys</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Hitung ulang bulan, key_full, dan key_short untuk semua data. Jalankan ini setelah edit data manual.
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 text-xs">
+                            Hitung ulang bulan, key_full, dan key_short. Jalankan setelah edit data manual.
                         </p>
                         <div class="mt-3">
                             <x-filament::button
                                 wire:click="recalculateKeys"
-                                wire:confirm="Recalculate keys untuk semua data? Proses ini mungkin memakan waktu."
+                                wire:confirm="Recalculate keys untuk semua data?"
                                 color="info"
                                 size="sm"
                                 icon="heroicon-o-arrow-path"
@@ -60,18 +60,42 @@
                     <x-heroicon-o-magnifying-glass class="w-6 h-6 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" />
                     <div class="flex-1">
                         <p class="font-semibold text-gray-900 dark:text-white">Re-detect Duplikat</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Scan ulang seluruh database untuk mendeteksi duplikat. Reset semua status lalu tandai ulang Duplikat & Review.
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 text-xs">
+                            Scan ulang duplikat. Reset semua status lalu tandai ulang Duplikat & Review.
                         </p>
                         <div class="mt-3">
                             <x-filament::button
                                 wire:click="redetectDuplikat"
-                                wire:confirm="Scan ulang duplikat? Semua status akan di-reset lalu dideteksi ulang."
+                                wire:confirm="Scan ulang duplikat? Semua status akan di-reset."
                                 color="warning"
                                 size="sm"
                                 icon="heroicon-o-magnifying-glass"
                             >
                                 Scan Duplikat
+                            </x-filament::button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Recalculate Primary Rows --}}
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                    <x-heroicon-o-check-badge class="w-6 h-6 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900 dark:text-white">Recalculate Primary</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 text-xs">
+                            Set ulang baris utama. Penting agar statistik dan chart dashboard tidak kosong.
+                        </p>
+                        <div class="mt-3">
+                            <x-filament::button
+                                wire:click="recalculatePrimaryRows"
+                                wire:confirm="Set ulang baris primary? Ini memperbaiki chart dashboard."
+                                color="success"
+                                size="sm"
+                                icon="heroicon-o-check-badge"
+                            >
+                                Fix Chart
                             </x-filament::button>
                         </div>
                     </div>

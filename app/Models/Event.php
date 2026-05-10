@@ -121,12 +121,12 @@ class Event extends Model
 
     public function scopeValid($query)
     {
-        return $query->whereRaw("status_data = 'Valid'");
+        return $query->whereRaw("\"status_data\" = 'Valid'");
     }
 
     public function scopePrimary($query)
     {
-        return $query->whereRaw('is_primary_row = true');
+        return $query->whereRaw("\"is_primary_row\" = true");
     }
 
     public function scopeReview($query)

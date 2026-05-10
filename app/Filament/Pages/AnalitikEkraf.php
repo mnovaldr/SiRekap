@@ -71,7 +71,7 @@ class AnalitikEkraf extends Page
             $year = array_key_first($availableYears) ?? date('Y');
         }
 
-        $cacheKey = "analitik_data_{$year}_v2";
+        $cacheKey = "analitik_data_{$year}_v3";
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(15), function () use ($year) {
             return $this->fetchAnalyticsData($year);
@@ -81,7 +81,7 @@ class AnalitikEkraf extends Page
     private function fetchAnalyticsData(int|string $year): array
     {
         // Semua query hanya untuk data Valid
-        $baseQuery = fn() => Event::whereYear('tanggal', $year)->where('status_data', 'Valid');
+        $baseQuery = fn() => Event::whereRaw('EXTRACT(YEAR FROM "tanggal") = ?', [(int)$year])->valid();
 
         // 1. Sub Sektor
         $kategoriEkraf = $baseQuery()
@@ -109,12 +109,12 @@ class AnalitikEkraf extends Page
         // 4. Rekap Bulanan — Ambil bulan dari tanggal sebagai fallback utama
         $bulanan = $baseQuery()
             ->select(
-                DB::raw('EXTRACT(MONTH FROM tanggal) as month_num'),
-                DB::raw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event'),
-                DB::raw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_pengunjung'),
-                DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Komersial\' THEN 1 END) as total_komersil'),
-                DB::raw('COUNT(CASE WHEN is_primary_row = true AND komersial = \'Non Komersial\' THEN 1 END) as total_non_komersil'),
-                DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN nama_organisasi END) as total_pelaku')
+                DB::raw('EXTRACT(MONTH FROM "tanggal") as month_num'),
+                DB::raw('COUNT(CASE WHEN "is_primary_row" = true THEN 1 END) as total_event'),
+                DB::raw('SUM(CASE WHEN "is_primary_row" = true THEN "jumlah_peserta" ELSE 0 END) as total_pengunjung'),
+                DB::raw('COUNT(CASE WHEN "is_primary_row" = true AND "komersial" = \'Komersial\' THEN 1 END) as total_komersil'),
+                DB::raw('COUNT(CASE WHEN "is_primary_row" = true AND "komersial" = \'Non Komersial\' THEN 1 END) as total_non_komersil'),
+                DB::raw('COUNT(DISTINCT CASE WHEN "nama_organisasi" IS NOT NULL AND "nama_organisasi" != \'\' THEN "nama_organisasi" END) as total_pelaku')
             )
             ->groupBy('month_num')
             ->orderBy('month_num')

@@ -15,7 +15,7 @@ class EventsChart extends Widget
     use InteractsWithPageFilters;
     use ResolvesYearFilter;
 
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
 
     protected static ?int $sort = 2;
     protected int | string | array $columnSpan = 'full';
@@ -25,7 +25,7 @@ class EventsChart extends Widget
     {
         [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
-        $cacheKey = "events_chart_v2_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}";
+        $cacheKey = "events_chart_v4_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}";
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
             // ── DAILY view (month selected) ─────────────────────────────────
@@ -33,16 +33,16 @@ class EventsChart extends Widget
                 $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int) $month, (int) $yearEnd);
 
                 $eventData = Event::valid()
-                    ->byYear($yearEnd)
-                    ->byMonth($month)
+                    ->whereRaw('EXTRACT(YEAR FROM "tanggal") = ?', [(int)$yearEnd])
+                    ->whereRaw('EXTRACT(MONTH FROM "tanggal") = ?', [(int)$month])
                     ->bySubSektor($subSektor)
                     ->primary()
-                    ->selectRaw('EXTRACT(DAY FROM tanggal)::integer as d, count(*) as cnt, sum(jumlah_peserta) as peserta,
-                        COUNT(CASE WHEN komersial = \'Komersial\' THEN 1 END) as komersil,
-                        COUNT(CASE WHEN komersial = \'Non Komersial\' THEN 1 END) as non_komersil')
-                    ->groupBy(DB::raw('EXTRACT(DAY FROM tanggal)'))
+                    ->selectRaw('EXTRACT(DAY FROM "tanggal")::integer as d, count(*) as cnt, sum(jumlah_peserta) as peserta,
+                        COUNT(CASE WHEN "komersial" = \'Komersial\' THEN 1 END) as komersil,
+                        COUNT(CASE WHEN "komersial" = \'Non Komersial\' THEN 1 END) as non_komersil')
+                    ->groupBy(DB::raw('EXTRACT(DAY FROM "tanggal")'))
                     ->get()
-                    ->keyBy('d');
+                    ->mapWithKeys(fn($item) => [(int)$item->d => $item]);
 
                 $labels = $events = $peserta = $komersil = $nonKom = [];
                 for ($i = 1; $i <= $daysInMonth; $i++) {
@@ -63,19 +63,19 @@ class EventsChart extends Widget
                 $rows = Event::valid()
                     ->primary()
                     ->bySubSektor($subSektor)
-                    ->selectRaw('EXTRACT(YEAR FROM tanggal)::integer as yr,
+                    ->selectRaw('EXTRACT(YEAR FROM "tanggal")::integer as yr,
                         count(*) as cnt, sum(jumlah_peserta) as peserta,
-                        COUNT(CASE WHEN komersial = \'Komersial\' THEN 1 END) as komersil,
-                        COUNT(CASE WHEN komersial = \'Non Komersial\' THEN 1 END) as non_komersil')
-                    ->whereRaw('EXTRACT(YEAR FROM tanggal) BETWEEN ? AND ?', [(int)$yearStart, (int)$yearEnd])
-                    ->groupBy(DB::raw('EXTRACT(YEAR FROM tanggal)'))
+                        COUNT(CASE WHEN "komersial" = \'Komersial\' THEN 1 END) as komersil,
+                        COUNT(CASE WHEN "komersial" = \'Non Komersial\' THEN 1 END) as non_komersil')
+                    ->whereRaw('EXTRACT(YEAR FROM "tanggal") BETWEEN ? AND ?', [(int)$yearStart, (int)$yearEnd])
+                    ->groupBy(DB::raw('EXTRACT(YEAR FROM "tanggal")'))
                     ->get()
-                    ->keyBy('yr');
+                    ->mapWithKeys(fn($item) => [(int)$item->yr => $item]);
 
                 $labels = $events = $peserta = $komersil = $nonKom = [];
                 foreach (range($yearStart, $yearEnd) as $yr) {
                     $labels[]   = (string) $yr;
-                    $row        = $rows->get($yr);
+                    $row        = $rows->get((int)$yr);
                     $events[]   = (int) ($row?->cnt          ?? 0);
                     $peserta[]  = (int) ($row?->peserta      ?? 0);
                     $komersil[] = (int) ($row?->komersil     ?? 0);
@@ -89,16 +89,16 @@ class EventsChart extends Widget
             // ── MONTHLY view (single year) ───────────────────────────────────
             } else {
                 $rows = Event::valid()
-                    ->byYear($yearEnd)
+                    ->whereRaw('EXTRACT(YEAR FROM "tanggal") = ?', [(int)$yearEnd])
                     ->bySubSektor($subSektor)
                     ->primary()
-                    ->selectRaw('EXTRACT(MONTH FROM tanggal)::integer as mo,
+                    ->selectRaw('EXTRACT(MONTH FROM "tanggal")::integer as mo,
                         count(*) as cnt, sum(jumlah_peserta) as peserta,
-                        COUNT(CASE WHEN komersial = \'Komersial\' THEN 1 END) as komersil,
-                        COUNT(CASE WHEN komersial = \'Non Komersial\' THEN 1 END) as non_komersil')
-                    ->groupBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
+                        COUNT(CASE WHEN "komersial" = \'Komersial\' THEN 1 END) as komersil,
+                        COUNT(CASE WHEN "komersial" = \'Non Komersial\' THEN 1 END) as non_komersil')
+                    ->groupBy(DB::raw('EXTRACT(MONTH FROM "tanggal")'))
                     ->get()
-                    ->keyBy('mo');
+                    ->mapWithKeys(fn($item) => [(int)$item->mo => $item]);
 
                 $monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
                 $labels = $events = $peserta = $komersil = $nonKom = [];

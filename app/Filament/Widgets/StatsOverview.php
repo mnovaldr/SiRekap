@@ -23,7 +23,7 @@ class StatsOverview extends BaseWidget
     {
         [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
 
-        $cacheKey = "stats_overview_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}";
+        $cacheKey = "stats_overview_v2_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}";
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
             $query     = Event::valid()
@@ -34,10 +34,10 @@ class StatsOverview extends BaseWidget
             $baseQuery = (clone $query);
 
             $statsRow = $query->selectRaw('
-                COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_events,
-                SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_peserta,
-                COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN nama_organisasi END) as ekraf_unik,
-                COUNT(CASE WHEN is_primary_row = true AND komersial = \'Non Komersial\' THEN 1 END) as total_non_komersial
+                COUNT(CASE WHEN "is_primary_row" = true THEN 1 END) as total_events,
+                SUM(CASE WHEN "is_primary_row" = true THEN "jumlah_peserta" ELSE 0 END) as total_peserta,
+                COUNT(DISTINCT CASE WHEN "nama_organisasi" IS NOT NULL AND "nama_organisasi" != \'\' THEN "nama_organisasi" END) as ekraf_unik,
+                COUNT(CASE WHEN "is_primary_row" = true AND "komersial" = \'Non Komersial\' THEN 1 END) as total_non_komersial
             ')->first();
 
             $ekrafUnik = $statsRow->ekraf_unik ?? 0;
