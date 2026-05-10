@@ -30,7 +30,7 @@ class EventsChart extends Widget
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
             // ── DAILY view (month selected) ─────────────────────────────────
             if ($month) {
-                $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int) $month, (int) $yearEnd);
+                $daysInMonth = (int) date('t', strtotime("{$yearEnd}-{$month}-01"));
 
                 $eventData = Event::valid()
                     ->whereRaw('EXTRACT(YEAR FROM "tanggal") = ?', [(int)$yearEnd])
