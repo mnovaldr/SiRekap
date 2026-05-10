@@ -21,7 +21,7 @@ class RekapBulanan extends Page
 
     public function mount(): void
     {
-        $this->selectedYear = (string) (Event::whereNotNull('tanggal')->max(DB::raw('EXTRACT(YEAR FROM tanggal)')) ?? date('Y'));
+        $this->selectedYear = (string) (Event::whereNotNull('tanggal')->max(DB::raw('EXTRACT(YEAR FROM "tanggal")')) ?? date('Y'));
         $this->loadRekap();
     }
 
@@ -39,14 +39,14 @@ class RekapBulanan extends Page
         ];
 
         // Ambil semua data dalam satu query agregasi (Sangat Cepat!)
-        $stats = Event::byYear($this->selectedYear)
-            ->where('status_data', '!=', 'Duplikat')
+        $stats = Event::valid()
+            ->whereRaw('EXTRACT(YEAR FROM "tanggal") = ?', [(int)$this->selectedYear])
             ->selectRaw("
                 bulan,
-                COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event,
-                SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_peserta,
-                COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != '' THEN UPPER(TRIM(nama_organisasi)) END) as ekraf_unik,
-                COUNT(CASE WHEN is_primary_row = true AND komersial = 'Non Komersial' THEN 1 END) as non_komersial
+                COUNT(CASE WHEN \"is_primary_row\" = true THEN 1 END) as total_event,
+                SUM(CASE WHEN \"is_primary_row\" = true THEN \"jumlah_peserta\" ELSE 0 END) as total_peserta,
+                COUNT(DISTINCT CASE WHEN \"nama_organisasi\" IS NOT NULL AND \"nama_organisasi\" != '' THEN UPPER(TRIM(\"nama_organisasi\")) END) as ekraf_unik,
+                COUNT(CASE WHEN \"is_primary_row\" = true AND \"komersial\" = 'Non Komersial' THEN 1 END) as non_komersial
             ")
             ->groupBy('bulan')
             ->get()
@@ -56,6 +56,7 @@ class RekapBulanan extends Page
         $grandTotal     = 0;
         $grandPeserta   = 0;
         $grandNonKom    = 0;
+        $grandEkrafUnik = 0;
 
         foreach ($monthsMap as $num => $name) {
             $data = $stats->get($name);
@@ -75,15 +76,17 @@ class RekapBulanan extends Page
                 'pct_non_kom'    => $pctNonKom,
             ];
 
-            $grandTotal   += $totalEvent;
-            $grandPeserta += $totalPeserta;
-            $grandNonKom  += $nonKom;
+            $grandTotal     += $totalEvent;
+            $grandPeserta   += $totalPeserta;
+            $grandNonKom    += $nonKom;
+            $grandEkrafUnik += $ekrafUnik;
         }
 
         $this->rekap  = $rekap;
         $this->totals = [
             'total_event'   => $grandTotal,
             'total_peserta' => $grandPeserta,
+            'ekraf_unik'    => $grandEkrafUnik,
             'non_komersial' => $grandNonKom,
             'pct_non_kom'   => $grandTotal > 0 ? round($grandNonKom / $grandTotal * 100) : 0,
         ];

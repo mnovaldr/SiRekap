@@ -24,9 +24,9 @@ class AnalitikEkraf extends Page
     public function filtersForm(Form $form): Form
     {
         $availableYears = \Illuminate\Support\Facades\Cache::remember(
-            'analitik_available_years',
+            'analitik_available_years_v2',
             now()->addMinutes(30),
-            fn () => Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
+            fn () => Event::selectRaw('EXTRACT(YEAR FROM "tanggal")::integer as year')
                 ->whereNotNull('tanggal')
                 ->distinct()
                 ->orderBy('year', 'desc')
@@ -58,9 +58,9 @@ class AnalitikEkraf extends Page
 
         if (empty($year)) {
             $availableYears = \Illuminate\Support\Facades\Cache::remember(
-                'analitik_available_years',
+                'analitik_available_years_v2',
                 now()->addMinutes(30),
-                fn () => Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
+                fn () => Event::selectRaw('EXTRACT(YEAR FROM "tanggal")::integer as year')
                     ->whereNotNull('tanggal')
                     ->distinct()
                     ->orderBy('year', 'desc')
@@ -133,7 +133,7 @@ class AnalitikEkraf extends Page
 
         // (Opsional) Jika ingin menampilkan angka unik murni (2.293) bisa gunakan ini:
         $pureUniquePelaku = $baseQuery()
-            ->select(DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN nama_organisasi END) as total'))
+            ->select(DB::raw('COUNT(DISTINCT CASE WHEN "nama_organisasi" IS NOT NULL AND "nama_organisasi" != \'\' THEN "nama_organisasi" END) as total'))
             ->value('total') ?? 0;
 
         return [

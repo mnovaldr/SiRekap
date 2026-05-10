@@ -225,7 +225,7 @@
                                 {{ number_format($totals['total_peserta']) }}
                             </td>
                             <td class="text-center font-bold text-gray-600 dark:text-gray-400 tabular-nums">
-                                {{ number_format($rekap[0]['ekraf_unik'] ?? 0) /* Placeholder for unique actors if sum isn\'t appropriate */ }}
+                                {{ number_format($totals['ekraf_unik'] ?? 0) }}
                             </td>
                             <td class="text-right">
                                 <span class="text-base font-black text-primary-600 dark:text-primary-400 tabular-nums">{{ $totals['pct_non_kom'] }}%</span>

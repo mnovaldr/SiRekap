@@ -3,9 +3,9 @@
 
     // Periode data yang tersedia
     $yearRange = Event::selectRaw('
-        MIN(EXTRACT(YEAR FROM tanggal))::integer as min_year,
-        MAX(EXTRACT(YEAR FROM tanggal))::integer as max_year,
-        COUNT(DISTINCT EXTRACT(YEAR FROM tanggal)::integer) as total_years
+        MIN(EXTRACT(YEAR FROM "tanggal"))::integer as min_year,
+        MAX(EXTRACT(YEAR FROM "tanggal"))::integer as max_year,
+        COUNT(DISTINCT EXTRACT(YEAR FROM "tanggal")::integer) as total_years
     ')->whereNotNull('tanggal')->first();
 
     $minYear = $yearRange?->min_year ?? date('Y');

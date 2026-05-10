@@ -36,7 +36,7 @@ class RekapBulananWidget extends BaseWidget
         return $table
             ->query(
                 Event::select(
-                    DB::raw('CASE EXTRACT(MONTH FROM tanggal)
+                    DB::raw('CASE EXTRACT(MONTH FROM "tanggal")
                         WHEN 1 THEN \'Januari\'
                         WHEN 2 THEN \'Februari\'
                         WHEN 3 THEN \'Maret\'
@@ -50,16 +50,16 @@ class RekapBulananWidget extends BaseWidget
                         WHEN 11 THEN \'November\'
                         WHEN 12 THEN \'Desember\'
                     END as bulan'),
-                    DB::raw('COUNT(CASE WHEN is_primary_row = true THEN 1 END) as total_event'),
-                    DB::raw('SUM(CASE WHEN is_primary_row = true THEN jumlah_peserta ELSE 0 END) as total_peserta'),
-                    DB::raw('COUNT(DISTINCT CASE WHEN nama_organisasi IS NOT NULL AND nama_organisasi != \'\' THEN nama_organisasi END) as total_organisasi')
+                    DB::raw('COUNT(CASE WHEN "is_primary_row" = true THEN 1 END) as total_event'),
+                    DB::raw('SUM(CASE WHEN "is_primary_row" = true THEN "jumlah_peserta" ELSE 0 END) as total_peserta'),
+                    DB::raw('COUNT(DISTINCT CASE WHEN "nama_organisasi" IS NOT NULL AND "nama_organisasi" != \'\' THEN "nama_organisasi" END) as total_organisasi')
                 )
                 ->valid()
                 ->byYearRange($yearStart, $yearEnd)
                 ->bySubSektor($subSektor)
                 ->whereNotNull('tanggal')
-                ->groupBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
-                ->orderBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
+                ->groupBy(DB::raw('EXTRACT(MONTH FROM "tanggal")'))
+                ->orderBy(DB::raw('EXTRACT(MONTH FROM "tanggal")'))
             )
             ->columns([
                 Tables\Columns\TextColumn::make('bulan')
