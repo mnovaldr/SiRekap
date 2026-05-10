@@ -67,13 +67,33 @@ class AdminPanelProvider extends PanelProvider
                         .si-processing { cursor: wait !important; }
                         .si-processing a, 
                         .si-processing button { pointer-events: none !important; opacity: 0.7 !important; }
-                        [data-si-loading="true"] { pointer-events: none !important; opacity: 0.6 !important; position: relative; }
+                        
+                        [data-si-loading="true"] { 
+                            pointer-events: none !important; 
+                            opacity: 0.8 !important; 
+                            position: relative !important; 
+                            color: transparent !important;
+                            min-width: 40px;
+                        }
                         [data-si-loading="true"]::after {
                             content: "";
                             position: absolute;
-                            inset: 0;
-                            background: rgba(255,255,255,0.1);
-                            cursor: wait;
+                            top: 50%;
+                            left: 50%;
+                            width: 1.2rem;
+                            height: 1.2rem;
+                            margin-top: -0.6rem;
+                            margin-left: -0.6rem;
+                            border: 2px solid rgba(255,255,255,0.3);
+                            border-top-color: currentColor;
+                            border-radius: 50%;
+                            animation: si-spin 0.6s linear infinite;
+                            z-index: 10;
+                        }
+                        .si-btn-cancel[data-si-loading="true"]::after { border-top-color: #475569; }
+                        
+                        @keyframes si-spin {
+                            to { transform: rotate(360deg); }
                         }
 
                         /* ===== WIDGET SKELETON LOADING ===== */
@@ -253,7 +273,7 @@ class AdminPanelProvider extends PanelProvider
                                     // Remove individual button locks
                                     document.querySelectorAll("[data-si-loading]").forEach(el => {
                                         el.removeAttribute("data-si-loading");
-                                        el.disabled = false;
+                                        if (el.tagName === "BUTTON") el.disabled = false;
                                     });
                                 }, 700);
                             }
@@ -272,14 +292,19 @@ class AdminPanelProvider extends PanelProvider
 
                             // Global Click Protector
                             document.addEventListener("click", function(e) {
+                                const trigger = e.target.closest("a, button");
+                                if (!trigger) return;
+
                                 if (window.siProcessing) {
-                                    // If it is a link or button, prevent it
-                                    const trigger = e.target.closest("a, button");
-                                    if (trigger) {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        return false;
-                                    }
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    return false;
+                                }
+
+                                // Auto-trigger processing for regular navigation links and non-ajax buttons
+                                if (trigger.tagName === "A" && trigger.href && !trigger.href.includes("#") && !trigger.getAttribute("target") && !trigger.hasAttribute("wire:click") && !trigger.hasAttribute("wire:navigate")) {
+                                    startBar();
+                                    trigger.setAttribute("data-si-loading", "true");
                                 }
                             }, true);
 
@@ -318,8 +343,19 @@ class AdminPanelProvider extends PanelProvider
                                     mConfirm.className = "si-btn " + (type === "danger" ? "si-btn-confirm" : "si-btn-primary");
                                     mConfirm.textContent = confirmText;
                                     
+                                    // Reset buttons
+                                    mConfirm.disabled = false;
+                                    mConfirm.removeAttribute("data-si-loading");
+                                    mCancel.disabled = false;
+                                    
                                     const onConfirm = () => {
-                                        modal.classList.remove("show");
+                                        mConfirm.setAttribute("data-si-loading", "true");
+                                        mConfirm.disabled = true;
+                                        mCancel.disabled = true;
+                                        
+                                        // Delay closing modal slightly if it's a redirect to show loading
+                                        setTimeout(() => modal.classList.remove("show"), 400);
+                                        
                                         mConfirm.removeEventListener("click", onConfirm);
                                         mCancel.removeEventListener("click", onCancel);
                                         resolve(true);
@@ -387,6 +423,7 @@ HTML
                                          );
 
                                          if (confirmed) {
+                                             if (typeof startBar === "function") startBar();
                                              window.location.href = "/admin/do-logout";
                                          }
                                      });
