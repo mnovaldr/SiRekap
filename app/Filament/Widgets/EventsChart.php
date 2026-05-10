@@ -15,7 +15,8 @@ class EventsChart extends Widget
     use InteractsWithPageFilters;
     use ResolvesYearFilter;
 
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
+
     protected static ?int $sort = 2;
     protected int | string | array $columnSpan = 'full';
     protected static string $view = 'filament.widgets.events-chart';

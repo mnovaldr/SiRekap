@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Cache;
 
 class ActivityStatsWidget extends BaseWidget
 {
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
+
 
     protected static ?int $sort = 9;
 
