@@ -18,8 +18,30 @@ return Application::configure(basePath: dirname(__DIR__))
         // $middleware->append(\App\Http\Middleware\OptimizeResponse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Jika CSRF token expired (misal tab dibuka lama), redirect ke login
+        // Tangani CSRF token mismatch (error 419) - redirect ke login tanpa menampilkan halaman error
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            // Invalidate session yang bermasalah dan buat token baru
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            // Livewire request → kembalikan JSON agar Livewire redirect ke login
+            if ($request->hasHeader('X-Livewire')) {
+                return response()->json([
+                    'effects' => ['redirect' => '/admin/login?logged_out=1'],
+                ]);
+            }
+
+            // AJAX / JSON request biasa
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Sesi Anda telah berakhir. Silakan login kembali.',
+                    'redirect' => '/admin/login?logged_out=1',
+                ], 419);
+            }
+
+            // Request biasa (form submit, navigasi) → redirect ke login
             return redirect('/admin/login?logged_out=1');
         });
     })->create();

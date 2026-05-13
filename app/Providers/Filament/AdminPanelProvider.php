@@ -9,6 +9,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Enums\ThemeMode;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -552,6 +553,7 @@ HTML
             ->darkModeBrandLogo('/images/logo-white.png')
             ->brandLogoHeight('3rem')
             ->favicon('/favicon.png')
+            ->defaultThemeMode(ThemeMode::Light)
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications();
     }
