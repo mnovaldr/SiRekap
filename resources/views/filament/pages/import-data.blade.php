@@ -1,8 +1,8 @@
-<x-filament-panels::page>
+﻿<x-filament-panels::page>
 <div class="import-wrap space-y-8 pb-10">
 
     <style>
-    /* ── Import Design System ── */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ Import Design System Ã¢â€â‚¬Ã¢â€â‚¬ */
     .import-wrap { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
     
     /* Cards */
@@ -184,6 +184,192 @@
         transform: scale(1.01);
         box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.1);
     }
+
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ Step 2: Stat Cards New Style Ã¢â€â‚¬Ã¢â€â‚¬ */
+    .stat-card-v2 {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.3s ease;
+        min-height: 140px;
+    }
+    .dark .stat-card-v2 { background: #1f2937; border-color: #374151; }
+    .stat-card-v2:hover { box-shadow: 0 12px 24px -8px rgba(0,0,0,0.1); }
+    .stat-card-v2 .sv2-label {
+        font-size: 0.65rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        color: #6b7280;
+    }
+    .stat-card-v2 .sv2-value {
+        font-size: 2.5rem; font-weight: 800;
+        line-height: 1; letter-spacing: -0.04em;
+        color: #111827;
+        margin-top: 0.5rem;
+    }
+    .dark .stat-card-v2 .sv2-value { color: #f9fafb; }
+    .stat-card-v2.success { border-color: #a7f3d0; }
+    .stat-card-v2.success .sv2-label { color: #059669; }
+    .stat-card-v2.success .sv2-value { color: #059669; }
+    .stat-card-v2.danger  { border-color: #fecaca; }
+    .stat-card-v2.danger  .sv2-label { color: #dc2626; }
+    .stat-card-v2.danger  .sv2-value { color: #dc2626; }
+    .sv2-mono { font-size: 0.6rem; color: #9ca3af; font-family: monospace; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.4rem; }
+    .sv2-bar { height: 4px; border-radius: 2px; background: #10b981; margin-top: 0.75rem; width: 75%; }
+
+    /* Alert Card (Perlu Review) */
+    .alert-card {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .dark .alert-card { background: rgba(154,52,18,0.15); border-color: rgba(154,52,18,0.4); }
+    .alert-card-title { font-size: 0.875rem; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .dark .alert-card-title { color: #f9fafb; }
+    .alert-card-icon { width: 24px; height: 24px; background: #f97316; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.875rem; flex-shrink: 0; }
+    .alert-card-body { font-size: 0.75rem; color: #374151; line-height: 1.6; }
+    .dark .alert-card-body { color: #d1d5db; }
+    .alert-progress-bar { margin-top: 1rem; }
+    .alert-progress-label { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 700; color: #374151; margin-bottom: 4px; }
+    .dark .alert-progress-label { color: #d1d5db; }
+    .alert-progress-track { height: 6px; background: #fed7aa; border-radius: 3px; overflow: hidden; }
+    .dark .alert-progress-track { background: rgba(154,52,18,0.3); }
+    .alert-progress-fill { height: 100%; background: #c2410c; border-radius: 3px; }
+
+    /* Column Mapping List */
+    .col-map-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem; }
+    .col-map-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.875rem 1rem;
+        border-radius: 0.875rem;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        transition: all 0.2s ease;
+    }
+    .dark .col-map-row { background: #1f2937; border-color: #374151; }
+    .col-map-row.missing { border-color: #fecaca; background: #fff5f5; }
+    .dark .col-map-row.missing { background: rgba(127,29,29,0.1); border-color: rgba(127,29,29,0.3); }
+    .col-map-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        background: #eef2ff; color: #4338ca;
+        flex-shrink: 0;
+    }
+    .col-map-row.missing .col-map-icon { background: #fee2e2; color: #dc2626; }
+    .col-map-info { display: flex; flex-direction: column; gap: 2px; margin-left: 12px; flex: 1; }
+    .col-map-name { font-size: 0.875rem; font-weight: 700; color: #111827; }
+    .dark .col-map-name { color: #f9fafb; }
+    .col-map-sub { font-size: 0.7rem; color: #6b7280; }
+    .col-map-right { display: flex; align-items: center; gap: 10px; }
+    .col-map-mapped { font-size: 0.7rem; font-style: italic; color: #9ca3af; font-family: monospace; }
+    .badge-sesuai { background: #d1fae5; color: #065f46; padding: 0.2rem 0.65rem; border-radius: 99px; font-size: 0.65rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .badge-missing { background: #fee2e2; color: #991b1b; padding: 0.2rem 0.65rem; border-radius: 99px; font-size: 0.65rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-manual { background: #fff; border: 1px solid #fca5a5; color: #dc2626; font-size: 0.7rem; font-weight: 600; padding: 0.3rem 0.75rem; border-radius: 0.5rem; cursor: default; }
+    .dark .btn-manual { background: #1f2937; border-color: rgba(220,38,38,0.5); }
+    
+    /* Step 2 action panel */
+    .action-panel { display: flex; flex-direction: column; gap: 0.75rem; }
+    .btn-primary-xl {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; padding: 1rem 1.5rem;
+        background: #4338ca; color: #fff; font-weight: 700; font-size: 1rem;
+        border-radius: 1rem; border: none; cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-primary-xl:hover { background: #3730a3; }
+    .btn-outline-xl {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; padding: 1rem 1.5rem;
+        background: #fff; color: #374151; font-weight: 700; font-size: 0.9rem;
+        border-radius: 1rem; border: 2px solid #e5e7eb; cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .dark .btn-outline-xl { background: #1f2937; color: #d1d5db; border-color: #374151; }
+    .btn-outline-xl:hover { border-color: #6b7280; }
+    .hint-box {
+        border: 1px dashed #d1d5db; border-radius: 1rem; padding: 1rem;
+        display: flex; gap: 10px; font-size: 0.75rem; color: #6b7280;
+        background: #f9fafb;
+    }
+    .dark .hint-box { background: rgba(31,41,55,0.4); border-color: #374151; color: #9ca3af; }
+
+    /* Step 3: Debug Info Bar */
+    .debug-bar {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 1.25rem;
+        padding: 1rem 1.25rem;
+    }
+    .dark .debug-bar { background: #1f2937; border-color: #374151; }
+    .debug-bar-title { display: flex; align-items: center; gap: 6px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 0.875rem; }
+    .debug-cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+    @media (max-width: 640px) { .debug-cells { grid-template-columns: repeat(2, 1fr); } }
+    .debug-cell {
+        background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+    .dark .debug-cell { background: #111827; border-color: #374151; }
+    .debug-cell-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 0.35rem; }
+    .debug-cell-value { font-size: 1rem; font-weight: 700; color: #111827; }
+    .dark .debug-cell-value { color: #f9fafb; }
+    .debug-cell-value.active { color: #10b981; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; }
+
+    /* Step 3: Table preview header */
+    .preview-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex; align-items: center; justify-content: space-between;
+        background: #fff;
+    }
+    .dark .preview-header { background: #1f2937; border-color: #374151; }
+    .preview-title { font-size: 1.125rem; font-weight: 800; color: #111827; letter-spacing: -0.02em; }
+    .dark .preview-title { color: #f9fafb; }
+    .preview-sub { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+    .pager { display: flex; align-items: center; gap: 12px; }
+    .pager-label { font-size: 0.875rem; font-weight: 600; color: #374151; }
+    .dark .pager-label { color: #d1d5db; }
+    .pager-btn {
+        width: 34px; height: 34px; border-radius: 8px;
+        border: 1px solid #e5e7eb; background: #fff;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.15s ease; color: #374151;
+    }
+    .dark .pager-btn { background: #374151; border-color: #4b5563; color: #d1d5db; }
+    .pager-btn:hover { background: #f3f4f6; }
+    .dark .pager-btn:hover { background: #4b5563; }
+    .pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Step 3: Status pill badges */
+    .pill-valid   { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; padding: 3px 12px; border-radius: 99px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+    .pill-review  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 3px 12px; border-radius: 99px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+    .pill-duplikat { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 3px 12px; border-radius: 99px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+    .pill-default  { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; padding: 3px 12px; border-radius: 99px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+
+    /* Step 3: Bottom info cards */
+    .info-card {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 1.5rem;
+        padding: 1.5rem; display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .dark .info-card { background: #1f2937; border-color: #374151; }
+    .info-card-icon {
+        width: 48px; height: 48px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .info-card-title { font-size: 0.875rem; font-weight: 700; color: #111827; margin-bottom: 4px; }
+    .dark .info-card-title { color: #f9fafb; }
+    .info-card-body { font-size: 0.75rem; color: #6b7280; line-height: 1.6; }
+    
+    /* Matched/Missing badges in header */
+    .badge-matched { background: #eef2ff; color: #4338ca; padding: 3px 10px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; }
+    .badge-cols-missing { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; }
     </style>
 
     {{-- HEADER & STEPS --}}
@@ -350,198 +536,301 @@
 
     {{-- STEP 2: VALIDATION --}}
     @if($currentStep === 2)
-    <div class="space-y-6 animate-fade-in">
-        {{-- Stats Grid --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <div class="stat-card">
-                <div class="icon-wrap bg-indigo-50 dark:bg-indigo-900/20">
-                    <x-heroicon-o-table-cells class="w-5 h-5 text-indigo-600" />
+    <div style="display:flex;flex-direction:column;gap:1.5rem;" class="animate-fade-in">
+
+        {{-- Stats Row + Alert --}}
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:1.25rem;align-items:stretch;">
+
+            {{-- Total Baris --}}
+            <div class="stat-card-v2">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div class="sv2-label">Total Baris</div>
+                    <x-heroicon-o-bars-4 style="width:18px;height:18px;color:#9ca3af;" />
                 </div>
-                <div class="stat-value">{{ number_format($totalRows) }}</div>
-                <div class="stat-label">Total Baris</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon-wrap bg-emerald-50 dark:bg-emerald-900/20">
-                    <x-heroicon-o-check-circle class="w-5 h-5 text-emerald-600" />
+                <div>
+                    <div class="sv2-value">{{ number_format($totalRows) }}</div>
+                    <div class="sv2-mono">Entries Found</div>
                 </div>
-                <div class="stat-value">{{ number_format($validRows + $reviewRows) }}</div>
-                <div class="stat-label">Siap Import</div>
             </div>
-            <div class="stat-card">
-                <div class="icon-wrap bg-red-50 dark:bg-red-900/20">
-                    <x-heroicon-o-x-circle class="w-5 h-5 text-red-600" />
+
+            {{-- Siap Import --}}
+            <div class="stat-card-v2 success">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div class="sv2-label">Siap Import</div>
+                    <div style="width:22px;height:22px;border-radius:50%;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;">
+                        <x-heroicon-s-check style="width:14px;height:14px;color:#10b981;" />
+                    </div>
                 </div>
-                <div class="stat-value">{{ number_format($duplikatRows) }}</div>
-                <div class="stat-label">Duplikat</div>
+                <div>
+                    <div class="sv2-value">{{ number_format($validRows + $reviewRows) }}</div>
+                    <div class="sv2-bar"></div>
+                </div>
             </div>
+
+            {{-- Duplikat --}}
+            <div class="stat-card-v2 danger">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div class="sv2-label">Duplikat</div>
+                    <x-heroicon-o-exclamation-triangle style="width:18px;height:18px;color:#dc2626;" />
+                </div>
+                <div>
+                    <div class="sv2-value">{{ number_format($duplikatRows) }}</div>
+                    <div class="sv2-mono" style="color:#ef4444;">Requires Action</div>
+                </div>
+            </div>
+
+            {{-- Perlu Review Alert --}}
+            <div class="alert-card" style="min-width:240px;">
+                <div>
+                    <div class="alert-card-title">
+                        <div class="alert-card-icon">!</div>
+                        Perlu Review
+                    </div>
+                    <div class="alert-card-body">
+                        Ditemukan <strong>{{ number_format($duplikatRows) }}</strong> data duplikat dan beberapa data perlu ditinjau. Pastikan semua kolom wajib terisi sebelum melanjutkan.
+                    </div>
+                </div>
+                <div class="alert-progress-bar">
+                    <div class="alert-progress-label">
+                        <span>Validitas Data</span>
+                        <span>{{ $totalRows > 0 ? round((($validRows + $reviewRows) / $totalRows) * 100) : 0 }}%</span>
+                    </div>
+                    <div class="alert-progress-track">
+                        <div class="alert-progress-fill" style="width:{{ $totalRows > 0 ? (($validRows + $reviewRows) / $totalRows) * 100 : 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {{-- Column Discovery --}}
-            <div class="xl:col-span-2 card-premium overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Struktur Kolom Terdeteksi</h3>
-                        <p class="text-xs text-gray-500 mt-0.5">Sistem mendeteksi kolom berikut dari file Anda</p>
-                    </div>
-                    <span class="badge-premium badge-primary text-xs">{{ count($foundColumns) }} Kolom</span>
-                </div>
-                <div class="p-6">
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($foundColumns as $col)
-                            @php 
-                                $isImportant = in_array(strtolower($col), [
-                                    'nama organisasi', 'bidang', 'jenis kegiatan', 
-                                    'judul kegiatan', 'tanggal', 'jumlah peserta'
-                                ]); 
-                            @endphp
-                            <span class="badge-premium {{ $isImportant ? 'badge-primary' : 'badge-secondary' }} py-1.5 px-3 rounded-lg text-xs">
-                                {{ $col }}
-                            </span>
-                        @endforeach
-                    </div>
+        {{-- Column Mapping + Action --}}
+        <div style="display:grid;grid-template-columns:1fr auto;gap:1.25rem;align-items:start;">
 
-                    {{-- Mapping Status --}}
-                    <div class="mt-6 p-5 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 mb-4">Pemetaan Kolom Wajib</h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            @php
-                                $required = [
-                                    'Organisasi' => ['nama organisasi', 'organisasi'],
-                                    'Bidang' => ['bidang'],
-                                    'Jenis Kegiatan' => ['jenis kegiatan'],
-                                    'Judul Kegiatan' => ['judul kegiatan', 'event'],
-                                    'Tanggal' => ['tanggal'],
-                                    'Jumlah Peserta' => ['jumlah peserta'],
-                                ];
-                                $foundLower = array_map('strtolower', $foundColumns);
-                            @endphp
-                            @foreach($required as $label => $keys)
-                                @php $isMatched = !empty(array_intersect($keys, $foundLower)); @endphp
-                                <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-white/50 dark:bg-gray-800/30">
-                                    <span class="text-sm font-medium {{ $isMatched ? 'text-gray-700 dark:text-gray-300' : 'text-red-600 dark:text-red-400' }}">
-                                        {{ $label }}
-                                    </span>
-                                    @if($isMatched)
-                                        <x-heroicon-m-check-circle class="w-5 h-5 text-emerald-500" />
-                                    @else
-                                        <span class="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                                            <x-heroicon-m-x-circle class="w-4 h-4" /> Tidak ditemukan
-                                        </span>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
+            {{-- Column Discovery Panel --}}
+            <div class="card-premium" style="padding:1.5rem;">
+                @php
+                    $required = [
+                        'Nama Organisasi'    => ['nama organisasi', 'organisasi', 'komunitas'],
+                        'Bidang'             => ['bidang'],
+                        'Jenis Kegiatan'     => ['jenis kegiatan', 'kegiatan'],
+                        'Judul Kegiatan'     => ['judul kegiatan', 'judul kegiatan/event', 'judul', 'event'],
+                        'Tanggal Pelaksanaan'=> ['tanggal', 'tanggal kegiatan', 'tgl'],
+                        'Lokasi'             => ['lokasi', 'ruangan'],
+                        'Jumlah Peserta'     => ['jumlah peserta', 'peserta'],
+                    ];
+                    $foundLower   = array_map('strtolower', $foundColumns);
+                    $matchedCount = 0;
+                    foreach ($required as $keys) {
+                        foreach ($keys as $key) {
+                            foreach ($foundLower as $fc) {
+                                if (str_contains($fc, $key) || str_contains($key, $fc)) { $matchedCount++; break 2; }
+                            }
+                        }
+                    }
+                    $missingCount = count($required) - $matchedCount;
+                @endphp
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                    <div>
+                        <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0;">Struktur Kolom Terdeteksi</h3>
+                        <p style="font-size:0.75rem;color:#6b7280;margin-top:3px;">Sistem mendeteksi mapping kolom berikut dari file Anda</p>
                     </div>
+                    <div style="display:flex;gap:6px;">
+                        <span class="badge-matched">{{ $matchedCount }} Matched</span>
+                        @if($missingCount > 0)
+                        <span class="badge-cols-missing">{{ $missingCount }} Missing</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="col-map-list">
+                    @foreach($required as $label => $keys)
+                        @php
+                            $isMatched  = false;
+                            $matchedCol = '';
+                            $icons = [
+                                'Nama Organisasi'     => 'heroicon-o-building-office',
+                                'Bidang'              => 'heroicon-o-squares-2x2',
+                                'Tanggal Pelaksanaan' => 'heroicon-o-calendar-days',
+                                'Jumlah Peserta'      => 'heroicon-o-users',
+                                'Lokasi'              => 'heroicon-o-map-pin',
+                                'Jenis Kegiatan'      => 'heroicon-o-tag',
+                                'Judul Kegiatan'      => 'heroicon-o-document-text',
+                            ];
+                            $iconComp = $icons[$label] ?? 'heroicon-o-document-text';
+                            foreach ($keys as $key) {
+                                foreach ($foundLower as $idx => $fc) {
+                                    if (str_contains($fc, $key) || str_contains($key, $fc)) {
+                                        $isMatched = true;
+                                        $matchedCol = $foundColumns[$idx];
+                                        break 2;
+                                    }
+                                }
+                            }
+                            $isOptional = in_array($label, ['Lokasi','Jumlah Peserta']);
+                        @endphp
+                        <div class="col-map-row {{ !$isMatched ? 'missing' : '' }}">
+                            <div style="display:flex;align-items:center;flex:1;">
+                                <div class="col-map-icon">
+                                    <x-dynamic-component :component="$iconComp" style="width:18px;height:18px;" />
+                                </div>
+                                <div class="col-map-info">
+                                    <div class="col-map-name">{{ $label }}</div>
+                                    <div class="col-map-sub">{{ $isOptional ? 'Opsional' : 'Wajib diisi' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-map-right">
+                                @if($isMatched)
+                                    <span class="col-map-mapped">Mapped to "{{ $matchedCol }}"</span>
+                                    <span class="badge-sesuai">
+                                        <x-heroicon-s-check-circle style="width:12px;height:12px;" /> Sesuai
+                                    </span>
+                                @else
+                                    <span class="btn-manual">Pilih Kolom Manually</span>
+                                    <span class="badge-missing">
+                                        <x-heroicon-s-x-circle style="width:12px;height:12px;" /> Missing
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
             {{-- Action Panel --}}
-            <div class="space-y-5">
-                <div class="card-premium p-6">
-                    <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl mb-6">
-                        <h4 class="text-sm font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2 mb-2">
-                            <x-heroicon-s-exclamation-triangle class="w-4 h-4" />
-                            Perlu Review
-                        </h4>
-                        <p class="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-                            Terdapat <strong>{{ number_format($reviewRows) }} data</strong> yang perlu ditinjau. Data akan tetap diimport dengan status review.
-                        </p>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500 font-medium">Validitas Data</span>
-                            <span class="font-bold text-indigo-600">{{ round(($validRows / max(1, $totalRows)) * 100) }}%</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                            <div class="h-full bg-indigo-600 rounded-full transition-all" style="width: {{ ($validRows / max(1, $totalRows)) * 100 }}%"></div>
-                        </div>
-                    </div>
-
-                    <div class="mt-8 space-y-3">
-                        <x-filament::button wire:click="$set('currentStep', 3)" wire:loading.attr="disabled" class="w-full rounded-xl py-2.5 shadow-md" icon="heroicon-o-arrow-right" icon-position="after">
-                            Lanjutkan ke Pratinjau
-                        </x-filament::button>
-                        <x-filament::button wire:click="resetImport" wire:loading.attr="disabled" color="gray" variant="outline" class="w-full rounded-xl">
-                            Unggah Ulang
-                        </x-filament::button>
-                    </div>
+            <div class="action-panel" style="min-width:260px;">
+                <button wire:click="$set('currentStep', 3)" wire:loading.attr="disabled" class="btn-primary-xl">
+                    Lanjutkan ke Pratinjau
+                    <x-heroicon-o-arrow-right style="width:18px;height:18px;" />
+                </button>
+                <button wire:click="resetImport" wire:loading.attr="disabled" class="btn-outline-xl">
+                    <x-heroicon-o-cloud-arrow-up style="width:18px;height:18px;" />
+                    Unggah Ulang File
+                </button>
+                <div class="hint-box">
+                    <x-heroicon-o-information-circle style="width:18px;height:18px;flex-shrink:0;" />
+                    <span>Format: <strong>.xlsx, .xls, .csv</strong> maks. 10MB.</span>
                 </div>
             </div>
+
         </div>
     </div>
     @endif
 
+
     {{-- STEP 3: PREVIEW TABLE --}}
     @if($currentStep === 3)
-    <div class="space-y-6 animate-fade-in">
-        <div class="card-premium overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-800/30">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pratinjau Data</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Data yang terstandardisasi sebelum disimpan</p>
+    <div style="display:flex;flex-direction:column;gap:1.5rem;" class="animate-fade-in">
+        {{-- Debug Info Bar --}}
+        <div class="debug-bar">
+            <div class="debug-bar-title">
+                <x-heroicon-o-information-circle style="width:14px;height:14px;" />
+                Debug Info
+            </div>
+            <div class="debug-cells">
+                <div class="debug-cell">
+                    <div class="debug-cell-label">Total Rows</div>
+                    <div class="debug-cell-value">{{ number_format($totalRows) }}</div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div class="text-right text-sm">
-                        <span class="font-medium text-gray-900 dark:text-white">{{ $currentPage }}</span>
-                        <span class="text-gray-400"> / {{ ceil($totalRows / $perPage) }}</span>
+                <div class="debug-cell">
+                    <div class="debug-cell-label">Session Status</div>
+                    <div class="debug-cell-value active">
+                        <span class="status-dot"></span> Active
                     </div>
-                    <div class="flex gap-1">
-                        <x-filament::button wire:click="prevPage" @disabled($currentPage === 1) wire:loading.attr="disabled" color="gray" size="sm" icon="heroicon-o-chevron-left" class="rounded-lg p-2" />
-                        <x-filament::button wire:click="nextPage" @disabled($currentPage * $perPage >= $totalRows) wire:loading.attr="disabled" color="gray" size="sm" icon="heroicon-o-chevron-right" class="rounded-lg p-2" />
+                </div>
+                <div class="debug-cell">
+                    <div class="debug-cell-label">Preview Count</div>
+                    <div class="debug-cell-value">{{ count($this->previewData) }} Items</div>
+                </div>
+                <div class="debug-cell">
+                    <div class="debug-cell-label">Data Integrity</div>
+                    <div class="debug-cell-value">Passed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-premium overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Pratinjau Data</h3>
+                    <p class="text-sm text-gray-500 mt-1">Data yang terstandardisasi sebelum disimpan</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm font-bold text-gray-700 dark:text-gray-300">
+                        {{ $currentPage }} <span class="text-gray-400 font-normal">/ {{ ceil($totalRows / $perPage) ?: 1 }}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button wire:click="prevPage" @disabled($currentPage === 1) class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                            <x-heroicon-o-chevron-left class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                        </button>
+                        <button wire:click="nextPage" @disabled($currentPage * $perPage >= $totalRows) class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                            <x-heroicon-o-chevron-right class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="perf-table">
+                <table class="perf-table w-full">
                     <thead>
                         <tr>
-                            <th>Organisasi</th>
-                            <th>Kegiatan</th>
-                            <th>Waktu & Lokasi</th>
-                            <th class="text-right">Peserta</th>
-                            <th class="text-center">Status</th>
+                            <th class="py-4">Organisasi</th>
+                            <th class="py-4">Kegiatan</th>
+                            <th class="py-4">Waktu & Lokasi</th>
+                            <th class="py-4 text-center">Peserta</th>
+                            <th class="py-4 text-center">Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse($this->previewData as $row)
-                        <tr class="{{ $row['status_data'] === 'Duplikat' ? 'opacity-60 bg-gray-50/50 dark:bg-gray-900/30' : '' }}">
-                            <td class="align-top">
-                                <div class="font-semibold text-gray-900 dark:text-white truncate max-w-[200px]">{{ $row['nama_organisasi'] ?? '-' }}</div>
-                                <div class="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">{{ $row['bidang'] ?? '-' }}</div>
-                            </td>
-                            <td class="align-top">
-                                <div class="text-gray-700 dark:text-gray-300 line-clamp-1 max-w-[220px]">{{ $row['judul_kegiatan'] ?? '-' }}</div>
-                                <div class="text-xs text-gray-400 mt-1">{{ $row['jenis_kegiatan'] ?? '-' }}</div>
-                            </td>
-                            <td class="align-top whitespace-nowrap">
-                                <div class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                                    <x-heroicon-m-calendar class="w-3.5 h-3.5 text-indigo-400" />
-                                    {{ $row['tanggal'] ?? '-' }}
+                        <tr class="group {{ ($row['status_data'] ?? '') === 'Duplikat' ? 'opacity-70 bg-gray-50/50 dark:bg-gray-900/30' : '' }}">
+                            <td class="align-top py-4">
+                                <div class="font-bold text-sm text-gray-900 dark:text-white truncate max-w-[220px]" title="{{ $row['nama_organisasi'] ?? '-' }}">
+                                    {{ Str::limit($row['nama_organisasi'] ?? '-', 35) }}
                                 </div>
-                                <div class="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                                    <x-heroicon-m-map-pin class="w-3.5 h-3.5" />
+                                <div class="text-sm text-gray-500 mt-1">{{ $row['bidang'] ?? '-' }}</div>
+                            </td>
+                            <td class="align-top py-4">
+                                <div class="font-medium text-sm text-gray-800 dark:text-gray-200 line-clamp-2 max-w-[260px]" title="{{ $row['judul_kegiatan'] ?? '-' }}">
+                                    {{ Str::limit($row['judul_kegiatan'] ?? '-', 45) }}
+                                </div>
+                                <div class="text-sm text-indigo-600 dark:text-indigo-400 mt-1">{{ $row['jenis_kegiatan'] ?? '-' }}</div>
+                            </td>
+                            <td class="align-top py-4 whitespace-nowrap">
+                                <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                    <x-heroicon-o-calendar class="w-4 h-4" />
+                                    {{ isset($row['tanggal']) ? \Carbon\Carbon::parse($row['tanggal'])->format('d M Y') : '-' }}
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-500 mt-1.5">
+                                    <x-heroicon-o-map-pin class="w-4 h-4" />
                                     {{ $row['lokasi'] ?? '-' }} (Lt.{{ $row['lantai'] ?? '-' }})
                                 </div>
                             </td>
-                            <td class="text-right align-top">
-                                <span class="font-bold text-gray-900 dark:text-white">{{ number_format($row['jumlah_peserta'] ?? 0) }}</span>
+                            <td class="text-center align-middle py-4">
+                                <span class="font-bold text-base text-gray-900 dark:text-white">{{ number_format($row['jumlah_peserta'] ?? 0) }}</span>
                             </td>
-                            <td class="text-center align-top">
-                                <span class="badge-premium 
-                                    {{ $row['status_data'] === 'Valid' ? 'badge-success' : '' }}
-                                    {{ $row['status_data'] === 'Review' ? 'badge-warning' : '' }}
-                                    {{ $row['status_data'] === 'Duplikat' ? 'badge-danger' : '' }}">
-                                    {{ $row['status_data'] ?? '-' }}
+                            <td class="text-center align-middle py-4">
+                                @php
+                                    $status = $row['status_data'] ?? 'Unknown';
+                                    $badgeStyle = match($status) {
+                                        'Valid' => 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
+                                        'Review' => 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+                                        'Duplikat' => 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+                                        default => 'bg-gray-100 text-gray-600 border-gray-200'
+                                    };
+                                @endphp
+                                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border {{ $badgeStyle }}">
+                                    {{ $status }}
                                 </span>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center py-12 text-gray-500">
-                                Tidak ada data untuk ditampilkan
+                            <td colspan="5" class="text-center py-16">
+                                <div class="flex flex-col items-center gap-3">
+                                    <x-heroicon-o-inbox class="w-12 h-12 text-gray-300" />
+                                    <p class="font-medium text-gray-500">Tidak ada data untuk ditampilkan</p>
+                                </div>
                             </td>
                         </tr>
                         @endforelse
@@ -549,19 +838,45 @@
                 </table>
             </div>
 
-            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <p class="text-xs text-gray-500">
+            <div class="px-6 py-5 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p class="text-xs font-medium text-gray-500">
                     Menampilkan {{ number_format(($currentPage - 1) * $perPage + 1) }} - {{ number_format(min($currentPage * $perPage, $totalRows)) }} 
                     dari {{ number_format($totalRows) }} data
                 </p>
                 <div class="flex items-center gap-3">
-                    <x-filament::button wire:click="resetImport" wire:loading.attr="disabled" color="gray" variant="outline" size="sm">
+                    <x-filament::button wire:click="resetImport" wire:loading.attr="disabled" color="gray" variant="outline" class="rounded-xl px-6">
                         Batalkan
                     </x-filament::button>
-                    <x-filament::button wire:click="confirmImport" wire:loading.attr="disabled" size="sm" class="bg-indigo-600 hover:bg-indigo-700">
+                    <x-filament::button wire:click="confirmImport" wire:loading.attr="disabled" class="bg-indigo-700 hover:bg-indigo-800 rounded-xl px-8 shadow-md">
                         <span wire:loading.remove wire:target="confirmImport">Import {{ number_format($validRows + $reviewRows) }} Data</span>
-                        <span wire:loading wire:target="confirmImport">Menyimpan...</span>
+                        <span wire:loading wire:target="confirmImport">Memproses...</span>
                     </x-filament::button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Info Cards (Bottom) --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div class="card-premium p-6 flex gap-4 bg-white dark:bg-gray-900">
+                <div class="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                    <x-heroicon-o-eye class="w-6 h-6 text-indigo-500" />
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Data Verification</h4>
+                    <p class="text-xs text-gray-500 leading-relaxed">
+                        We have identified {{ number_format($validRows + $reviewRows) }} records ready for import. Please review any flagged "Review" or "Duplikat" entries to ensure data accuracy before final confirmation.
+                    </p>
+                </div>
+            </div>
+            <div class="card-premium p-6 flex gap-4 bg-white dark:bg-gray-900">
+                <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                    <x-heroicon-o-shield-check class="w-6 h-6 text-emerald-500" />
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Secure Processing</h4>
+                    <p class="text-xs text-gray-500 leading-relaxed">
+                        Your data is processed through our secure encryption layer. Once confirmed, the information will be synchronized across all MCC ecosystem modules immediately.
+                    </p>
                 </div>
             </div>
         </div>

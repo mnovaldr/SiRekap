@@ -102,6 +102,10 @@ class ImportData extends Page
     {
         if (!$this->file) return;
 
+        // Cegah timeout saat memproses file Excel 2025 yang besar (12 sheet)
+        set_time_limit(600); // 10 menit max execution (naikkan dari 5 menit)
+        ini_set('memory_limit', '2048M'); // Naikkan dari 1024M ke 2048M
+
         $this->isProcessing = true;
         $this->processMessage = 'Sedang memproses file...';
         
@@ -182,19 +186,40 @@ class ImportData extends Page
             $toInsert = array_values($data);
             $now = now();
 
-            DB::transaction(function() use ($toInsert, $now) {
-                // Gunakan chunk yang lebih besar untuk cloud DB (misal 500 baris per query)
-                foreach (array_chunk($toInsert, 500) as $chunk) {
+            // Kolom yang valid di tabel events (semua kolom di $fillable + id + timestamps)
+            $allowedColumns = [
+                'id', 'nama_organisasi', 'bidang', 'jenis_kegiatan', 'sub_sektor',
+                'komersial', 'program_sdgs', 'judul_kegiatan', 'tanggal', 'bulan',
+                'lantai', 'lokasi', 'jumlah_peserta', 'is_primary_row',
+                'email', 'no_telepon', 'pic',
+                'status_data', 'catatan_review', 'key_full', 'key_short',
+                'created_at', 'updated_at',
+            ];
+
+            DB::transaction(function() use ($toInsert, $now, $allowedColumns, $service) {
+                foreach (array_chunk($toInsert, 300) as $chunk) {
                     $bulkData = [];
                     foreach ($chunk as $row) {
                         // Pastikan ID dan Timestamps terisi karena insert() tidak otomatis mengisinya
-                        $row['id'] = (string) \Illuminate\Support\Str::uuid();
+                        $row['id']         = (string) \Illuminate\Support\Str::uuid();
                         $row['created_at'] = $now;
                         $row['updated_at'] = $now;
-                        
-                        // Hapus kolom temporary jika ada
-                        unset($row['bulan_label']); 
-                        
+
+                        // Pastikan bulan terisi — fallback dari kolom tanggal jika kosong
+                        if (empty($row['bulan']) && !empty($row['tanggal'])) {
+                            $row['bulan'] = $service->getBulanIndonesia($row['tanggal']);
+                        }
+
+                        // Pastikan nilai nullable tidak berupa string kosong
+                        foreach (['program_sdgs', 'sub_sektor', 'email', 'no_telepon', 'pic', 'catatan_review'] as $nullable) {
+                            if (isset($row[$nullable]) && $row[$nullable] === '') {
+                                $row[$nullable] = null;
+                            }
+                        }
+
+                        // Hapus semua kolom yang tidak ada di tabel untuk menghindari error
+                        $row = array_intersect_key($row, array_flip($allowedColumns));
+
                         $bulkData[] = $row;
                     }
                     Event::insert($bulkData);
@@ -221,7 +246,15 @@ class ImportData extends Page
 
             Notification::make()->title('Berhasil mengimpor ' . count($toInsert) . ' data!')->success()->send();
         } catch (\Exception $e) {
-            Notification::make()->title('Error saat menyimpan: ' . $e->getMessage())->danger()->send();
+            \Log::error('Import Error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            Notification::make()
+                ->title('Error saat menyimpan')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
         }
 
         $this->isProcessing = false;

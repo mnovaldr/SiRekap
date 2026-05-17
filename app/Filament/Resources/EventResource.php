@@ -77,6 +77,14 @@ class EventResource extends Resource
                             ])
                             ->required()
                             ->default('Non Komersial'),
+                        Forms\Components\Select::make('program_sdgs')
+                            ->label('Program SDGS')
+                            ->options(array_combine(
+                                array_map(fn($i) => "SDGS $i", range(1, 17)),
+                                array_map(fn($i) => "SDGS $i", range(1, 17))
+                            ))
+                            ->nullable()
+                            ->placeholder('Tidak ada / Tidak diisi'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Waktu & Lokasi')
@@ -177,6 +185,11 @@ class EventResource extends Resource
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('bidang')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('program_sdgs')
+                    ->label('SDGS')
+                    ->badge()
+                    ->color('info')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('pic')
                     ->label('PIC')

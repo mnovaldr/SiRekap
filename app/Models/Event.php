@@ -16,6 +16,7 @@ class Event extends Model
         'jenis_kegiatan',
         'sub_sektor',
         'komersial',
+        'program_sdgs',
         'judul_kegiatan',
         'tanggal',
         'bulan',

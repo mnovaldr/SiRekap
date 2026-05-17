@@ -158,6 +158,7 @@ class ExportData extends Page
             'jenis_kegiatan',
             'sub_sektor',
             'komersial',
+            'program_sdgs',
             'judul_kegiatan',
             'tanggal',
             'bulan',
@@ -175,20 +176,21 @@ class ExportData extends Page
     {
         return [
             'nama_organisasi' => 'Organisasi',
-            'bidang' => 'Bidang',
-            'jenis_kegiatan' => 'Jenis Kegiatan',
-            'sub_sektor' => 'Sub Sektor',
-            'komersial' => 'Komersial',
-            'judul_kegiatan' => 'Judul Kegiatan',
-            'tanggal' => 'Tanggal',
-            'bulan' => 'Bulan',
-            'lantai' => 'Lantai',
-            'lokasi' => 'Lokasi',
-            'jumlah_peserta' => 'Peserta',
-            'email' => 'Email',
-            'no_telepon' => 'No Telepon',
-            'pic' => 'PIC',
-            'status_data' => 'Status',
+            'bidang'          => 'Bidang',
+            'jenis_kegiatan'  => 'Jenis Kegiatan',
+            'sub_sektor'      => 'Sub Sektor',
+            'komersial'       => 'Komersial',
+            'program_sdgs'    => 'Program SDGS',
+            'judul_kegiatan'  => 'Judul Kegiatan',
+            'tanggal'         => 'Tanggal',
+            'bulan'           => 'Bulan',
+            'lantai'          => 'Lantai',
+            'lokasi'          => 'Lokasi',
+            'jumlah_peserta'  => 'Peserta',
+            'email'           => 'Email',
+            'no_telepon'      => 'No Telepon',
+            'pic'             => 'PIC',
+            'status_data'     => 'Status',
         ];
     }
 
@@ -416,8 +418,8 @@ class ExportData extends Page
         $data = $this->getBaseQuery()->get($this->getExportColumns())->toArray();
         
         $periodLabel = $this->selectedMonth !== 'Semua'
-            ? $this->months[$this->selectedMonth] . ' ' . $this->selectedYear
-            : 'Tahun ' . $this->selectedYear;
+            ? $this->months[$this->selectedMonth] . ' ' . $this->selectedYearEnd
+            : 'Tahun ' . $this->selectedYearEnd;
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.events-pdf', [
             'data' => $data,
@@ -512,8 +514,8 @@ class ExportData extends Page
             ->toArray();
 
         $periodLabel = $this->selectedMonth !== 'Semua'
-            ? $this->months[$this->selectedMonth] . ' ' . $this->selectedYear
-            : 'Tahun ' . $this->selectedYear;
+            ? $this->months[$this->selectedMonth] . ' ' . $this->selectedYearEnd
+            : 'Tahun ' . $this->selectedYearEnd;
 
         $export = [
             'metadata' => [
@@ -521,7 +523,7 @@ class ExportData extends Page
                 'exported_at' => now()->toIso8601String(),
                 'exported_by' => auth()->user()->name ?? 'System',
                 'period' => $periodLabel,
-                'year' => $this->selectedYear,
+                'year' => $this->selectedYearEnd,
                 'month' => $this->selectedMonth !== 'Semua' ? $this->selectedMonth : null,
                 'total_records' => count($data),
                 'format_version' => '1.0',

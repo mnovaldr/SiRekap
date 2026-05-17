@@ -4,8 +4,36 @@ namespace App\Services;
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 use App\Models\Event;
 use Illuminate\Support\Facades\Log;
+
+/**
+ * Excel Import Service
+ * 
+ * Service ini menangani import data Excel dari berbagai tahun dengan format yang berbeda:
+ * 
+ * TAHUN 2023:
+ * - Kolom: No, Nama Organisasi, Bidang, Kegiatan, Sub Sektor, Komersial, 
+ *   Judul Kegiatan, Tanggal, Lantai, Lokasi, Jumlah Peserta
+ * - TIDAK ADA: Email, No. Telf, PIC, Program SDGS
+ * 
+ * TAHUN 2024:
+ * - Kolom: No, Nama Organisasi, Bidang, Jenis Kegiatan, Sub Sektor, Komersial,
+ *   Judul Kegiatan, Tanggal, Lantai, Lokasi, Jumlah Peserta, Email, No. Telf, PIC
+ * - TIDAK ADA: Program SDGS
+ * 
+ * TAHUN 2025:
+ * - Kolom: No, Nama Organisasi, Bidang, Jenis Kegiatan, Sub Sektor, Komersial,
+ *   Program SDGS (BARU), Judul Kegiatan, Tanggal, Lantai, Lokasi, 
+ *   Jumlah Peserta, PIC, No. Telf, Email
+ * 
+ * SISTEM FLEKSIBEL:
+ * - Menggunakan resolveColumns() dengan alias mapping untuk menangani perbedaan nama kolom
+ * - Kolom yang tidak ada di file lama otomatis diisi NULL tanpa error
+ * - Kolom baru di tahun berikutnya otomatis dipetakan jika ada
+ * - Memory-efficient: chunk reading untuk file besar (2025: 12 sheet)
+ */
 
 class ExcelImportService
 {
@@ -31,143 +59,521 @@ class ExcelImportService
 
     /**
      * Parse Excel file and return raw data from all bulan sheets.
+     *
+     * Mendukung format header multi-baris (merged cells) yang digunakan di semua tahun:
+     * - Baris 1: header grup (misal "Kategori Pelaku")
+     * - Baris 2: sub-header (misal "Bidang", "Jenis Kegiatan", dst)
+     * - Baris 3+: data
+     *
+     * Juga mendukung kolom baru yang ditambahkan di tahun berikutnya (misal Program SDGS 2025)
+     * tanpa menyebabkan error pada file tahun sebelumnya.
      */
     public function parseExcel(string $filePath): array
     {
-        try {
-            $spreadsheet = IOFactory::load($filePath);
-        } catch (\Throwable $e) {
-            throw new \Exception('Format file tidak didukung. Harap gunakan file .xlsx atau .xls yang valid.');
-        }
-        $allData = [];
+        // Naikkan memory limit untuk proses import file besar (2025)
+        $prevMemLimit = ini_get('memory_limit');
+        ini_set('memory_limit', '2048M'); // Naikkan dari 1024M ke 2048M untuk file 2025 yang besar
+
+        // Konfigurasi PhpSpreadsheet untuk hemat memory
+        \PhpOffice\PhpSpreadsheet\Settings::setCache(
+            new \PhpOffice\PhpSpreadsheet\Collection\Memory\SimpleCache3()
+        );
+
+        $allData      = [];
         $foundHeaders = [];
 
-        foreach ($spreadsheet->getSheetNames() as $sheetName) {
-            if (in_array($sheetName, $this->validMonths)) {
-                $sheet = $spreadsheet->getSheetByName($sheetName);
-                $rows = $sheet->toArray(null, true, true, false);
+        try {
+            // ── Tahap 1: Baca daftar sheet names saja (ringan) ──
+            $reader = IOFactory::createReaderForFile($filePath);
+            $reader->setReadDataOnly(true);
 
-                if (empty($rows)) continue;
+            // Baca hanya struktur untuk mendapatkan nama sheet
+            $spreadsheet = $reader->load($filePath);
+            $sheetNames  = $spreadsheet->getSheetNames();
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+            gc_collect_cycles();
 
-                // First row is header
-                $headers = array_map('trim', $rows[0] ?? []);
-                if (empty(array_filter($headers))) continue;
+            // ── Tahap 2: Load setiap sheet bulan satu per satu ──
+            $bulanSheets = array_filter($sheetNames, fn($n) => in_array($n, $this->validMonths));
+            
+            Log::info("Import Excel: Ditemukan " . count($bulanSheets) . " sheet bulan", [
+                'sheets' => $bulanSheets,
+                'file' => basename($filePath)
+            ]);
 
-                $foundHeaders = array_unique(array_merge($foundHeaders, $headers));
+            foreach ($bulanSheets as $sheetName) {
+                try {
+                    Log::info("Memproses sheet: {$sheetName}");
+                    
+                    // OPTIMASI: Baca sheet dengan chunk filter untuk hemat memory
+                    $reader2 = IOFactory::createReaderForFile($filePath);
+                    $reader2->setReadDataOnly(true);
+                    $reader2->setLoadSheetsOnly([$sheetName]);
 
-                for ($i = 1; $i < count($rows); $i++) {
-                    $row = $rows[$i];
-                    if (empty(array_filter($row))) continue;
-                    $mapped = [];
-                    foreach ($headers as $idx => $header) {
-                        if (empty($header)) continue;
-                        $mapped[$header] = $row[$idx] ?? '';
+                    $wb   = $reader2->load($filePath);
+                    $sheet = $wb->getSheetByName($sheetName);
+
+                    if (!$sheet) {
+                        $wb->disconnectWorksheets();
+                        unset($wb, $reader2);
+                        gc_collect_cycles();
+                        continue;
                     }
-                    $mapped['_sheet'] = $sheetName;
-                    $allData[] = $mapped;
+
+                    // Dapatkan dimensi sheet
+                    $highestRow = $sheet->getHighestRow();
+                    $highestCol = $sheet->getHighestColumn();
+                    
+                    // Convert column letter to number untuk iterasi
+                    $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+                    
+                    // Baca hanya 10 baris pertama untuk deteksi header (hemat memory)
+                    $headerSample = [];
+                    for ($i = 1; $i <= min(10, $highestRow); $i++) {
+                        $rowData = [];
+                        // Iterasi dengan index number, bukan range()
+                        for ($colIndex = 1; $colIndex <= $highestColIndex; $colIndex++) {
+                            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                            $rowData[] = $sheet->getCell($colLetter . $i)->getValue();
+                        }
+                        $headerSample[] = $rowData;
+                    }
+
+                    [$headerRow, $dataStartRow, $parentRow] = $this->detectHeaderRow($headerSample);
+                    
+                    if ($headerRow === null) {
+                        Log::warning("Sheet [{$sheetName}]: Header tidak ditemukan, skip sheet");
+                        $wb->disconnectWorksheets();
+                        unset($wb, $sheet, $reader2, $headerSample);
+                        gc_collect_cycles();
+                        continue;
+                    }
+
+                    $rawHeaders = $headerSample[$headerRow];
+
+                    // Jika ada baris parent (format multi-baris header), gabungkan semuanya
+                    // mergeHeaderRows() menerima baris dari atas ke bawah (parent → sub)
+                    // Sub-header (baris terakhir) menimpa parent untuk kolom yang sama
+                    if ($parentRow !== null && isset($headerSample[$parentRow])) {
+                        // Pass: parent row dulu, lalu sub-header row
+                        $rawHeaders = $this->mergeHeaderRows(
+                            $headerSample[$parentRow], // Row atas: Nama Org, Judul, Tanggal, dll.
+                            $headerSample[$headerRow]  // Row bawah: Bidang, Jenis Kegiatan, dll. (menimpa)
+                        );
+                        $blockSize = $headerRow - $parentRow + 1;
+                        Log::info("Sheet [{$sheetName}]: Format {$blockSize}-baris header (parent baris " . ($parentRow+1) . ", sub baris " . ($headerRow+1) . ")");
+                    } else {
+                        Log::info("Sheet [{$sheetName}]: Format 1-baris header (baris " . ($headerRow+1) . ")");
+                    }
+
+                    $headers = array_map('trim', $rawHeaders);
+                    $foundHeaders = array_unique(array_merge($foundHeaders, array_filter($headers)));
+                    
+                    // KRITIS: $dataStartRow adalah indeks 0-based dalam $headerSample
+                    // (headerSample[0] = sheet row 1, headerSample[1] = sheet row 2, dst.)
+                    // Saat membaca sel sheet, kita butuh 1-based row number → tambah 1
+                    $sheetDataStartRow = $dataStartRow + 1;
+                    
+                    Log::info("Sheet [{$sheetName}]: Kolom terdeteksi: " . implode(', ', array_slice(array_filter($headers), 0, 10)) . (count(array_filter($headers)) > 10 ? '...' : ''));
+                    Log::info("Sheet [{$sheetName}]: Data mulai baris {$sheetDataStartRow}");
+
+                    // Baca data baris per baris (STREAMING - hemat memory)
+                    $rowCount = 0;
+                    for ($rowNum = $sheetDataStartRow; $rowNum <= $highestRow; $rowNum++) {
+                        $rowData = [];
+                        $hasData = false;
+                        
+                        // Iterasi dengan index number, bukan range()
+                        for ($colIndex = 1; $colIndex <= $highestColIndex; $colIndex++) {
+                            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                            $value = $sheet->getCell($colLetter . $rowNum)->getValue();
+                            $rowData[] = $value;
+                            if ($value !== null && $value !== '') {
+                                $hasData = true;
+                            }
+                        }
+
+                        if (!$hasData) continue;
+
+                        $mapped = [];
+                        foreach ($headers as $idx => $header) {
+                            if (empty($header)) continue;
+                            $mapped[$header] = $rowData[$idx] ?? null;
+                        }
+                        $mapped['_sheet'] = $sheetName;
+                        $allData[] = $mapped;
+                        $rowCount++;
+
+                        // Garbage collection setiap 100 baris
+                        if ($rowCount % 100 === 0) {
+                            gc_collect_cycles();
+                        }
+                    }
+
+                    $wb->disconnectWorksheets();
+                    unset($wb, $sheet, $reader2, $headers, $headerSample);
+                    gc_collect_cycles();
+                    
+                    Log::info("Sheet [{$sheetName}] selesai: {$rowCount} baris data");
+                    
+                    // Log sample data pertama untuk debugging
+                    if ($rowCount > 0) {
+                        $sampleData = array_filter($allData, fn($d) => ($d['_sheet'] ?? '') === $sheetName);
+                        if (!empty($sampleData)) {
+                            $firstRow = reset($sampleData);
+                            Log::info("Sheet [{$sheetName}] sample data:", [
+                                'nama_organisasi' => $firstRow['Nama Organisasi / Komunitas'] ?? $firstRow['Nama Organisasi'] ?? 'N/A',
+                                'bidang' => $firstRow['Bidang'] ?? 'N/A',
+                                'judul' => $firstRow['Judul Kegiatan'] ?? 'N/A',
+                                'program_sdgs' => $firstRow['Program SDGS'] ?? $firstRow['Program SDGs'] ?? 'N/A',
+                            ]);
+                        }
+                    }
+
+                } catch (\Throwable $sheetErr) {
+                    Log::error("Gagal baca sheet [{$sheetName}]: " . $sheetErr->getMessage(), [
+                        'trace' => $sheetErr->getTraceAsString()
+                    ]);
+                    continue;
                 }
             }
-        }
 
-        // Fallback: use first sheet if no bulan sheets found
-        if (empty($allData)) {
-            $sheet = $spreadsheet->getActiveSheet();
-            $rows = $sheet->toArray(null, true, true, false);
-            if (!empty($rows)) {
-                $headers = array_map('trim', $rows[0]);
+            // ── Fallback: load sheet aktif jika tidak ada sheet bulan ──
+            if (empty($allData)) {
+                Log::info("Tidak ada sheet bulan, menggunakan sheet aktif");
+                
+                $reader3 = IOFactory::createReaderForFile($filePath);
+                $reader3->setReadDataOnly(true);
+                $wb3   = $reader3->load($filePath);
+                $sheet = $wb3->getActiveSheet();
+                
+                $highestRow = $sheet->getHighestRow();
+                $highestCol = $sheet->getHighestColumn();
+                
+                // Convert column letter to number
+                $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+                
+                // Baca header sample
+                $headerSample = [];
+                for ($i = 1; $i <= min(10, $highestRow); $i++) {
+                    $rowData = [];
+                    for ($colIndex = 1; $colIndex <= $highestColIndex; $colIndex++) {
+                        $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                        $rowData[] = $sheet->getCell($colLetter . $i)->getValue();
+                    }
+                    $headerSample[] = $rowData;
+                }
+
+                [$headerRow, $dataStartRow, $parentRow] = $this->detectHeaderRow($headerSample);
+                $headerRow    = $headerRow ?? 0;
+                $dataStartRow = $dataStartRow ?? 1;
+                
+                $rawHeaders = $headerSample[$headerRow];
+                if ($parentRow !== null && isset($headerSample[$parentRow])) {
+                    $rawHeaders = $this->mergeHeaderRows(
+                        $headerSample[$parentRow],
+                        $headerSample[$headerRow]
+                    );
+                }
+                $headers      = array_map('trim', $rawHeaders);
                 $foundHeaders = $headers;
-                for ($i = 1; $i < count($rows); $i++) {
-                    $row = $rows[$i];
-                    if (empty(array_filter($row))) continue;
+
+                // KRITIS: Sama seperti di atas, tambah 1 untuk konversi ke 1-based sheet row
+                $sheetDataStartRow = $dataStartRow + 1;
+
+                // Baca data baris per baris (STREAMING)
+                for ($rowNum = $sheetDataStartRow; $rowNum <= $highestRow; $rowNum++) {
+                    $rowData = [];
+                    $hasData = false;
+                    
+                    foreach (range('A', $highestCol) as $col) {
+                        $value = $sheet->getCell($col . $rowNum)->getValue();
+                        $rowData[] = $value;
+                        if ($value !== null && $value !== '') {
+                            $hasData = true;
+                        }
+                    }
+
+                    if (!$hasData) continue;
+
                     $mapped = [];
                     foreach ($headers as $idx => $header) {
                         if (empty($header)) continue;
-                        $mapped[$header] = $row[$idx] ?? '';
+                        $mapped[$header] = $rowData[$idx] ?? null;
                     }
                     $allData[] = $mapped;
+
+                    // Garbage collection setiap 100 baris
+                    if ($rowNum % 100 === 0) {
+                        gc_collect_cycles();
+                    }
                 }
+
+                $wb3->disconnectWorksheets();
+                unset($wb3, $sheet, $reader3, $headers, $headerSample);
+                gc_collect_cycles();
             }
+
+        } catch (\Throwable $e) {
+            ini_set('memory_limit', $prevMemLimit);
+            Log::error('Error parsing Excel', [
+                'message' => $e->getMessage(),
+                'file' => basename($filePath),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new \Exception('Format file tidak didukung atau file rusak: ' . $e->getMessage());
         }
+
+        ini_set('memory_limit', $prevMemLimit);
+        
+        Log::info("Import Excel selesai: Total " . count($allData) . " baris data dari " . count($foundHeaders) . " kolom", [
+            'headers' => $foundHeaders
+        ]);
 
         return [
-            'data' => $allData,
-            'headers' => array_values(array_filter($foundHeaders))
+            'data'    => $allData,
+            'headers' => array_values(array_filter($foundHeaders)),
         ];
+    }
+
+    /**
+     * Deteksi baris header secara FLEKSIBEL menggunakan pendekatan scoring.
+     *
+     * Algoritma:
+     * 1. Scan setiap baris (hingga 15 baris pertama)
+     * 2. Hitung "skor" tiap baris = jumlah key column yang cocok
+     * 3. Tandai baris sebagai "header" jika skor >= 1
+     * 4. Temukan BLOK KONSEKUTIF baris header (mendukung 1, 2, bahkan 3 baris header)
+     * 5. Blok pertama = header block, baris setelahnya = awal data
+     *
+     * Ini menangani semua format:
+     * - 2023: satu baris header di baris 1 atau 2
+     * - 2025: dua baris header (parent merged + sub-header) di posisi manapun
+     * - File dengan judul/logo di atas header (header tidak di baris 1)
+     *
+     * Returns: [lastHeaderRowIdx, dataStartRowIdx, firstHeaderRowIdx|null]
+     *   - lastHeaderRowIdx  : baris sub-header (paling bawah dari blok header)
+     *   - dataStartRowIdx   : index 0-based ke $rows (perlu +1 untuk sheet row 1-based)
+     *   - firstHeaderRowIdx : baris parent (null jika hanya 1 baris header)
+     */
+    protected function detectHeaderRow(array $rows): array
+    {
+        // Semua nama kolom yang mungkin muncul di baris header (semua tahun)
+        $keyColumns = [
+            // Kolom wajib — muncul di hampir semua tahun
+            'Nama Organisasi',
+            'Nama Organisasi / Komunitas',
+            'Nama Organisasi/ Komunitas',
+            'Judul Kegiatan',
+            'Judul Kegiatan/Event',
+            'Tanggal',
+            'Tanggal Kegiatan',
+            'Jumlah Peserta',
+            'Lokasi',
+            'Lokasi / Ruangan',
+            'Lantai',
+            // Sub-header 2025 (di bawah Kategori Pelaku)
+            'Bidang',
+            'Jenis Kegiatan',
+            'Kegiatan',
+            'Sub Sektor',
+            'Komersial',
+            'Komersial/Non Komersial',
+            'Komersial/ Non Komersial',
+            'Program SDGS',
+            'Program SDGs',
+            'SDGS',
+            // Kolom kontak
+            'Email',
+            'No. Telf',
+            'No. Telp',
+            'PIC',
+        ];
+
+        // Skor setiap baris: berapa key column yang cocok
+        // Cocokkan secara case-insensitive untuk toleransi variasi penulisan
+        $keyLower = array_map('strtolower', $keyColumns);
+
+        $rowScores = [];
+        foreach ($rows as $idx => $row) {
+            $score = 0;
+            foreach ($row as $cell) {
+                $cellLower = strtolower(trim((string) ($cell ?? '')));
+                if ($cellLower !== '' && in_array($cellLower, $keyLower, true)) {
+                    $score++;
+                }
+            }
+            $rowScores[$idx] = $score;
+        }
+
+        // Temukan baris-baris yang memiliki skor > 0 (kandidat header)
+        $candidateRows = array_keys(array_filter($rowScores, fn($s) => $s > 0));
+
+        if (empty($candidateRows)) {
+            return [null, null, null]; // Tidak ada header ditemukan
+        }
+
+        // Temukan BLOK KONSEKUTIF pertama dari kandidat header
+        // Contoh: [1, 2] → blok header baris 1 dan 2 (format 2025)
+        // Contoh: [0]    → blok header baris 0 saja (format 2023)
+        // Contoh: [3, 4] → header di baris 3-4 (file dengan judul di atas)
+        $blockStart = $candidateRows[0];
+        $blockEnd   = $candidateRows[0];
+
+        for ($i = 1; $i < count($candidateRows); $i++) {
+            if ($candidateRows[$i] === $blockEnd + 1) {
+                // Baris ini konsekutif → masuk ke blok yang sama
+                $blockEnd = $candidateRows[$i];
+            } else {
+                // Tidak konsekutif → berhenti di blok pertama
+                break;
+            }
+        }
+
+        $dataStartRow = $blockEnd + 1; // Baris data = tepat setelah blok header
+
+        if ($blockStart === $blockEnd) {
+            // Satu baris header (format 2023/2024)
+            return [$blockEnd, $dataStartRow, null];
+        } else {
+            // Multi-baris header (format 2025: parent + sub-header)
+            // blockStart = parent (row paling atas), blockEnd = sub-header (row paling bawah)
+            return [$blockEnd, $dataStartRow, $blockStart];
+        }
+    }
+
+    /**
+     * Gabungkan beberapa baris header menjadi satu array header lengkap.
+     *
+     * Bekerja dengan cara overlay: mulai dari baris paling atas (parent),
+     * setiap baris bawah menimpa sel yang terisi (sub-header lebih spesifik).
+     *
+     * Group labels yang hanya sebagai judul grup (bukan nama kolom data) dibuang.
+     *
+     * @param array $headerRows  Array of rows, paling atas = index 0 (parent), paling bawah = last (sub)
+     * @return array Merged header row
+     */
+    protected function mergeHeaderRows(array ...$headerRows): array
+    {
+        // Label grup yang bukan nama kolom data — buang saat merge
+        $groupLabels = [
+            'Kategori Pelaku',
+            'Kategori',
+            'Kelompok',
+        ];
+
+        if (empty($headerRows)) return [];
+
+        $colCount = max(array_map('count', $headerRows));
+        $merged   = array_fill(0, $colCount, '');
+
+        // Overlay dari parent ke sub-header:
+        // Tiap baris menimpa sel yang kosong dari baris sebelumnya
+        // Sub-header (baris terakhir) paling tinggi prioritasnya
+        foreach ($headerRows as $row) {
+            for ($i = 0; $i < $colCount; $i++) {
+                $val = trim((string) ($row[$i] ?? ''));
+                if ($val !== '' && !in_array($val, $groupLabels, true)) {
+                    // Sub-header menimpa parent (prioritas lebih tinggi)
+                    $merged[$i] = $val;
+                }
+                // Jika sub kosong, biarkan nilai dari parent (sudah di $merged[$i])
+            }
+        }
+
+        return $merged;
     }
 
     /**
      * Standardize raw Excel data to DB schema.
      *
+     * Menggunakan sistem column resolver yang fleksibel sehingga:
+     * - Kolom baru (misal Program SDGS di 2025) otomatis dipetakan jika ada
+     * - Kolom yang tidak ada di file lama (2023/2024) diisi null tanpa error
+     * - Perbedaan nama kolom antar tahun ditangani via alias mapping
+     *
      * Multi-lokasi/lantai DI-SPLIT menjadi baris terpisah untuk menghitung event per lokasi.
      * NAMUN jumlah_peserta hanya diisi di baris PERTAMA, baris berikutnya = 0.
-     * Ini mencegah peserta terhitung ganda saat SUM(jumlah_peserta).
-     *
-     * Contoh:
-     *   Excel: Workshop | 50 peserta | Studio Musik & Studio Foto
-     *   Hasil: baris 1 → Studio Musik | 50 peserta
-     *          baris 2 → Studio Foto  |  0 peserta  ← tidak dihitung ganda
      */
     public function standardize(array $rawData): array
     {
         $result = [];
+        $loggedColumns = false; // Flag untuk log kolom hanya sekali
 
-        foreach ($rawData as $item) {
+        foreach ($rawData as $index => $item) {
+            // Normalisasi key: trim whitespace
             $t = [];
             foreach ($item as $k => $v) {
                 $t[trim((string) $k)] = is_string($v) ? trim($v) : $v;
             }
 
-            $n = [];
-            foreach ($t as $k => $v) {
-                $nk = strtolower(preg_replace('/[\s\/]+/', '_', $k));
-                $n[$nk] = $v;
+            // Resolve setiap field menggunakan alias-aware resolver
+            $r = $this->resolveColumns($t);
+            
+            // Log kolom yang berhasil di-resolve (hanya sekali untuk efisiensi)
+            if (!$loggedColumns && $index === 0) {
+                $resolvedFields = array_filter($r, fn($v) => $v !== null);
+                Log::info("Kolom yang berhasil di-resolve dari Excel:", [
+                    'fields' => array_keys($resolvedFields),
+                    'has_program_sdgs' => isset($resolvedFields['program_sdgs']),
+                    'has_email' => isset($resolvedFields['email']),
+                    'has_no_telepon' => isset($resolvedFields['no_telepon']),
+                    'has_pic' => isset($resolvedFields['pic']),
+                ]);
+                $loggedColumns = true;
             }
 
             // Tanggal
-            $rawTgl      = $t['Tanggal'] ?? $t['Tanggal Kegiatan'] ?? $n['tanggal'] ?? $n['tanggal_kegiatan'] ?? '';
-            $finalTanggal = $this->parseDate($rawTgl) ?? date('Y-m-d');
+            $finalTanggal = $this->parseDate($r['tanggal_raw']) ?? date('Y-m-d');
 
-            // Peserta (hanya untuk baris pertama)
-            $pesertaRaw    = $t['Jumlah Peserta'] ?? $n['jumlah_peserta'] ?? 0;
-            $pesertaParsed = (int) preg_replace('/[^\d]/', '', (string) $pesertaRaw);
+            // Bulan — selalu diisi agar widget yang mengandalkan kolom `bulan` tidak null
+            $finalBulan = $this->getBulanIndonesia($finalTanggal);
+
+            // Peserta
+            $pesertaParsed = (int) preg_replace('/[^\d]/', '', (string) ($r['jumlah_peserta'] ?? 0));
 
             // Lantai — split multi
-            $rawLantai  = isset($t['Lantai']) ? (string) $t['Lantai'] : '2';
-            $lantaiList = $this->splitMulti($rawLantai);
+            $lantaiList = $this->splitMulti((string) ($r['lantai'] ?? '2'));
             $lantaiList = array_values(array_filter(
                 array_map(fn($l) => in_array(trim($l), ['2', '3', '4', '5']) ? trim($l) : null, $lantaiList)
             ));
             if (empty($lantaiList)) $lantaiList = ['2'];
 
             // Lokasi — split multi
-            $rawLokasi  = $t['Lokasi/ Ruangan'] ?? $t['Lokasi / Ruangan'] ?? $t['Lokasi'] ?? $n['lokasi__ruangan'] ?? $n['lokasi'] ?? '';
-            $lokasiList = $this->splitMulti((string) $rawLokasi);
+            $lokasiList = $this->splitMulti((string) ($r['lokasi'] ?? ''));
             $lokasiList = array_values(array_map([$this, 'cleanLokasi'], $lokasiList));
             if (empty($lokasiList)) $lokasiList = ['Ruang Meeting'];
 
+            // Email, No.Telf, PIC — nullable, aman untuk data 2023 yang tidak memiliki kolom ini
+            $emailVal     = $this->cleanNullableString($r['email'] ?? null, 255);
+            $noTelpVal    = $this->cleanNullableString($r['no_telepon'] ?? null, 50);
+            $picVal       = $this->cleanNullableString($r['pic'] ?? null, 150);
+
             $commonData = [
-                'nama_organisasi' => $this->cleanOrganisasi($t['Nama Organisasi / Komunitas'] ?? $t['Nama Organisasi/ Komunitas'] ?? $t['Organisasi'] ?? $t['Nama Organisasi'] ?? $n['nama_organisasi'] ?? 'Unknown'),
-                'bidang'          => $this->cleanBidang($t['Bidang'] ?? $n['bidang'] ?? ''),
-                'jenis_kegiatan'  => $this->cleanKegiatan($t['Jenis Kegiatan'] ?? $n['jenis_kegiatan'] ?? ''),
-                'sub_sektor'      => ($t['Sub Sektor'] ?? $t['Subsektor'] ?? $n['sub_sektor'] ?? null) ?: null,
-                'komersial'       => $this->cleanKomersial($t['Komersial/ Non Komersial'] ?? $t['Komersial'] ?? $n['komersial'] ?? ''),
-                'judul_kegiatan'  => $t['Judul Kegiatan'] ?? $t['Event'] ?? $n['judul_kegiatan'] ?? 'Untitled Event',
+                'nama_organisasi' => $this->cleanOrganisasi($r['nama_organisasi'] ?? 'Unknown'),
+                'bidang'          => $this->cleanBidang($r['bidang'] ?? ''),
+                'jenis_kegiatan'  => $this->cleanKegiatan($r['jenis_kegiatan'] ?? ''),
+                'sub_sektor'      => ($r['sub_sektor'] ?? null) ?: null,
+                'komersial'       => $this->cleanKomersial($r['komersial'] ?? ''),
+                'program_sdgs'    => $this->cleanSdgs($r['program_sdgs'] ?? null),
+                'judul_kegiatan'  => $r['judul_kegiatan'] ?? 'Untitled Event',
                 'tanggal'         => $finalTanggal,
-                'email'           => ($t['Email'] ?? $t['email'] ?? $n['email'] ?? null) ?: null,
-                'no_telepon'      => ($t['No. Telf'] ?? $t['Telepon'] ?? $t['No Telp'] ?? $n['no_telepon'] ?? null) ?: null,
-                'pic'             => ($t['PIC'] ?? $n['pic'] ?? null) ?: null,
+                'bulan'           => $finalBulan,
+                'email'           => $emailVal,
+                'no_telepon'      => $noTelpVal,
+                'pic'             => $picVal,
             ];
 
             // Cartesian product: lantai × lokasi
-            // Setiap baris hasil split tetap memiliki jumlah_peserta penuh sesuai permintaan user
             $isFirst = true;
             foreach ($lantaiList as $lantai) {
                 foreach ($lokasiList as $lokasi) {
                     $result[] = array_merge($commonData, [
-                        'lantai'          => $lantai,
-                        'lokasi'          => $lokasi,
-                        'jumlah_peserta'  => $pesertaParsed,
-                        'is_primary_row'  => $isFirst,
+                        'lantai'         => $lantai,
+                        'lokasi'         => $lokasi,
+                        'jumlah_peserta' => $pesertaParsed,
+                        'is_primary_row' => $isFirst,
                     ]);
                     $isFirst = false;
                 }
@@ -175,6 +581,132 @@ class ExcelImportService
         }
 
         return $result;
+    }
+
+    /**
+     * Resolve kolom dari raw Excel row menggunakan alias mapping.
+     *
+     * Setiap field DB memiliki daftar alias nama kolom Excel yang mungkin muncul
+     * di berbagai tahun/format. Sistem ini toleran terhadap:
+     * - Penambahan kolom baru (2025: Program SDGS)
+     * - Perbedaan nama kolom antar tahun (2023: "Kegiatan" vs 2024: "Jenis Kegiatan")
+     * - Kolom yang tidak ada → diisi null
+     */
+    protected function resolveColumns(array $row): array
+    {
+        // Definisi alias per field: key = nama field DB, value = array nama kolom Excel yang mungkin
+        $aliases = [
+            'nama_organisasi' => [
+                'Nama Organisasi / Komunitas',
+                'Nama Organisasi/ Komunitas',
+                'Nama Organisasi',
+                'Organisasi',
+            ],
+            'bidang' => [
+                'Bidang',
+            ],
+            'jenis_kegiatan' => [
+                'Jenis Kegiatan',  // 2024, 2025
+                'Kegiatan',        // 2023
+            ],
+            'sub_sektor' => [
+                'Sub Sektor',
+                'Subsektor',
+                'Sub-Sektor',
+            ],
+            'komersial' => [
+                'Komersial/Non Komersial',   // 2025
+                'Komersial/ Non Komersial',  // 2024
+                'Komersial/Non',
+                'Komersial',
+            ],
+            'program_sdgs' => [
+                'Program SDGS',      // 2025+
+                'Program (SDGS)',    // variasi 2025
+                'Program SDGs',
+                'SDGS',
+                'SDGs',
+                'Program Sdgs',
+            ],
+            'judul_kegiatan' => [
+                'Judul Kegiatan',
+                'Judul Kegiatan/Event',  // variasi 2025
+                'Judul Kegiatan / Event',
+                'Event',
+                'Judul',
+            ],
+            'tanggal_raw' => [
+                'Tanggal Kegiatan',
+                'Tanggal',
+                'Tgl Kegiatan',
+                'Tgl',
+            ],
+            'lantai' => [
+                'Lantai',
+                'Lt',
+                'Floor',
+            ],
+            'lokasi' => [
+                'Lokasi / Ruangan',
+                'Lokasi/ Ruangan',
+                'Lokasi/Ruangan',
+                'Lokasi',
+                'Ruangan',
+                'Room',
+            ],
+            'jumlah_peserta' => [
+                'Jumlah Peserta',
+                'Jumlah  Peserta',  // double space
+                'Peserta',
+                'Jml Peserta',
+            ],
+            'email' => [
+                'Email',
+                'E-mail',
+                'E Mail',
+            ],
+            'no_telepon' => [
+                'No. Telf',
+                'No. Telp',
+                'No Telp',
+                'No. Telepon',
+                'Telepon',
+                'No Telepon',
+                'Telp',
+                'Hp',
+                'No. Hp',
+            ],
+            'pic' => [
+                'PIC',
+                'Pic',
+                'P.I.C',
+                'Person In Charge',
+            ],
+        ];
+
+        $resolved = [];
+
+        foreach ($aliases as $field => $possibleKeys) {
+            $resolved[$field] = null; // default null jika kolom tidak ada
+
+            foreach ($possibleKeys as $key) {
+                // Cek exact match dulu
+                if (array_key_exists($key, $row) && $row[$key] !== '' && $row[$key] !== null) {
+                    $resolved[$field] = $row[$key];
+                    break;
+                }
+
+                // Cek case-insensitive sebagai fallback
+                foreach ($row as $rowKey => $rowVal) {
+                    if (strcasecmp(trim($rowKey), trim($key)) === 0 && $rowVal !== '' && $rowVal !== null) {
+                        $resolved[$field] = $rowVal;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        return $resolved;
     }
 
     /**
@@ -377,6 +909,76 @@ class ExcelImportService
         if (str_contains($k, 'non') || $k === '') return 'Non Komersial';
         if (str_contains($k, 'komers') || str_contains($k, 'komesial')) return 'Komersial';
         return 'Non Komersial';
+    }
+
+    /**
+     * Normalisasi nilai Program SDGS.
+     *
+     * Mendukung berbagai format input dari data 2025:
+     * - Single: "SDGS 4", "SDGs 8", "4", "sdgs4"  → "SDGS 4"
+     * - Multi:  "SDGS 4; SDGS 5; SDGS 18"          → "SDGS 4; SDGS 5; SDGS 18"
+     * - Multi:  "4, 5, 10"                          → "SDGS 4; SDGS 5; SDGS 10"
+     * - Null/kosong                                  → null (kolom tidak wajib, aman untuk data 2023)
+     */
+    private function cleanSdgs(mixed $raw): ?string
+    {
+        if ($raw === null || trim((string) $raw) === '') return null;
+
+        $s = trim((string) $raw);
+
+        // Pecah nilai multi (separator: semicolon, koma, spasi sebelum "SDGS")
+        // Contoh: "SDGS 4; SDGS 5; SDGS 18" atau "4, 5, 10"
+        $parts = preg_split('/[;,]|(?=\bsdgs?\s*\d)/i', $s);
+        $parts = array_filter(array_map('trim', $parts), fn($p) => $p !== '');
+
+        if (empty($parts)) return null;
+
+        $normalized = [];
+        foreach ($parts as $part) {
+            $part = trim($part);
+
+            // Format "SDGS X" atau "SDGs X" atau "sdgsx"
+            if (preg_match('/^sdgs?\s*(\d{1,2})$/i', $part, $m)) {
+                $num = (int) $m[1];
+                if ($num >= 1 && $num <= 17) {
+                    $normalized[] = 'SDGS ' . $num;
+                } else {
+                    $normalized[] = 'SDGS ' . $num; // tetap simpan meskipun di luar 1-17
+                }
+                continue;
+            }
+
+            // Hanya angka: "4" → "SDGS 4"
+            if (preg_match('/^\d{1,2}$/', $part)) {
+                $normalized[] = 'SDGS ' . (int) $part;
+                continue;
+            }
+
+            // Format tidak dikenali — simpan apa adanya agar data tidak hilang
+            if (!empty($part)) {
+                $normalized[] = $part;
+            }
+        }
+
+        if (empty($normalized)) return null;
+
+        $result = implode('; ', array_unique($normalized));
+
+        // Pastikan tidak melebihi panjang kolom database (255 char)
+        return mb_substr($result, 0, 255);
+    }
+
+    /**
+     * Bersihkan string nullable — kembalikan null jika kosong, potong jika terlalu panjang.
+     * Mencegah error "value too long for column" untuk email/no_telepon/pic dari data 2025.
+     */
+    private function cleanNullableString(mixed $raw, int $maxLength = 255): ?string
+    {
+        if ($raw === null) return null;
+        $s = trim((string) $raw);
+        if ($s === '') return null;
+        // Potong jika melebihi batas kolom
+        return mb_substr($s, 0, $maxLength);
     }
 
     private function cleanLokasi(string $raw): string
