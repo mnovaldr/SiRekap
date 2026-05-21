@@ -102,7 +102,6 @@ class ImportData extends Page
     }
 
     public function processFile(): void
-    public function processFile(): void
     {
         if (!$this->file) return;
 
@@ -331,5 +330,5 @@ class ImportData extends Page
         if (file_exists($filePath)) {
             @unlink($filePath);
         }
-    } }
+    }
 }
