@@ -3,7 +3,7 @@
         <x-slot name="heading">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                    <x-heroicon-o-globe-asia-pacific class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <x-heroicon-o-globe-alt class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <span class="text-lg font-black tracking-tight">Capaian Kategori Program SDGs</span>
             </div>
