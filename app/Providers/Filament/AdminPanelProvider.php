@@ -266,17 +266,19 @@ class AdminPanelProvider extends PanelProvider
                             function finishBar() {
                                 clearInterval(timer);
                                 bar.classList.add("done");
+                                
+                                // Unlock UI and buttons immediately
+                                document.body.classList.remove("si-processing");
+                                window.siProcessing = false;
+                                document.querySelectorAll("[data-si-loading]").forEach(el => {
+                                    el.removeAttribute("data-si-loading");
+                                    if (el.tagName === "BUTTON") el.disabled = false;
+                                });
+
                                 setTimeout(function() {
                                     bar.style.width = "0%";
                                     bar.style.opacity = "0";
-                                    document.body.classList.remove("si-processing");
-                                    window.siProcessing = false;
-                                    // Remove individual button locks
-                                    document.querySelectorAll("[data-si-loading]").forEach(el => {
-                                        el.removeAttribute("data-si-loading");
-                                        if (el.tagName === "BUTTON") el.disabled = false;
-                                    });
-                                }, 700);
+                                }, 400);
                             }
 
                             // Livewire events
@@ -533,6 +535,7 @@ HTML
                 \App\Filament\Widgets\TopOrganisasiWidget::class,
                 \App\Filament\Widgets\TopLokasiWidget::class,
                 \App\Filament\Widgets\RekapBulananWidget::class,
+                \App\Filament\Widgets\SdgsDistributionWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

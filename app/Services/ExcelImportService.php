@@ -86,18 +86,26 @@ class ExcelImportService
             // ── Tahap 1: Load spreadsheet (sekali saja) ──
             $reader = IOFactory::createReaderForFile($filePath);
             $reader->setReadDataOnly(true);
-            $spreadsheet = $reader->load($filePath);
-            $sheetNames  = $spreadsheet->getSheetNames();
-
-            // ── Tahap 2: Load setiap sheet bulan dari memory ──
+            
+            // OPTIMIZATION: Only load sheets that represent valid months to save CPU & Memory
+            $sheetNames = $reader->listWorksheetNames($filePath);
             $validMonthsLower = array_map('strtolower', $this->validMonths);
+            $loadSheets = [];
             $bulanSheets = [];
+            
             foreach ($sheetNames as $originalName) {
                 $trimmedName = trim($originalName);
                 if (in_array(strtolower($trimmedName), $validMonthsLower)) {
+                    $loadSheets[] = $originalName;
                     $bulanSheets[$trimmedName] = $originalName; // Map trimmed to original
                 }
             }
+
+            if (!empty($loadSheets)) {
+                $reader->setLoadSheetsOnly($loadSheets);
+            }
+            
+            $spreadsheet = $reader->load($filePath);
             
             Log::info("Import Excel: Ditemukan " . count($bulanSheets) . " sheet bulan", [
                 'sheets' => array_values($bulanSheets),
@@ -116,43 +124,28 @@ class ExcelImportService
                         continue;
                     }
 
-                    // Dapatkan dimensi sheet
-                    $highestRow = $sheet->getHighestRow();
-                    $highestCol = $sheet->getHighestColumn();
-                    
-                    // Convert column letter to number untuk iterasi
-                    $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+                    // Convert entire sheet to memory-efficient array in one go (avoiding loop overhead)
+                    $sheetData = $sheet->toArray(null, false, false, false);
+                    $highestRow = count($sheetData);
                     
                     // Baca hanya 10 baris pertama untuk deteksi header (hemat memory)
-                    $headerSample = [];
-                    for ($i = 1; $i <= min(10, $highestRow); $i++) {
-                        $rowData = [];
-                        // Iterasi dengan index number, bukan range()
-                        for ($colIndex = 1; $colIndex <= $highestColIndex; $colIndex++) {
-                            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
-                            $rowData[] = $sheet->getCell($colLetter . $i)->getValue();
-                        }
-                        $headerSample[] = $rowData;
-                    }
+                    $headerSample = array_slice($sheetData, 0, 10);
 
                     [$headerRow, $dataStartRow, $parentRow] = $this->detectHeaderRow($headerSample);
                     
                     if ($headerRow === null) {
                         Log::warning("Sheet [{$sheetName}]: Header tidak ditemukan, skip sheet");
-                        unset($headerSample);
+                        unset($headerSample, $sheetData);
                         continue;
                     }
 
                     $rawHeaders = $headerSample[$headerRow];
 
                     // Jika ada baris parent (format multi-baris header), gabungkan semuanya
-                    // mergeHeaderRows() menerima baris dari atas ke bawah (parent → sub)
-                    // Sub-header (baris terakhir) menimpa parent untuk kolom yang sama
                     if ($parentRow !== null && isset($headerSample[$parentRow])) {
-                        // Pass: parent row dulu, lalu sub-header row
                         $rawHeaders = $this->mergeHeaderRows(
-                            $headerSample[$parentRow], // Row atas: Nama Org, Judul, Tanggal, dll.
-                            $headerSample[$headerRow]  // Row bawah: Bidang, Jenis Kegiatan, dll. (menimpa)
+                            $headerSample[$parentRow],
+                            $headerSample[$headerRow]
                         );
                         $blockSize = $headerRow - $parentRow + 1;
                         Log::info("Sheet [{$sheetName}]: Format {$blockSize}-baris header (parent baris " . ($parentRow+1) . ", sub baris " . ($headerRow+1) . ")");
@@ -163,27 +156,18 @@ class ExcelImportService
                     $headers = array_map('trim', $rawHeaders);
                     $foundHeaders = array_unique(array_merge($foundHeaders, array_filter($headers)));
                     
-                    // KRITIS: $dataStartRow adalah indeks 0-based dalam $headerSample
-                    // (headerSample[0] = sheet row 1, headerSample[1] = sheet row 2, dst.)
-                    // Saat membaca sel sheet, kita butuh 1-based row number → tambah 1
-                    $sheetDataStartRow = $dataStartRow + 1;
-                    
                     Log::info("Sheet [{$sheetName}]: Kolom terdeteksi: " . implode(', ', array_slice(array_filter($headers), 0, 10)) . (count(array_filter($headers)) > 10 ? '...' : ''));
-                    Log::info("Sheet [{$sheetName}]: Data mulai baris {$sheetDataStartRow}");
+                    Log::info("Sheet [{$sheetName}]: Data mulai indeks baris {$dataStartRow}");
 
-                    // Baca data baris per baris (STREAMING - hemat memory)
+                    // Baca data baris per baris dari array
                     $rowCount = 0;
-                    for ($rowNum = $sheetDataStartRow; $rowNum <= $highestRow; $rowNum++) {
-                        $rowData = [];
+                    for ($rowIdx = $dataStartRow; $rowIdx < $highestRow; $rowIdx++) {
+                        $rowData = $sheetData[$rowIdx];
                         $hasData = false;
-                        
-                        // Iterasi dengan index number, bukan range()
-                        for ($colIndex = 1; $colIndex <= $highestColIndex; $colIndex++) {
-                            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
-                            $value = $sheet->getCell($colLetter . $rowNum)->getValue();
-                            $rowData[] = $value;
+                        foreach ($rowData as $value) {
                             if ($value !== null && $value !== '') {
                                 $hasData = true;
+                                break;
                             }
                         }
 
@@ -197,14 +181,9 @@ class ExcelImportService
                         $mapped['_sheet'] = $trimmedSheetName;
                         $allData[] = $mapped;
                         $rowCount++;
-
-                        // Garbage collection setiap 100 baris
-                        if ($rowCount % 100 === 0) {
-                            gc_collect_cycles();
-                        }
                     }
 
-                    unset($headers, $headerSample);
+                    unset($headers, $headerSample, $sheetData);
                     gc_collect_cycles();
                     
                     Log::info("Sheet [{$sheetName}] selesai: {$rowCount} baris data");
@@ -238,28 +217,17 @@ class ExcelImportService
                 $sheet = $spreadsheet->getActiveSheet();
                 $sheetName = trim($sheet->getTitle());
                 
-                $highestRow = $sheet->getHighestRow();
-                $highestCol = $sheet->getHighestColumn();
-                
-                // Convert column letter to number
-                $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+                $sheetData = $sheet->toArray(null, false, false, false);
+                $highestRow = count($sheetData);
                 
                 // Baca header sample
-                $headerSample = [];
-                for ($i = 1; $i <= min(10, $highestRow); $i++) {
-                    $rowData = [];
-                    for ($colIndex = 1; $colIndex <= $highestColIndex; $colIndex++) {
-                        $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
-                        $rowData[] = $sheet->getCell($colLetter . $i)->getValue();
-                    }
-                    $headerSample[] = $rowData;
-                }
+                $headerSample = array_slice($sheetData, 0, 10);
 
                 [$headerRow, $dataStartRow, $parentRow] = $this->detectHeaderRow($headerSample);
                 $headerRow    = $headerRow ?? 0;
                 $dataStartRow = $dataStartRow ?? 1;
                 
-                $rawHeaders = $headerSample[$headerRow];
+                $rawHeaders = $headerSample[$headerRow] ?? [];
                 if ($parentRow !== null && isset($headerSample[$parentRow])) {
                     $rawHeaders = $this->mergeHeaderRows(
                         $headerSample[$parentRow],
@@ -269,19 +237,14 @@ class ExcelImportService
                 $headers      = array_map('trim', $rawHeaders);
                 $foundHeaders = $headers;
 
-                // KRITIS: Sama seperti di atas, tambah 1 untuk konversi ke 1-based sheet row
-                $sheetDataStartRow = $dataStartRow + 1;
-
-                // Baca data baris per baris (STREAMING)
-                for ($rowNum = $sheetDataStartRow; $rowNum <= $highestRow; $rowNum++) {
-                    $rowData = [];
+                // Baca data
+                for ($rowIdx = $dataStartRow; $rowIdx < $highestRow; $rowIdx++) {
+                    $rowData = $sheetData[$rowIdx];
                     $hasData = false;
-                    
-                    foreach (range('A', $highestCol) as $col) {
-                        $value = $sheet->getCell($col . $rowNum)->getValue();
-                        $rowData[] = $value;
+                    foreach ($rowData as $value) {
                         if ($value !== null && $value !== '') {
                             $hasData = true;
+                            break;
                         }
                     }
 
@@ -294,13 +257,8 @@ class ExcelImportService
                     }
                     $mapped['_sheet'] = $sheetName;
                     $allData[] = $mapped;
-
-                    // Garbage collection setiap 100 baris
-                    if ($rowNum % 100 === 0) {
-                        gc_collect_cycles();
-                    }
                 }
-                unset($headers, $headerSample);
+                unset($headers, $headerSample, $sheetData);
                 gc_collect_cycles();
             }
 
@@ -915,9 +873,9 @@ class ExcelImportService
 
         $s = trim((string) $raw);
 
-        // Pecah nilai multi (separator: semicolon, koma, spasi sebelum "SDGS")
-        // Contoh: "SDGS 4; SDGS 5; SDGS 18" atau "4, 5, 10"
-        $parts = preg_split('/[;,]|(?=\bsdgs?\s*\d)/i', $s);
+        // Pecah nilai multi (separator: semicolon, koma, &, kata "dan"/"and", atau lookahead untuk "sdgs")
+        // Contoh: "SDGS 4; SDGS 5; SDGS 18" atau "4, 5, 10" atau "SDGS 4 dan SDGS 5"
+        $parts = preg_split('/[;,&]|\bdan\b|\band\b|(?=\bsdgs?\s*\d)/i', $s);
         $parts = array_filter(array_map('trim', $parts), fn($p) => $p !== '');
 
         if (empty($parts)) return null;

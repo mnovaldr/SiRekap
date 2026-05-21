@@ -10,6 +10,69 @@
         gap: 2.25rem !important;
     }
     
+    /* Header Card & Header Layout */
+    .import-header-card {
+        padding: 2rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2.5rem !important;
+    }
+    .import-header-row {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        gap: 1rem !important;
+        width: 100% !important;
+    }
+    @media (min-width: 768px) {
+        .import-header-row {
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 1.5rem !important;
+        }
+    }
+    .import-header-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 1.25rem !important;
+    }
+    .import-header-icon-box {
+        background-color: #4f46e5 !important;
+        border-radius: 1rem !important;
+        padding: 0.875rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2) !important;
+        flex-shrink: 0 !important;
+    }
+    .import-header-icon-box svg {
+        color: #ffffff !important;
+        width: 1.75rem !important;
+        height: 1.75rem !important;
+    }
+    .import-header-title {
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        color: #111827 !important;
+        letter-spacing: -0.025em !important;
+        line-height: 1.25 !important;
+        margin: 0 !important;
+    }
+    .dark .import-header-title {
+        color: #ffffff !important;
+    }
+    .import-header-sub {
+        font-size: 0.875rem !important;
+        color: #6b7280 !important;
+        margin-top: 0.25rem !important;
+        margin-bottom: 0 !important;
+    }
+    .dark .import-header-sub {
+        color: #9ca3af !important;
+    }
+
     /* Cards */
     .import-wrap .card-premium {
         background-color: #fff;
@@ -685,6 +748,28 @@
         animation: spin 1s linear infinite;
         box-sizing: border-box;
     }
+    .pulse-ring {
+        position: absolute;
+        inset: -8px;
+        border: 2px solid rgba(79, 70, 229, 0.15);
+        border-radius: 50%;
+        animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        box-sizing: border-box;
+    }
+    @keyframes pulse-ring {
+        0% {
+            transform: scale(0.85);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(1.15);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(0.85);
+            opacity: 0.5;
+        }
+    }
     .spinner-icon {
         position: absolute;
         inset: 0;
@@ -709,15 +794,15 @@
     </style>
 
     {{-- HEADER & STEPS --}}
-    <div class="card-premium p-6 sm:p-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-            <div class="flex items-center gap-4">
-                <div class="p-3 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none">
-                    <x-heroicon-o-arrow-up-tray class="w-7 h-7 text-white" />
+    <div class="card-premium import-header-card">
+        <div class="import-header-row">
+            <div class="import-header-left">
+                <div class="import-header-icon-box">
+                    <x-heroicon-o-arrow-up-tray />
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Import Data Event</h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Integrasi data Excel ke dalam ekosistem MCC</p>
+                    <h1 class="import-header-title">Import Data Event</h1>
+                    <p class="import-header-sub">Integrasi data Excel ke dalam ekosistem MCC</p>
                 </div>
             </div>
             
@@ -786,21 +871,36 @@
                     
                     <input type="file" id="file-upload" style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 20;" wire:model="file" accept=".xlsx,.xls">
 
-                    {{-- Loading State --}}
+                    {{-- Loading State 1: Uploading File --}}
                     <div wire:loading wire:target="file" class="upload-loading">
                         <div class="spinner-wrap">
                             <div class="spinner-bg"></div>
                             <div class="spinner-spin"></div>
-                            <x-heroicon-o-arrow-up-tray class="spinner-icon" />
+                            <div class="pulse-ring"></div>
+                            <x-heroicon-o-arrow-up-tray class="spinner-icon animate-bounce" />
                         </div>
                         <div style="text-align: center;">
-                            <p class="loading-title">Sedang Memproses...</p>
-                            <p class="loading-subtitle">Menganalisis struktur file</p>
+                            <p class="loading-title text-indigo-600 dark:text-indigo-400 font-semibold">Mengunggah File Excel...</p>
+                            <p class="loading-subtitle">Mengirim data file ke server</p>
+                        </div>
+                    </div>
+
+                    {{-- Loading State 2: Processing File --}}
+                    <div wire:loading wire:target="processFile" class="upload-loading">
+                        <div class="spinner-wrap">
+                            <div class="spinner-bg"></div>
+                            <div class="spinner-spin"></div>
+                            <div class="pulse-ring"></div>
+                            <x-heroicon-o-arrow-path class="spinner-icon animate-spin" />
+                        </div>
+                        <div style="text-align: center;">
+                            <p class="loading-title text-indigo-600 dark:text-indigo-400 font-bold">Sedang Memproses...</p>
+                            <p class="loading-subtitle">Menganalisis struktur file & validasi data</p>
                         </div>
                     </div>
 
                     {{-- Default State --}}
-                    <div wire:loading.remove wire:target="file" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 1.5rem; z-index: 10;">
+                    <div wire:loading.remove wire:target="file, processFile" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 1.5rem; z-index: 10;">
                         <div class="upload-icon-wrap">
                             <x-heroicon-o-document-plus />
                         </div>
@@ -822,35 +922,7 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 2rem;">
-            {{-- Guide Card --}}
-            <div class="card-premium-gradient p-6 text-white shadow-xl">
-                <h4 class="guide-title">
-                    <x-heroicon-s-sparkles />
-                    Panduan Cepat
-                </h4>
-                <ul class="guide-list">
-                    <li class="guide-item">
-                        <span class="guide-num">1</span>
-                        <span>Gunakan template resmi MCC</span>
-                    </li>
-                    <li class="guide-item">
-                        <span class="guide-num">2</span>
-                        <span>Sheet per bulan akan terbaca otomatis</span>
-                    </li>
-                    <li class="guide-item">
-                        <span class="guide-num">3</span>
-                        <span>Header kolom di baris pertama</span>
-                    </li>
-                </ul>
-                
-                <div class="mt-6 pt-4 border-t border-white/20">
-                    <a href="#" class="btn-white-premium">
-                        <x-heroicon-o-arrow-down-tray class="w-4 h-4 mr-2" />
-                        Unduh Template
-                    </a>
-                </div>
-            </div>
-
+            
             {{-- Required Columns --}}
             <div class="card-premium p-6">
                 <h4 class="required-title">Kolom Wajib</h4>
@@ -935,148 +1007,150 @@
                     </div>
                 </div>
             </div>
-
         </div>
 
-        {{-- Column Mapping + Action --}}
         <div class="import-grid items-start">
 
-            {{-- Column Discovery Panel --}}
-            <div class="card-premium import-col-span-2" style="padding:1.5rem;">
-                @php
-                    $required = [
-                        'Nama Organisasi'    => ['nama organisasi', 'organisasi', 'komunitas'],
-                        'Bidang'             => ['bidang'],
-                        'Jenis Kegiatan'     => ['jenis kegiatan', 'kegiatan'],
-                        'Judul Kegiatan'     => ['judul kegiatan', 'judul kegiatan/event', 'judul', 'event'],
-                        'Tanggal Pelaksanaan'=> ['tanggal', 'tanggal kegiatan', 'tgl'],
-                        'Lokasi'             => ['lokasi', 'ruangan'],
-                        'Jumlah Peserta'     => ['jumlah peserta', 'peserta'],
-                    ];
-                    $foundLower   = array_map('strtolower', $foundColumns);
-                    $matchedCount = 0;
-                    foreach ($required as $keys) {
-                        foreach ($keys as $key) {
-                            foreach ($foundLower as $fc) {
-                                if (str_contains($fc, $key) || str_contains($key, $fc)) { $matchedCount++; break 2; }
-                            }
-                        }
-                    }
-                    $missingCount = count($required) - $matchedCount;
-                @endphp
-
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
-                    <div>
-                        <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0;">Struktur Kolom Terdeteksi</h3>
-                        <p style="font-size:0.75rem;color:#6b7280;margin-top:3px;">Sistem mendeteksi mapping kolom berikut dari file Anda</p>
-                    </div>
-                    <div style="display:flex;gap:6px;">
-                        <span class="badge-matched">{{ $matchedCount }} Matched</span>
-                        @if($missingCount > 0)
-                        <span class="badge-cols-missing">{{ $missingCount }} Missing</span>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="col-map-list">
-                    @foreach($required as $label => $keys)
-                        @php
-                            $isMatched  = false;
-                            $matchedCol = '';
-                            $icons = [
-                                'Nama Organisasi'     => 'heroicon-o-building-office',
-                                'Bidang'              => 'heroicon-o-squares-2x2',
-                                'Tanggal Pelaksanaan' => 'heroicon-o-calendar-days',
-                                'Jumlah Peserta'      => 'heroicon-o-users',
-                                'Lokasi'              => 'heroicon-o-map-pin',
-                                'Jenis Kegiatan'      => 'heroicon-o-tag',
-                                'Judul Kegiatan'      => 'heroicon-o-document-text',
-                            ];
-                            $iconComp = $icons[$label] ?? 'heroicon-o-document-text';
+            {{-- Left Column: Column Discovery Panel + Action Panel (Buttons) --}}
+            <div class="import-col-span-2" style="display: flex; flex-direction: column; gap: 2rem; width: 100%;">
+                
+                {{-- Column Discovery Panel --}}
+                <div class="card-premium" style="padding:1.5rem; width: 100%;">
+                    @php
+                        $required = [
+                            'Nama Organisasi'    => ['nama organisasi', 'organisasi', 'komunitas'],
+                            'Bidang'             => ['bidang'],
+                            'Jenis Kegiatan'     => ['jenis kegiatan', 'kegiatan'],
+                            'Judul Kegiatan'     => ['judul kegiatan', 'judul kegiatan/event', 'judul', 'event'],
+                            'Tanggal Pelaksanaan'=> ['tanggal', 'tanggal kegiatan', 'tgl'],
+                            'Lokasi'             => ['lokasi', 'ruangan'],
+                            'Jumlah Peserta'     => ['jumlah peserta', 'peserta'],
+                        ];
+                        $foundLower   = array_map('strtolower', $foundColumns);
+                        $matchedCount = 0;
+                        foreach ($required as $keys) {
                             foreach ($keys as $key) {
-                                foreach ($foundLower as $idx => $fc) {
-                                    if (str_contains($fc, $key) || str_contains($key, $fc)) {
-                                        $isMatched = true;
-                                        $matchedCol = $foundColumns[$idx];
-                                        break 2;
-                                    }
+                                foreach ($foundLower as $fc) {
+                                    if (str_contains($fc, $key) || str_contains($key, $fc)) { $matchedCount++; break 2; }
                                 }
                             }
-                            $isOptional = in_array($label, ['Lokasi','Jumlah Peserta']);
-                        @endphp
-                        <div class="col-map-row {{ !$isMatched ? 'missing' : '' }}">
-                            <div style="display:flex;align-items:center;flex:1;">
-                                <div class="col-map-icon">
-                                    <x-dynamic-component :component="$iconComp" style="width:18px;height:18px;" />
-                                </div>
-                                <div class="col-map-info">
-                                    <div class="col-map-name">{{ $label }}</div>
-                                    <div class="col-map-sub">{{ $isOptional ? 'Opsional' : 'Wajib diisi' }}</div>
-                                </div>
-                            </div>
-                            <div class="col-map-right">
-                                @if($isMatched)
-                                    <span class="col-map-mapped">Mapped to "{{ $matchedCol }}"</span>
-                                    <span class="badge-sesuai">
-                                        <x-heroicon-s-check-circle style="width:12px;height:12px;" /> Sesuai
-                                    </span>
-                                @else
-                                    <span class="btn-manual">Pilih Kolom Manually</span>
-                                    <span class="badge-missing">
-                                        <x-heroicon-s-x-circle style="width:12px;height:12px;" /> Missing
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
+                        }
+                        $missingCount = count($required) - $matchedCount;
+                    @endphp
 
-            {{-- Right Column: Action Panel + Bulan Terdeteksi --}}
-            <div style="display: flex; flex-direction: column; gap: 2rem; width: 100%;">
-                {{-- Action Panel --}}
-                <div class="action-panel">
-                    <button wire:click="$set('currentStep', 3)" wire:loading.attr="disabled" class="btn-primary-xl">
-                        Lanjutkan ke Pratinjau
-                        <x-heroicon-o-arrow-right style="width:18px;height:18px;" />
-                    </button>
-                    <button wire:click="resetImport" wire:loading.attr="disabled" class="btn-outline-xl">
-                        <x-heroicon-o-cloud-arrow-up style="width:18px;height:18px;" />
-                        Unggah Ulang File
-                    </button>
-                    <div class="hint-box">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                        <div>
+                            <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0;">Struktur Kolom Terdeteksi</h3>
+                            <p style="font-size:0.75rem;color:#6b7280;margin-top:3px;">Sistem mendeteksi mapping kolom berikut dari file Anda</p>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <span class="badge-matched">{{ $matchedCount }} Matched</span>
+                            @if($missingCount > 0)
+                            <span class="badge-cols-missing">{{ $missingCount }} Missing</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="col-map-list">
+                        @foreach($required as $label => $keys)
+                            @php
+                                $isMatched  = false;
+                                $matchedCol = '';
+                                $icons = [
+                                    'Nama Organisasi'     => 'heroicon-o-building-office',
+                                    'Bidang'              => 'heroicon-o-squares-2x2',
+                                    'Tanggal Pelaksanaan' => 'heroicon-o-calendar-days',
+                                    'Jumlah Peserta'      => 'heroicon-o-users',
+                                    'Lokasi'              => 'heroicon-o-map-pin',
+                                    'Jenis Kegiatan'      => 'heroicon-o-tag',
+                                    'Judul Kegiatan'      => 'heroicon-o-document-text',
+                                ];
+                                $iconComp = $icons[$label] ?? 'heroicon-o-document-text';
+                                foreach ($keys as $key) {
+                                    foreach ($foundLower as $idx => $fc) {
+                                        if (str_contains($fc, $key) || str_contains($key, $fc)) {
+                                            $isMatched = true;
+                                            $matchedCol = $foundColumns[$idx];
+                                            break 2;
+                                        }
+                                    }
+                                }
+                                $isOptional = in_array($label, ['Lokasi','Jumlah Peserta']);
+                            @endphp
+                            <div class="col-map-row {{ !$isMatched ? 'missing' : '' }}">
+                                <div style="display:flex;align-items:center;flex:1;">
+                                    <div class="col-map-icon">
+                                        <x-dynamic-component :component="$iconComp" style="width:18px;height:18px;" />
+                                    </div>
+                                    <div class="col-map-info">
+                                        <div class="col-map-name">{{ $label }}</div>
+                                        <div class="col-map-sub">{{ $isOptional ? 'Opsional' : 'Wajib diisi' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-map-right">
+                                    @if($isMatched)
+                                        <span class="col-map-mapped">Mapped to "{{ $matchedCol }}"</span>
+                                        <span class="badge-sesuai">
+                                            <x-heroicon-s-check-circle style="width:12px;height:12px;" /> Sesuai
+                                        </span>
+                                    @else
+                                        <span class="btn-manual">Pilih Kolom Manually</span>
+                                        <span class="badge-missing">
+                                            <x-heroicon-s-x-circle style="width:12px;height:12px;" /> Missing
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Action Panel (Buttons + Hint) --}}
+                <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+                    <div style="display: flex; gap: 1rem; width: 100%; flex-wrap: wrap;">
+                        <button wire:click="$set('currentStep', 3)" wire:loading.attr="disabled" class="btn-primary-xl" style="flex: 1; min-width: 240px; width: auto !important; margin: 0; justify-content: center;">
+                            Lanjutkan ke Pratinjau
+                            <x-heroicon-o-arrow-right style="width:18px;height:18px;" />
+                        </button>
+                        <button wire:click="resetImport" wire:loading.attr="disabled" class="btn-outline-xl" style="flex: 1; min-width: 240px; width: auto !important; margin: 0; justify-content: center;">
+                            <x-heroicon-o-cloud-arrow-up style="width:18px;height:18px;" />
+                            Unggah Ulang File
+                        </button>
+                    </div>
+                    <div class="hint-box" style="width: 100%; margin: 0;">
                         <x-heroicon-o-information-circle style="width:18px;height:18px;flex-shrink:0;" />
                         <span>Format: <strong>.xlsx, .xls, .csv</strong> maks. 10MB.</span>
                     </div>
                 </div>
 
-                {{-- Bulan Terdeteksi Card --}}
-                <div class="card-premium" style="padding:1.5rem;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
-                        <div>
-                            <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0;">Bulan Terdeteksi</h3>
-                            <p style="font-size:0.75rem;color:#6b7280;margin-top:3px;">Daftar sheet bulan dan jumlah data yang valid</p>
-                        </div>
+            </div>
+
+            {{-- Right Column: Bulan Terdeteksi --}}
+            <div class="card-premium" style="padding:1.5rem; width: 100%;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                    <div>
+                        <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0;">Bulan Terdeteksi</h3>
+                        <p style="font-size:0.75rem;color:#6b7280;margin-top:3px;">Daftar sheet bulan dan jumlah data yang valid</p>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                        @forelse($detectedMonths as $month => $count)
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 0.875rem; border: 1px solid #e5e7eb; background: #fff;" class="dark:bg-gray-800 dark:border-gray-700">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #e0f2fe; color: #0369a1;" class="dark:bg-sky-900/30 dark:text-sky-400">
-                                        <x-heroicon-o-calendar style="width:16px;height:16px;" />
-                                    </div>
-                                    <span style="font-size: 0.875rem; font-weight: 700; color: #111827;" class="dark:text-white">{{ $month }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    @forelse($detectedMonths as $month => $count)
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 0.875rem; border: 1px solid #e5e7eb; background: #fff;" class="dark:bg-gray-800 dark:border-gray-700">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #e0f2fe; color: #0369a1;" class="dark:bg-sky-900/30 dark:text-sky-400">
+                                    <x-heroicon-o-calendar style="width:16px;height:16px;" />
                                 </div>
-                                <span class="badge-premium badge-primary bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300">
-                                    {{ $count }} baris
-                                </span>
+                                <span style="font-size: 0.875rem; font-weight: 700; color: #111827;" class="dark:text-white">{{ $month }}</span>
                             </div>
-                        @empty
-                            <div style="padding: 1.5rem; text-align: center; color: #9ca3af; font-size: 0.875rem; border: 1px dashed #e5e7eb; border-radius: 0.875rem;" class="dark:border-gray-700">
-                                Tidak ada data bulan terdeteksi
-                            </div>
-                        @endforelse
-                    </div>
+                            <span class="badge-premium badge-primary bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300">
+                                {{ $count }} baris
+                            </span>
+                        </div>
+                    @empty
+                        <div style="padding: 1.5rem; text-align: center; color: #9ca3af; font-size: 0.875rem; border: 1px dashed #e5e7eb; border-radius: 0.875rem;" class="dark:border-gray-700">
+                            Tidak ada data bulan terdeteksi
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
