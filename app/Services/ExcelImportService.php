@@ -83,41 +83,36 @@ class ExcelImportService
         $foundHeaders = [];
 
         try {
-            // ── Tahap 1: Baca daftar sheet names saja (ringan) ──
+            // ── Tahap 1: Load spreadsheet (sekali saja) ──
             $reader = IOFactory::createReaderForFile($filePath);
             $reader->setReadDataOnly(true);
-
-            // Baca hanya struktur untuk mendapatkan nama sheet
             $spreadsheet = $reader->load($filePath);
             $sheetNames  = $spreadsheet->getSheetNames();
-            $spreadsheet->disconnectWorksheets();
-            unset($spreadsheet);
-            gc_collect_cycles();
 
-            // ── Tahap 2: Load setiap sheet bulan satu per satu ──
-            $bulanSheets = array_filter($sheetNames, fn($n) => in_array($n, $this->validMonths));
+            // ── Tahap 2: Load setiap sheet bulan dari memory ──
+            $validMonthsLower = array_map('strtolower', $this->validMonths);
+            $bulanSheets = [];
+            foreach ($sheetNames as $originalName) {
+                $trimmedName = trim($originalName);
+                if (in_array(strtolower($trimmedName), $validMonthsLower)) {
+                    $bulanSheets[$trimmedName] = $originalName; // Map trimmed to original
+                }
+            }
             
             Log::info("Import Excel: Ditemukan " . count($bulanSheets) . " sheet bulan", [
-                'sheets' => $bulanSheets,
+                'sheets' => array_values($bulanSheets),
                 'file' => basename($filePath)
             ]);
 
-            foreach ($bulanSheets as $sheetName) {
+            foreach ($bulanSheets as $trimmedName => $originalName) {
+                $sheetName = $originalName;
+                $trimmedSheetName = $trimmedName;
                 try {
-                    Log::info("Memproses sheet: {$sheetName}");
+                    Log::info("Memproses sheet: {$sheetName} (trimmed: {$trimmedSheetName})");
                     
-                    // OPTIMASI: Baca sheet dengan chunk filter untuk hemat memory
-                    $reader2 = IOFactory::createReaderForFile($filePath);
-                    $reader2->setReadDataOnly(true);
-                    $reader2->setLoadSheetsOnly([$sheetName]);
-
-                    $wb   = $reader2->load($filePath);
-                    $sheet = $wb->getSheetByName($sheetName);
+                    $sheet = $spreadsheet->getSheetByName($sheetName);
 
                     if (!$sheet) {
-                        $wb->disconnectWorksheets();
-                        unset($wb, $reader2);
-                        gc_collect_cycles();
                         continue;
                     }
 
@@ -144,9 +139,7 @@ class ExcelImportService
                     
                     if ($headerRow === null) {
                         Log::warning("Sheet [{$sheetName}]: Header tidak ditemukan, skip sheet");
-                        $wb->disconnectWorksheets();
-                        unset($wb, $sheet, $reader2, $headerSample);
-                        gc_collect_cycles();
+                        unset($headerSample);
                         continue;
                     }
 
@@ -201,7 +194,7 @@ class ExcelImportService
                             if (empty($header)) continue;
                             $mapped[$header] = $rowData[$idx] ?? null;
                         }
-                        $mapped['_sheet'] = $sheetName;
+                        $mapped['_sheet'] = $trimmedSheetName;
                         $allData[] = $mapped;
                         $rowCount++;
 
@@ -211,15 +204,14 @@ class ExcelImportService
                         }
                     }
 
-                    $wb->disconnectWorksheets();
-                    unset($wb, $sheet, $reader2, $headers, $headerSample);
+                    unset($headers, $headerSample);
                     gc_collect_cycles();
                     
                     Log::info("Sheet [{$sheetName}] selesai: {$rowCount} baris data");
                     
                     // Log sample data pertama untuk debugging
                     if ($rowCount > 0) {
-                        $sampleData = array_filter($allData, fn($d) => ($d['_sheet'] ?? '') === $sheetName);
+                        $sampleData = array_filter($allData, fn($d) => ($d['_sheet'] ?? '') === $trimmedSheetName);
                         if (!empty($sampleData)) {
                             $firstRow = reset($sampleData);
                             Log::info("Sheet [{$sheetName}] sample data:", [
@@ -243,10 +235,8 @@ class ExcelImportService
             if (empty($allData)) {
                 Log::info("Tidak ada sheet bulan, menggunakan sheet aktif");
                 
-                $reader3 = IOFactory::createReaderForFile($filePath);
-                $reader3->setReadDataOnly(true);
-                $wb3   = $reader3->load($filePath);
-                $sheet = $wb3->getActiveSheet();
+                $sheet = $spreadsheet->getActiveSheet();
+                $sheetName = trim($sheet->getTitle());
                 
                 $highestRow = $sheet->getHighestRow();
                 $highestCol = $sheet->getHighestColumn();
@@ -302,6 +292,7 @@ class ExcelImportService
                         if (empty($header)) continue;
                         $mapped[$header] = $rowData[$idx] ?? null;
                     }
+                    $mapped['_sheet'] = $sheetName;
                     $allData[] = $mapped;
 
                     // Garbage collection setiap 100 baris
@@ -309,11 +300,14 @@ class ExcelImportService
                         gc_collect_cycles();
                     }
                 }
-
-                $wb3->disconnectWorksheets();
-                unset($wb3, $sheet, $reader3, $headers, $headerSample);
+                unset($headers, $headerSample);
                 gc_collect_cycles();
             }
+
+            // Disconnect worksheets to free memory
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+            gc_collect_cycles();
 
         } catch (\Throwable $e) {
             ini_set('memory_limit', $prevMemLimit);
@@ -407,39 +401,33 @@ class ExcelImportService
             $rowScores[$idx] = $score;
         }
 
-        // Temukan baris-baris yang memiliki skor > 0 (kandidat header)
-        $candidateRows = array_keys(array_filter($rowScores, fn($s) => $s > 0));
-
-        if (empty($candidateRows)) {
-            return [null, null, null]; // Tidak ada header ditemukan
-        }
-
-        // Temukan BLOK KONSEKUTIF pertama dari kandidat header
-        // Contoh: [1, 2] → blok header baris 1 dan 2 (format 2025)
-        // Contoh: [0]    → blok header baris 0 saja (format 2023)
-        // Contoh: [3, 4] → header di baris 3-4 (file dengan judul di atas)
-        $blockStart = $candidateRows[0];
-        $blockEnd   = $candidateRows[0];
-
-        for ($i = 1; $i < count($candidateRows); $i++) {
-            if ($candidateRows[$i] === $blockEnd + 1) {
-                // Baris ini konsekutif → masuk ke blok yang sama
-                $blockEnd = $candidateRows[$i];
-            } else {
-                // Tidak konsekutif → berhenti di blok pertama
-                break;
+        // Cari row dengan score tertinggi (anchor row)
+        $maxScore = -1;
+        $anchorIdx = null;
+        foreach ($rowScores as $idx => $score) {
+            if ($score > $maxScore) {
+                $maxScore = $score;
+                $anchorIdx = $idx;
             }
         }
 
-        $dataStartRow = $blockEnd + 1; // Baris data = tepat setelah blok header
+        // Header setidaknya butuh 4 key columns yang cocok
+        if ($anchorIdx === null || $maxScore < 4) {
+            return [null, null, null]; // Tidak ada header ditemukan
+        }
 
-        if ($blockStart === $blockEnd) {
-            // Satu baris header (format 2023/2024)
-            return [$blockEnd, $dataStartRow, null];
+        $scoreAfter = $rowScores[$anchorIdx + 1] ?? 0;
+        $scoreBefore = $rowScores[$anchorIdx - 1] ?? 0;
+
+        if ($scoreAfter >= 3) {
+            // Jika row setelah anchor memiliki kecocokan tinggi (>=3), merge anchor (parent) dan row setelahnya (sub-header)
+            return [$anchorIdx + 1, $anchorIdx + 2, $anchorIdx];
+        } elseif ($scoreBefore >= 3) {
+            // Jika row sebelum anchor memiliki kecocokan tinggi (>=3), merge row sebelum (parent) dan anchor (sub-header)
+            return [$anchorIdx, $anchorIdx + 1, $anchorIdx - 1];
         } else {
-            // Multi-baris header (format 2025: parent + sub-header)
-            // blockStart = parent (row paling atas), blockEnd = sub-header (row paling bawah)
-            return [$blockEnd, $dataStartRow, $blockStart];
+            // Single-row header
+            return [$anchorIdx, $anchorIdx + 1, null];
         }
     }
 
@@ -563,6 +551,7 @@ class ExcelImportService
                 'email'           => $emailVal,
                 'no_telepon'      => $noTelpVal,
                 'pic'             => $picVal,
+                '_sheet'          => isset($item['_sheet']) ? trim((string) $item['_sheet']) : null,
             ];
 
             // Cartesian product: lantai × lokasi

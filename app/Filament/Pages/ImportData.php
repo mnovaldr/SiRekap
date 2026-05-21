@@ -35,6 +35,8 @@ class ImportData extends Page
     public string $processMessage = '';
     public bool $imported = false;
     public array $foundColumns = [];
+    public array $detectedMonths = [];
+    public ?string $importUuid = null;
 
     // Pagination for preview
     public int $currentPage = 1;
@@ -54,6 +56,7 @@ class ImportData extends Page
         $this->reviewRows = 0;
         $this->imported = false;
         $this->currentPage = 1;
+        $this->detectedMonths = [];
     }
 
     public function updatedFile(): void
@@ -99,6 +102,7 @@ class ImportData extends Page
     }
 
     public function processFile(): void
+    public function processFile(): void
     {
         if (!$this->file) return;
 
@@ -130,12 +134,22 @@ class ImportData extends Page
             $standardized = $service->standardize($raw);
             $withStatus = $service->detectDuplicates($standardized);
 
+            $detected = [];
+            foreach ($withStatus as $row) {
+                $sheet = $row['_sheet'] ?? $row['bulan'] ?? 'Unknown';
+                $detected[$sheet] = ($detected[$sheet] ?? 0) + 1;
+            }
+            $this->detectedMonths = $detected;
+
             $this->totalRows = count($withStatus);
             $this->validRows = count(array_filter($withStatus, fn($r) => $r['status_data'] === 'Valid'));
             $this->duplikatRows = count(array_filter($withStatus, fn($r) => $r['status_data'] === 'Duplikat'));
             $this->reviewRows = count(array_filter($withStatus, fn($r) => $r['status_data'] === 'Review'));
 
-            session(['import_data' => $withStatus]);
+            // Write to temporary JSON file instead of session
+            $this->importUuid = (string) \Illuminate\Support\Str::uuid();
+            $this->writeTempData($this->importUuid, $withStatus);
+
             $this->currentStep = 2; // Move to validation step
             $this->currentPage = 1;
             
@@ -151,7 +165,10 @@ class ImportData extends Page
 
     public function getPreviewDataProperty()
     {
-        $data = session('import_data', []);
+        if (!$this->importUuid) {
+            return [];
+        }
+        $data = $this->readTempData($this->importUuid);
         $offset = ($this->currentPage - 1) * $this->perPage;
         return array_slice($data, $offset, $this->perPage);
     }
@@ -172,7 +189,11 @@ class ImportData extends Page
 
     public function confirmImport(): void
     {
-        $data = session('import_data', []);
+        if (!$this->importUuid) {
+            Notification::make()->title('Tidak ada data')->warning()->send();
+            return;
+        }
+        $data = $this->readTempData($this->importUuid);
         if (empty($data)) {
             Notification::make()->title('Tidak ada data')->warning()->send();
             return;
@@ -226,7 +247,8 @@ class ImportData extends Page
                 }
             });
 
-            session()->forget('import_data');
+            $this->deleteTempData($this->importUuid);
+            $this->importUuid = null;
             $this->imported = true;
             $this->currentStep = 4;
 
@@ -269,10 +291,45 @@ class ImportData extends Page
 
     public function resetImport(): void
     {
+        if ($this->importUuid) {
+            $this->deleteTempData($this->importUuid);
+            $this->importUuid = null;
+        }
         $this->file = null;
         $this->currentStep = 1;
         $this->foundColumns = [];
         $this->resetStats();
-        session()->forget('import_data');
     }
+
+    protected function getTempFilePath(string $uuid): string
+    {
+        $dir = storage_path('app/private/import-temp');
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        return $dir . '/' . $uuid . '.json';
+    }
+
+    protected function writeTempData(string $uuid, array $data): void
+    {
+        $filePath = $this->getTempFilePath($uuid);
+        file_put_contents($filePath, json_encode($data));
+    }
+
+    protected function readTempData(string $uuid): array
+    {
+        $filePath = $this->getTempFilePath($uuid);
+        if (file_exists($filePath)) {
+            return json_decode(file_get_contents($filePath), true) ?? [];
+        }
+        return [];
+    }
+
+    protected function deleteTempData(string $uuid): void
+    {
+        $filePath = $this->getTempFilePath($uuid);
+        if (file_exists($filePath)) {
+            @unlink($filePath);
+        }
+    } }
 }

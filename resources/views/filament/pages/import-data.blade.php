@@ -1,29 +1,34 @@
-﻿<x-filament-panels::page>
-<div class="import-wrap space-y-8 pb-10">
+<x-filament-panels::page>
+<div class="import-wrap pb-10">
 
     <style>
     /* Ã¢â€â‚¬Ã¢â€â‚¬ Import Design System Ã¢â€â‚¬Ã¢â€â‚¬ */
-    .import-wrap { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    .import-wrap {
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2.25rem !important;
+    }
     
     /* Cards */
-    .card-premium {
-        background: #fff;
+    .import-wrap .card-premium {
+        background-color: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 1.5rem;
         transition: all 0.3s ease;
     }
-    .dark .card-premium { background: #1f2937; border-color: #374151; }
-    .card-premium:hover { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1); }
+    .import-wrap .dark .card-premium { background-color: #1f2937; border-color: #374151; }
+    .import-wrap .card-premium:hover { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1); }
 
     /* Stat Cards */
     .stat-card {
-        background: #fff;
+        background-color: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 1.25rem;
         padding: 1.5rem;
         transition: all 0.3s ease;
     }
-    .dark .stat-card { background: #1f2937; border-color: #374151; }
+    .dark .stat-card { background-color: #1f2937; border-color: #374151; }
     .stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -12px rgba(0,0,0,0.12); border-color: #4f46e5; }
     
     .stat-card .icon-wrap {
@@ -63,7 +68,7 @@
     }
     .step-line {
         position: absolute;
-        top: 1.25rem;
+        top: 1.375rem;
         left: 50%;
         width: 100%;
         height: 2px;
@@ -370,6 +375,337 @@
     /* Matched/Missing badges in header */
     .badge-matched { background: #eef2ff; color: #4338ca; padding: 3px 10px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; }
     .badge-cols-missing { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; }
+
+    /* Custom Grid Layouts */
+    .import-wrap .import-grid {
+        display: grid !important;
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+        gap: 2rem !important;
+    }
+    @media (min-width: 768px) {
+        .import-wrap .import-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+        .import-wrap .import-col-span-2 {
+            grid-column: span 2 / span 2 !important;
+        }
+    }
+
+    .import-wrap .grid-4-cols {
+        display: grid !important;
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+        gap: 2rem !important;
+    }
+    @media (min-width: 640px) {
+        .import-wrap .grid-4-cols {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .import-wrap .grid-4-cols {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+
+    .import-wrap .grid-2-cols {
+        display: grid !important;
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+        gap: 2rem !important;
+    }
+    @media (min-width: 768px) {
+        .import-wrap .grid-2-cols {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+
+    .import-wrap .grid-3-cols-simple {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+
+    /* Gradient Card Style */
+    .import-wrap .card-premium-gradient {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%) !important;
+        border: none !important;
+        border-radius: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .import-wrap .card-premium-gradient:hover {
+        box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-white-premium {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.625rem 1.25rem;
+        background-color: #ffffff !important;
+        color: #4338ca !important;
+        font-weight: 700;
+        font-size: 0.875rem;
+        border-radius: 0.75rem;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-white-premium:hover {
+        background-color: #f3f4f6 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Guide List Style */
+    .guide-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .guide-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.4;
+    }
+    .guide-num {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 0.375rem;
+        background-color: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #ffffff;
+        flex-shrink: 0;
+        margin-top: 0.125rem;
+    }
+    .guide-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #ffffff;
+    }
+    .guide-title svg {
+        width: 1.25rem;
+        height: 1.25rem;
+        color: #c7d6ff;
+    }
+
+    /* Required Columns List Style */
+    .required-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0 0 1rem 0;
+        color: #111827;
+    }
+    .dark .required-title { color: #ffffff; }
+    
+    .required-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .required-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.75rem;
+        background-color: #f9fafb;
+        font-size: 0.875rem;
+        color: #374151;
+    }
+    .dark .required-item {
+        background-color: rgba(31, 41, 55, 0.5);
+        color: #d1d5db;
+    }
+    .required-check {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 50%;
+        background-color: #10b981;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: #ffffff;
+    }
+    .required-check svg {
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+
+    /* Custom Upload Zone */
+    .upload-zone {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        min-height: 24rem;
+        border: 2px dashed #d1d5db;
+        border-radius: 1rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fcfcfc;
+        padding: 2rem;
+        box-sizing: border-box;
+    }
+    .dark .upload-zone {
+        border-color: #4b5563;
+        background: #1a222e;
+    }
+    .upload-zone:hover {
+        border-color: #4f46e5;
+        background: #ffffff;
+    }
+    .dark .upload-zone:hover {
+        background: #1f2937;
+    }
+    .upload-icon-wrap {
+        width: 5rem;
+        height: 5rem;
+        background-color: #ffffff;
+        border-radius: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f3f4f6;
+        transition: all 0.3s ease;
+    }
+    .dark .upload-icon-wrap {
+        background-color: #111827;
+        border-color: #374151;
+    }
+    .upload-zone:hover .upload-icon-wrap {
+        transform: scale(1.1);
+        border-color: #c7d6ff;
+    }
+    .upload-icon-wrap svg {
+        width: 2.5rem;
+        height: 2.5rem;
+        color: #9ca3af;
+        transition: color 0.3s ease;
+    }
+    .upload-zone:hover .upload-icon-wrap svg {
+        color: #4f46e5;
+    }
+    
+    .upload-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 0.5rem 0;
+        letter-spacing: -0.02em;
+    }
+    .dark .upload-title { color: #ffffff; }
+    
+    .upload-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0 0 0.75rem 0;
+        max-w: 20rem;
+        line-height: 1.5;
+    }
+    .dark .upload-subtitle { color: #9ca3af; }
+    
+    .upload-hint {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin: 0 0 1.5rem 0;
+        font-weight: 500;
+    }
+    
+    .upload-badges {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .upload-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background-color: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid #e0e7ff;
+    }
+    .dark .upload-badge {
+        background-color: rgba(79, 70, 229, 0.15);
+        color: #a5b4fc;
+        border-color: rgba(79, 70, 229, 0.3);
+    }
+
+    /* Upload Loading State CSS */
+    .upload-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        z-index: 10;
+    }
+    .spinner-wrap {
+        position: relative;
+        width: 4rem;
+        height: 4rem;
+    }
+    .spinner-bg {
+        width: 100%;
+        height: 100%;
+        border: 4px solid #e0e7ff;
+        border-radius: 50%;
+        box-sizing: border-box;
+    }
+    .dark .spinner-bg {
+        border-color: rgba(79, 70, 229, 0.15);
+    }
+    .spinner-spin {
+        position: absolute;
+        inset: 0;
+        border: 4px solid transparent;
+        border-top-color: #4f46e5;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        box-sizing: border-box;
+    }
+    .spinner-icon {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: 1.5rem;
+        height: 1.5rem;
+        color: #4f46e5;
+    }
+    .loading-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+    }
+    .dark .loading-title { color: #ffffff; }
+    .loading-subtitle {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin: 0.25rem 0 0 0;
+    }
+    .dark .loading-subtitle { color: #9ca3af; }
     </style>
 
     {{-- HEADER & STEPS --}}
@@ -432,8 +768,8 @@
 
     {{-- STEP 1: UPLOAD AREA --}}
     @if($currentStep === 1)
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2">
+    <div class="import-grid">
+        <div class="import-col-span-2">
             <div class="card-premium p-6 h-full">
                 <label for="file-upload" 
                     x-data="{ isDragging: false }"
@@ -446,86 +782,85 @@
                         }
                     "
                     x-bind:class="{ 'upload-zone-dropping': isDragging }"
-                    class="upload-zone relative flex flex-col items-center justify-center w-full h-96 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl cursor-pointer transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500">
+                    class="upload-zone">
                     
-                    <input type="file" id="file-upload" class="absolute inset-0 opacity-0 cursor-pointer" wire:model="file" accept=".xlsx,.xls">
+                    <input type="file" id="file-upload" style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 20;" wire:model="file" accept=".xlsx,.xls">
 
                     {{-- Loading State --}}
-                    <div wire:loading wire:target="file" class="flex flex-col items-center gap-4 z-10">
-                        <div class="relative">
-                            <div class="w-16 h-16 border-4 border-indigo-200 dark:border-indigo-900/30 rounded-full"></div>
-                            <div class="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                            <x-heroicon-o-arrow-up-tray class="absolute inset-0 m-auto w-6 h-6 text-indigo-600" />
+                    <div wire:loading wire:target="file" class="upload-loading">
+                        <div class="spinner-wrap">
+                            <div class="spinner-bg"></div>
+                            <div class="spinner-spin"></div>
+                            <x-heroicon-o-arrow-up-tray class="spinner-icon" />
                         </div>
-                        <div class="text-center">
-                            <p class="text-sm font-semibold text-gray-900 dark:text-white">Sedang Memproses...</p>
-                            <p class="text-xs text-gray-500 mt-1">Menganalisis struktur file</p>
+                        <div style="text-align: center;">
+                            <p class="loading-title">Sedang Memproses...</p>
+                            <p class="loading-subtitle">Menganalisis struktur file</p>
                         </div>
                     </div>
 
                     {{-- Default State --}}
-                    <div wire:loading.remove wire:target="file" class="flex flex-col items-center text-center px-6 z-10">
-                        <div class="w-20 h-20 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-500 group-hover:scale-110 group-hover:border-indigo-200 group-hover:shadow-indigo-100 dark:group-hover:shadow-none"
-                             x-bind:class="{ 'scale-110 border-indigo-300 shadow-indigo-200': isDragging }">
-                            <x-heroicon-o-document-plus class="w-10 h-10 text-gray-400 dark:text-gray-500 transition-colors duration-500 group-hover:text-indigo-600"
-                                                        x-bind:class="{ 'text-indigo-600': isDragging }" />
+                    <div wire:loading.remove wire:target="file" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 1.5rem; z-index: 10;">
+                        <div class="upload-icon-wrap">
+                            <x-heroicon-o-document-plus />
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight" 
+                        <h3 class="upload-title" 
                             x-text="isDragging ? 'Lepaskan File Disini' : 'Unggah File Excel'"></h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-xs leading-relaxed" x-show="!isDragging">
+                        <p class="upload-subtitle" x-show="!isDragging">
                             Seret dan lepas file Anda di sini, atau klik untuk memilih file dari komputer
                         </p>
-                        <p class="text-xs text-gray-400 mt-3 font-medium" x-show="!isDragging">
+                        <p class="upload-hint" x-show="!isDragging">
                             Format: .xlsx, .xls (Maks. 10MB)
                         </p>
-                        <div class="flex gap-2 mt-8" x-show="!isDragging">
-                            <span class="badge-premium badge-primary px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">.xlsx</span>
-                            <span class="badge-premium badge-primary px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">.xls</span>
+                        <div class="upload-badges" x-show="!isDragging">
+                            <span class="upload-badge">.xlsx</span>
+                            <span class="upload-badge">.xls</span>
                         </div>
                     </div>
                 </label>
             </div>
         </div>
 
-        <div class="space-y-6">
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
             {{-- Guide Card --}}
-            <div class="card-premium p-6 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-0 shadow-xl">
-                <h4 class="text-base font-bold mb-4 flex items-center gap-2">
-                    <x-heroicon-s-sparkles class="w-5 h-5 text-indigo-200" />
+            <div class="card-premium-gradient p-6 text-white shadow-xl">
+                <h4 class="guide-title">
+                    <x-heroicon-s-sparkles />
                     Panduan Cepat
                 </h4>
-                <ul class="space-y-3">
-                    <li class="flex gap-3 text-sm">
-                        <span class="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center text-xs font-bold shrink-0">1</span>
-                        <span class="text-indigo-50">Gunakan template resmi MCC</span>
+                <ul class="guide-list">
+                    <li class="guide-item">
+                        <span class="guide-num">1</span>
+                        <span>Gunakan template resmi MCC</span>
                     </li>
-                    <li class="flex gap-3 text-sm">
-                        <span class="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center text-xs font-bold shrink-0">2</span>
-                        <span class="text-indigo-50">Sheet per bulan akan terbaca otomatis</span>
+                    <li class="guide-item">
+                        <span class="guide-num">2</span>
+                        <span>Sheet per bulan akan terbaca otomatis</span>
                     </li>
-                    <li class="flex gap-3 text-sm">
-                        <span class="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center text-xs font-bold shrink-0">3</span>
-                        <span class="text-indigo-50">Header kolom di baris pertama</span>
+                    <li class="guide-item">
+                        <span class="guide-num">3</span>
+                        <span>Header kolom di baris pertama</span>
                     </li>
                 </ul>
                 
                 <div class="mt-6 pt-4 border-t border-white/20">
-                    <x-filament::button href="#" tag="a" color="white" icon="heroicon-o-arrow-down-tray" class="w-full rounded-xl">
-                        <span class="text-indigo-600 font-semibold">Unduh Template</span>
-                    </x-filament::button>
+                    <a href="#" class="btn-white-premium">
+                        <x-heroicon-o-arrow-down-tray class="w-4 h-4 mr-2" />
+                        Unduh Template
+                    </a>
                 </div>
             </div>
 
             {{-- Required Columns --}}
             <div class="card-premium p-6">
-                <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Kolom Wajib</h4>
-                <div class="space-y-2">
+                <h4 class="required-title">Kolom Wajib</h4>
+                <div class="required-list">
                     @foreach(['Nama Organisasi', 'Bidang', 'Jenis Kegiatan', 'Judul Kegiatan', 'Tanggal', 'Lokasi', 'Lantai', 'Jumlah Peserta'] as $col)
-                        <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-sm">
-                            <div class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                                <x-heroicon-m-check class="w-3 h-3 text-white" />
+                        <div class="required-item">
+                            <div class="required-check">
+                                <x-heroicon-m-check />
                             </div>
-                            <span class="text-gray-700 dark:text-gray-300">{{ $col }}</span>
+                            <span>{{ $col }}</span>
                         </div>
                     @endforeach
                 </div>
@@ -536,10 +871,10 @@
 
     {{-- STEP 2: VALIDATION --}}
     @if($currentStep === 2)
-    <div style="display:flex;flex-direction:column;gap:1.5rem;" class="animate-fade-in">
+    <div style="display:flex;flex-direction:column;gap:2rem;" class="animate-fade-in">
 
         {{-- Stats Row + Alert --}}
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:1.25rem;align-items:stretch;">
+        <div class="grid-4-cols items-stretch">
 
             {{-- Total Baris --}}
             <div class="stat-card-v2">
@@ -580,7 +915,7 @@
             </div>
 
             {{-- Perlu Review Alert --}}
-            <div class="alert-card" style="min-width:240px;">
+            <div class="alert-card">
                 <div>
                     <div class="alert-card-title">
                         <div class="alert-card-icon">!</div>
@@ -604,10 +939,10 @@
         </div>
 
         {{-- Column Mapping + Action --}}
-        <div style="display:grid;grid-template-columns:1fr auto;gap:1.25rem;align-items:start;">
+        <div class="import-grid items-start">
 
             {{-- Column Discovery Panel --}}
-            <div class="card-premium" style="padding:1.5rem;">
+            <div class="card-premium import-col-span-2" style="padding:1.5rem;">
                 @php
                     $required = [
                         'Nama Organisasi'    => ['nama organisasi', 'organisasi', 'komunitas'],
@@ -697,19 +1032,51 @@
                 </div>
             </div>
 
-            {{-- Action Panel --}}
-            <div class="action-panel" style="min-width:260px;">
-                <button wire:click="$set('currentStep', 3)" wire:loading.attr="disabled" class="btn-primary-xl">
-                    Lanjutkan ke Pratinjau
-                    <x-heroicon-o-arrow-right style="width:18px;height:18px;" />
-                </button>
-                <button wire:click="resetImport" wire:loading.attr="disabled" class="btn-outline-xl">
-                    <x-heroicon-o-cloud-arrow-up style="width:18px;height:18px;" />
-                    Unggah Ulang File
-                </button>
-                <div class="hint-box">
-                    <x-heroicon-o-information-circle style="width:18px;height:18px;flex-shrink:0;" />
-                    <span>Format: <strong>.xlsx, .xls, .csv</strong> maks. 10MB.</span>
+            {{-- Right Column: Action Panel + Bulan Terdeteksi --}}
+            <div style="display: flex; flex-direction: column; gap: 2rem; width: 100%;">
+                {{-- Action Panel --}}
+                <div class="action-panel">
+                    <button wire:click="$set('currentStep', 3)" wire:loading.attr="disabled" class="btn-primary-xl">
+                        Lanjutkan ke Pratinjau
+                        <x-heroicon-o-arrow-right style="width:18px;height:18px;" />
+                    </button>
+                    <button wire:click="resetImport" wire:loading.attr="disabled" class="btn-outline-xl">
+                        <x-heroicon-o-cloud-arrow-up style="width:18px;height:18px;" />
+                        Unggah Ulang File
+                    </button>
+                    <div class="hint-box">
+                        <x-heroicon-o-information-circle style="width:18px;height:18px;flex-shrink:0;" />
+                        <span>Format: <strong>.xlsx, .xls, .csv</strong> maks. 10MB.</span>
+                    </div>
+                </div>
+
+                {{-- Bulan Terdeteksi Card --}}
+                <div class="card-premium" style="padding:1.5rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                        <div>
+                            <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0;">Bulan Terdeteksi</h3>
+                            <p style="font-size:0.75rem;color:#6b7280;margin-top:3px;">Daftar sheet bulan dan jumlah data yang valid</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        @forelse($detectedMonths as $month => $count)
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 0.875rem; border: 1px solid #e5e7eb; background: #fff;" class="dark:bg-gray-800 dark:border-gray-700">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #e0f2fe; color: #0369a1;" class="dark:bg-sky-900/30 dark:text-sky-400">
+                                        <x-heroicon-o-calendar style="width:16px;height:16px;" />
+                                    </div>
+                                    <span style="font-size: 0.875rem; font-weight: 700; color: #111827;" class="dark:text-white">{{ $month }}</span>
+                                </div>
+                                <span class="badge-premium badge-primary bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300">
+                                    {{ $count }} baris
+                                </span>
+                            </div>
+                        @empty
+                            <div style="padding: 1.5rem; text-align: center; color: #9ca3af; font-size: 0.875rem; border: 1px dashed #e5e7eb; border-radius: 0.875rem;" class="dark:border-gray-700">
+                                Tidak ada data bulan terdeteksi
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
 
@@ -720,7 +1087,7 @@
 
     {{-- STEP 3: PREVIEW TABLE --}}
     @if($currentStep === 3)
-    <div style="display:flex;flex-direction:column;gap:1.5rem;" class="animate-fade-in">
+    <div style="display:flex;flex-direction:column;gap:2rem;" class="animate-fade-in">
         {{-- Debug Info Bar --}}
         <div class="debug-bar">
             <div class="debug-bar-title">
@@ -856,7 +1223,7 @@
         </div>
 
         {{-- Info Cards (Bottom) --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div class="grid-2-cols mt-6">
             <div class="card-premium p-6 flex gap-4 bg-white dark:bg-gray-900">
                 <div class="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
                     <x-heroicon-o-eye class="w-6 h-6 text-indigo-500" />
@@ -898,7 +1265,7 @@
             <p class="text-gray-500 dark:text-gray-400 mb-8">Data telah diintegrasikan ke dalam database SiREKAP MCC</p>
 
             {{-- Stats Summary --}}
-            <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="grid-3-cols-simple mb-8">
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                     <div class="text-xl font-bold text-indigo-600">{{ number_format($validRows) }}</div>
                     <div class="text-xs font-medium text-gray-500 mt-1 uppercase tracking-wide">Valid</div>
