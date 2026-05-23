@@ -128,6 +128,39 @@ class AnalitikEkraf extends Page
             ->select(DB::raw('COUNT(DISTINCT CASE WHEN "nama_organisasi" IS NOT NULL AND "nama_organisasi" != \'\' THEN "nama_organisasi" END) as total'))
             ->value('total') ?? 0;
 
+        // 6. SDGs Counts (Primary Events only for consistency)
+        $sdgsList = $baseQuery()
+            ->primary()
+            ->whereNotNull('program_sdgs')
+            ->where('program_sdgs', '!=', '')
+            ->pluck('program_sdgs');
+
+        $sdgsCounts = [];
+        for ($i = 1; $i <= 17; $i++) {
+            $sdgsCounts["SDGS $i"] = 0;
+        }
+
+        foreach ($sdgsList as $sdgsString) {
+            $parts = preg_split('/[;,&]|\bdan\b|\band\b|(?=\bsdgs?\s*\d)/i', $sdgsString);
+            foreach ($parts as $part) {
+                $part = trim($part);
+                if ($part === '') {
+                    continue;
+                }
+                if (preg_match('/sdgs?\s*(\d{1,2})/i', $part, $m)) {
+                    $num = (int)$m[1];
+                    if ($num >= 1 && $num <= 17) {
+                        $sdgsCounts["SDGS $num"]++;
+                    }
+                } elseif (preg_match('/^\d{1,2}$/', $part)) {
+                    $num = (int)$part;
+                    if ($num >= 1 && $num <= 17) {
+                        $sdgsCounts["SDGS $num"]++;
+                    }
+                }
+            }
+        }
+
         return [
             'kategoriEkraf'       => $kategoriEkraf,
             'kategoriKegiatan'    => $kategoriKegiatan,
@@ -135,6 +168,7 @@ class AnalitikEkraf extends Page
             'bulanan'             => $bulanan,
             'totalPelakuYear'     => $totalPelakuYear,
             'pureUniquePelaku'    => $pureUniquePelaku,
+            'sdgsCounts'          => $sdgsCounts,
             'year'                => $year,
         ];
     }

@@ -1,4 +1,4 @@
-﻿<x-filament-panels::page>
+<x-filament-panels::page>
 @php $data = $this->getAnalyticsData(); @endphp
 
 <style>
@@ -404,6 +404,67 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    {{-- ══════════════════════════════════════════
+         SDGs DISTRIBUTION GRID
+    ══════════════════════════════════════════ --}}
+    <div class="chart-card">
+        <div class="chart-card-header">
+            <div>
+                <div class="chart-card-title">Capaian Kategori Program SDGs</div>
+                <div class="chart-card-subtitle">Jumlah event yang berkontribusi pada masing-masing program SDGs &mdash; Tahun {{ $data['year'] }}</div>
+            </div>
+            <span class="legend-pill" style="background:#eef2ff; border-color:#c7d2fe; color:#4338ca;">
+                17 Tujuan Pembangunan Berkelanjutan
+            </span>
+        </div>
+        <div class="chart-card-body">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-4">
+                @php
+                    $sdgMeta = [
+                        1 => ['title' => 'Tanpa Kemiskinan', 'color' => '#E5243B', 'text' => 'text-white'],
+                        2 => ['title' => 'Tanpa Kelaparan', 'color' => '#DDA63A', 'text' => 'text-white'],
+                        3 => ['title' => 'Kehidupan Sehat & Sejahtera', 'color' => '#4C9F38', 'text' => 'text-white'],
+                        4 => ['title' => 'Pendidikan Berkualitas', 'color' => '#C5192D', 'text' => 'text-white'],
+                        5 => ['title' => 'Kesetaraan Gender', 'color' => '#FF3A21', 'text' => 'text-white'],
+                        6 => ['title' => 'Air Bersih & Sanitasi Layak', 'color' => '#26BDE2', 'text' => 'text-white'],
+                        7 => ['title' => 'Energi Bersih & Terjangkau', 'color' => '#FCC30B', 'text' => 'text-gray-900'],
+                        8 => ['title' => 'Pekerjaan Layak & Pertumbuhan Ekonomi', 'color' => '#A21942', 'text' => 'text-white'],
+                        9 => ['title' => 'Industri, Inovasi & Infrastruktur', 'color' => '#FD6925', 'text' => 'text-white'],
+                        10 => ['title' => 'Berkurangnya Kesenjangan', 'color' => '#DD1367', 'text' => 'text-white'],
+                        11 => ['title' => 'Kota & Pemukiman Berkelanjutan', 'color' => '#FD9D24', 'text' => 'text-white'],
+                        12 => ['title' => 'Konsumsi & Produksi Bertanggung Jawab', 'color' => '#C9992D', 'text' => 'text-white'],
+                        13 => ['title' => 'Penanganan Perubahan Iklim', 'color' => '#3F7E44', 'text' => 'text-white'],
+                        14 => ['title' => 'Ekosistem Lautan', 'color' => '#0A97D9', 'text' => 'text-white'],
+                        15 => ['title' => 'Ekosistem Daratan', 'color' => '#56C02B', 'text' => 'text-white'],
+                        16 => ['title' => 'Perdamaian, Keadilan & Institusi Tangguh', 'color' => '#00689D', 'text' => 'text-white'],
+                        17 => ['title' => 'Kemitraan untuk Mencapai Tujuan', 'color' => '#19486A', 'text' => 'text-white'],
+                    ];
+                @endphp
+                @foreach($sdgMeta as $num => $meta)
+                    @php
+                        $count = $data['sdgsCounts']["SDGS $num"] ?? 0;
+                    @endphp
+                    <div class="relative flex flex-col justify-between p-4 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-gray-100 dark:border-gray-800" style="background-color: {{ $meta['color'] }}12;">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-lg font-black text-sm" style="background-color: {{ $meta['color'] }}; color: {{ str_contains($meta['text'], 'gray') ? '#1f2937' : '#ffffff' }}">
+                                {{ $num }}
+                            </div>
+                            <div class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                                {{ number_format($count) }}
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="text-[0.68rem] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Goal {{ $num }}</div>
+                            <div class="text-xs font-semibold text-gray-800 dark:text-slate-200 mt-0.5 line-clamp-2 leading-snug" title="{{ $meta['title'] }}">
+                                {{ $meta['title'] }}
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
