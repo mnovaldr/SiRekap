@@ -109,11 +109,14 @@ class AdminPanelProvider extends PanelProvider
                         .si-processing a, 
                         .si-processing button { pointer-events: none !important; opacity: 0.7 !important; }
                         
-                        [data-si-loading="true"] { 
+                        [data-si-loading="true"],
+                        [data-si-loading="true"] * { 
                             pointer-events: none !important; 
+                            color: transparent !important;
+                        }
+                        [data-si-loading="true"] { 
                             opacity: 0.8 !important; 
                             position: relative !important; 
-                            color: transparent !important;
                             min-width: 40px;
                         }
                         [data-si-loading="true"]::after {
