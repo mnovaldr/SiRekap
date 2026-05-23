@@ -49,7 +49,8 @@
         .export-select {
             width: 100%;
             padding: 12px 16px;
-            background: #f9fafb;
+            background-color: #f9fafb;
+            background-repeat: no-repeat !important;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
             font-size: 0.9rem;
@@ -63,7 +64,7 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
         }
         .dark .export-select {
-            background: #1f2937;
+            background-color: #1f2937;
             border-color: #374151;
             color: #f3f4f6;
         }
