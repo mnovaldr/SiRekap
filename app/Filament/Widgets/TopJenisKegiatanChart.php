@@ -95,15 +95,20 @@ class TopJenisKegiatanChart extends ChartWidget
     protected function getChartColors(int $count): array
     {
         $colors = [
-            '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#6366f1',
-            '#14b8a6', '#f97316', '#3b82f6', '#d946ef', '#f43f5e', '#84cc16', '#0ea5e9', '#475569'
+            '#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', 
+            '#8b5cf6', '#f97316', '#06b6d4', '#ec4899', '#14b8a6', 
+            '#3b82f6', '#d946ef', '#84cc16', '#ef4444', '#a855f7', 
+            '#eab308', '#22c55e', '#64748b', '#38bdf8', '#fb7185',
+            '#818cf8', '#34d399', '#fbcfe8', '#fbbf24', '#a78bfa'
         ];
 
-        if ($count <= count($colors)) {
-            return array_slice($colors, 0, $count);
+        $result = [];
+        $numColors = count($colors);
+        for ($i = 0; $i < $count; $i++) {
+            $result[] = $colors[$i % $numColors];
         }
 
-        return array_pad([], $count, '#94a3b8');
+        return $result;
     }
 
     protected function getOptions(): array

@@ -45,6 +45,14 @@ class Event extends Model
         
         // Logika pengisian otomatis (bulan, key, duplikat) 
         // sekarang ditangani oleh Database Trigger di Supabase.
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::flush();
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::flush();
+        });
     }
 
     public static function getBulanIndonesia($date)

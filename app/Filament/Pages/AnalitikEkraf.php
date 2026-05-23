@@ -23,17 +23,13 @@ class AnalitikEkraf extends Page
 
     public function filtersForm(Form $form): Form
     {
-        $availableYears = \Illuminate\Support\Facades\Cache::remember(
-            'analitik_available_years_v2',
-            now()->addMinutes(30),
-            fn () => Event::selectRaw('EXTRACT(YEAR FROM "tanggal")::integer as year')
-                ->whereNotNull('tanggal')
-                ->distinct()
-                ->orderBy('year', 'desc')
-                ->pluck('year', 'year')
-                ->mapWithKeys(fn ($v, $k) => [(string) $k => (string) $v])
-                ->toArray()
-        );
+        $availableYears = Event::selectRaw('EXTRACT(YEAR FROM "tanggal")::integer as year')
+            ->whereNotNull('tanggal')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year', 'year')
+            ->mapWithKeys(fn ($v, $k) => [(string) $k => (string) $v])
+            ->toArray();
 
         $latestYear = array_key_first($availableYears) ?? (string) date('Y');
 
@@ -57,17 +53,13 @@ class AnalitikEkraf extends Page
         $year = $this->filters['year'] ?? null;
 
         if (empty($year)) {
-            $availableYears = \Illuminate\Support\Facades\Cache::remember(
-                'analitik_available_years_v2',
-                now()->addMinutes(30),
-                fn () => Event::selectRaw('EXTRACT(YEAR FROM "tanggal")::integer as year')
-                    ->whereNotNull('tanggal')
-                    ->distinct()
-                    ->orderBy('year', 'desc')
-                    ->pluck('year', 'year')
-                    ->mapWithKeys(fn ($v, $k) => [(string) $k => (string) $v])
-                    ->toArray()
-            );
+            $availableYears = Event::selectRaw('EXTRACT(YEAR FROM "tanggal")::integer as year')
+                ->whereNotNull('tanggal')
+                ->distinct()
+                ->orderBy('year', 'desc')
+                ->pluck('year', 'year')
+                ->mapWithKeys(fn ($v, $k) => [(string) $k => (string) $v])
+                ->toArray();
             $year = array_key_first($availableYears) ?? date('Y');
         }
 

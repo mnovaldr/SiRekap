@@ -7,16 +7,82 @@ use Filament\Widgets\Widget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use App\Filament\Widgets\Concerns\ResolvesYearFilter;
 use Illuminate\Support\Facades\Cache;
+use Livewire\WithPagination;
 
 class SdgsDistributionWidget extends Widget
 {
     use InteractsWithPageFilters;
     use ResolvesYearFilter;
+    use WithPagination;
+
+    public ?string $selectedSdg = null;
+    public string $sdgSearch = '';
 
     protected static string $view = 'filament.widgets.sdgs-distribution-widget';
     protected static ?int $sort = 9;
     protected int | string | array $columnSpan = 'full';
     protected static bool $isLazy = true;
+
+    public function showEvents(string $sdgCode): void
+    {
+        $this->selectedSdg = $sdgCode;
+        $this->sdgSearch = '';
+        $this->resetPage('sdgPage');
+    }
+
+    public function updatedSdgSearch(): void
+    {
+        $this->resetPage('sdgPage');
+    }
+
+    public function resetSearch(): void
+    {
+        $this->sdgSearch = '';
+        $this->resetPage('sdgPage');
+    }
+
+    public function closeEvents(): void
+    {
+        $this->selectedSdg = null;
+    }
+
+    public function getSdgEvents()
+    {
+        if (!$this->selectedSdg) {
+            return null;
+        }
+
+        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+
+        if (preg_match('/sdgs?\s*(\d{1,2})/i', $this->selectedSdg, $m)) {
+            $num = (int)$m[1];
+        } else {
+            return null;
+        }
+
+        $query = Event::query()->valid()
+            ->primary()
+            ->byYearRange($yearStart, $yearEnd)
+            ->bySubSektor($subSektor);
+
+        if ($month) {
+            $query->whereMonth('tanggal', $month);
+        }
+
+        // Gunakan case-insensitive regex PostgreSQL dengan batas kata (\y)
+        $query->whereRaw('program_sdgs ~* ?', ["(\\ySDGS?\\s*{$num}\\y|\\y{$num}\\y)"]);
+
+        // Terapkan pencarian kata kunci pada nama_organisasi atau judul_kegiatan
+        if (trim($this->sdgSearch) !== '') {
+            $search = trim($this->sdgSearch);
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_organisasi', 'ilike', '%' . $search . '%')
+                  ->orWhere('judul_kegiatan', 'ilike', '%' . $search . '%');
+            });
+        }
+
+        return $query->orderBy('tanggal', 'desc')->paginate(10, ['*'], 'sdgPage');
+    }
 
     public function getSdgsData(): array
     {
@@ -50,12 +116,24 @@ class SdgsDistributionWidget extends Widget
             }
 
             foreach ($sdgsList as $sdgsString) {
-                $parts = explode(';', $sdgsString);
+                // Split berdasarkan koma, titik koma, &, kata dan/and, atau lookahead untuk sdgs
+                $parts = preg_split('/[;,&]|\bdan\b|\band\b|(?=\bsdgs?\s*\d)/i', $sdgsString);
                 foreach ($parts as $part) {
                     $part = trim($part);
-                    // Sesuaikan format jika ada variasi "SDGS X" vs "SDGS Y"
-                    if (isset($counts[$part])) {
-                        $counts[$part]++;
+                    if ($part === '') {
+                        continue;
+                    }
+                    // Cocokkan pola seperti "SDGS X", "SDG X", "sdgs X", atau hanya angka "X"
+                    if (preg_match('/sdgs?\s*(\d{1,2})/i', $part, $m)) {
+                        $num = (int)$m[1];
+                        if ($num >= 1 && $num <= 17) {
+                            $counts["SDGS $num"]++;
+                        }
+                    } elseif (preg_match('/^\d{1,2}$/', $part)) {
+                        $num = (int)$part;
+                        if ($num >= 1 && $num <= 17) {
+                            $counts["SDGS $num"]++;
+                        }
                     }
                 }
             }

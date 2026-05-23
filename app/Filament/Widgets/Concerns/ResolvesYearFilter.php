@@ -8,16 +8,14 @@ use Illuminate\Support\Facades\Cache;
 trait ResolvesYearFilter
 {
     /**
-     * Ambil tahun terbaru yang ada di database (cache 5 menit).
+     * Ambil tahun terbaru yang ada di database (selalu terupdate).
      */
     protected function getLatestDataYear(): int
     {
-        return (int) Cache::remember('latest_data_year', now()->addMinutes(5), function () {
-            return Event::valid()
-                ->whereNotNull('tanggal')
-                ->selectRaw('MAX(EXTRACT(YEAR FROM tanggal))::integer as max_year')
-                ->value('max_year') ?? (int) date('Y');
-        });
+        return (int) (Event::valid()
+            ->whereNotNull('tanggal')
+            ->selectRaw('MAX(EXTRACT(YEAR FROM tanggal))::integer as max_year')
+            ->value('max_year') ?? (int) date('Y'));
     }
 
     /**

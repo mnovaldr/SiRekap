@@ -266,6 +266,9 @@ class ImportData extends Page
             );
 
             Notification::make()->title('Berhasil mengimpor ' . count($toInsert) . ' data!')->success()->send();
+            
+            // Clear dashboard and widgets cache
+            \Illuminate\Support\Facades\Cache::flush();
         } catch (\Exception $e) {
             \Log::error('Import Error', [
                 'message' => $e->getMessage(),

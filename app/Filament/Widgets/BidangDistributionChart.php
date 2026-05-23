@@ -95,14 +95,17 @@ class BidangDistributionChart extends ChartWidget
     protected function getChartColors(int $count): array
     {
         $colors = [
-            '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6', '#78716c'
+            '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6', '#78716c',
+            '#4f46e5', '#0ea5e9', '#f43f5e', '#f97316', '#14b8a6', '#d946ef', '#84cc16', '#a855f7'
         ];
 
-        if ($count <= count($colors)) {
-            return array_slice($colors, 0, $count);
+        $result = [];
+        $numColors = count($colors);
+        for ($i = 0; $i < $count; $i++) {
+            $result[] = $colors[$i % $numColors];
         }
 
-        return array_pad([], $count, '#94a3b8');
+        return $result;
     }
 
     protected function getOptions(): array

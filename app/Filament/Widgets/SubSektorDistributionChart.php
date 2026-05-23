@@ -103,11 +103,13 @@ class SubSektorDistributionChart extends ChartWidget
             '#ef4444', '#78716c', '#71717a', '#525252', '#4b5563', '#475569', '#334155', '#1e293b'
         ];
 
-        if ($count <= count($colors)) {
-            return array_slice($colors, 0, $count);
+        $result = [];
+        $numColors = count($colors);
+        for ($i = 0; $i < $count; $i++) {
+            $result[] = $colors[$i % $numColors];
         }
 
-        return array_pad([], $count, '#94a3b8');
+        return $result;
     }
 
     protected function getOptions(): array

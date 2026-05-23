@@ -125,7 +125,7 @@ class ExcelImportService
                     }
 
                     // Convert entire sheet to memory-efficient array in one go (avoiding loop overhead)
-                    $sheetData = $sheet->toArray(null, false, false, false);
+                    $sheetData = $this->toArrayWithFormulas($sheet);
                     $highestRow = count($sheetData);
                     
                     // Baca hanya 10 baris pertama untuk deteksi header (hemat memory)
@@ -217,7 +217,7 @@ class ExcelImportService
                 $sheet = $spreadsheet->getActiveSheet();
                 $sheetName = trim($sheet->getTitle());
                 
-                $sheetData = $sheet->toArray(null, false, false, false);
+                $sheetData = $this->toArrayWithFormulas($sheet);
                 $highestRow = count($sheetData);
                 
                 // Baca header sample
@@ -797,6 +797,35 @@ class ExcelImportService
         }
 
         return null;
+    }
+
+    /**
+     * Convert sheet to array, resolving formula cell values using getOldCalculatedValue()
+     * instead of raw formula strings, while avoiding memory limits by doing it efficiently.
+     */
+    protected function toArrayWithFormulas($sheet): array
+    {
+        $data = [];
+        $highestRow = $sheet->getHighestRow();
+        $highestColumn = $sheet->getHighestColumn();
+        $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
+
+        for ($row = 1; $row <= $highestRow; $row++) {
+            $rowData = [];
+            for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                $cell = $sheet->getCell([$col, $row]);
+                $val = $cell->getValue();
+                
+                if (is_string($val) && str_starts_with($val, '=')) {
+                    $val = $cell->getOldCalculatedValue();
+                }
+                
+                $rowData[] = $val;
+            }
+            $data[] = $rowData;
+        }
+
+        return $data;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

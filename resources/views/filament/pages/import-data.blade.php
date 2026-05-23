@@ -718,11 +718,22 @@
 
     /* Upload Loading State CSS */
     .upload-loading {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-        z-index: 10;
+        display: none;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 1.25rem !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 1rem !important;
+        z-index: 50 !important;
+        backdrop-filter: blur(4px) !important;
+    }
+    .dark .upload-loading {
+        background-color: rgba(17, 24, 39, 0.9) !important;
     }
     .spinner-wrap {
         position: relative;
@@ -791,6 +802,122 @@
         margin: 0.25rem 0 0 0;
     }
     .dark .loading-subtitle { color: #9ca3af; }
+
+    /* Step 4: Success View Styles */
+    .success-container {
+        max-width: 32rem !important;
+        margin: 2rem auto !important;
+        width: 100% !important;
+    }
+    .success-card {
+        padding: 3rem 2rem !important;
+        text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 1.5rem !important;
+        border-radius: 1.5rem !important;
+    }
+    .success-icon-box {
+        width: 5.5rem !important;
+        height: 5.5rem !important;
+        background-color: #ecfdf5 !important;
+        border-radius: 1.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.15) !important;
+        margin-bottom: 0.5rem !important;
+    }
+    .dark .success-icon-box {
+        background-color: rgba(16, 185, 129, 0.15) !important;
+    }
+    .success-icon-box svg {
+        width: 2.75rem !important;
+        height: 2.75rem !important;
+        color: #10b981 !important;
+    }
+    .dark .success-icon-box svg {
+        color: #34d399 !important;
+    }
+    .success-title {
+        font-size: 1.75rem !important;
+        font-weight: 900 !important;
+        color: #111827 !important;
+        letter-spacing: -0.025em !important;
+        margin: 0 !important;
+    }
+    .dark .success-title {
+        color: #ffffff !important;
+    }
+    .success-subtitle {
+        font-size: 0.875rem !important;
+        color: #6b7280 !important;
+        margin: 0 !important;
+        max-width: 24rem !important;
+        line-height: 1.5 !important;
+    }
+    .dark .success-subtitle {
+        color: #9ca3af !important;
+    }
+    .success-stats-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 1rem !important;
+        width: 100% !important;
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .success-stat-item {
+        padding: 1rem !important;
+        background-color: #f9fafb !important;
+        border: 1px solid #f3f4f6 !important;
+        border-radius: 1rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 0.25rem !important;
+    }
+    .dark .success-stat-item {
+        background-color: rgba(31, 41, 55, 0.5) !important;
+        border-color: rgba(55, 65, 81, 0.5) !important;
+    }
+    .success-stat-value {
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+    }
+    .success-stat-value.valid { color: #10b981 !important; }
+    .success-stat-value.review { color: #f59e0b !important; }
+    .success-stat-value.skipped { color: #9ca3af !important; }
+    
+    .success-stat-label {
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        color: #6b7280 !important;
+    }
+    .dark .success-stat-label {
+        color: #9ca3af !important;
+    }
+    .success-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+    }
+    @media (min-width: 640px) {
+        .success-buttons {
+            flex-direction: row !important;
+            justify-content: center !important;
+        }
+        .success-buttons > * {
+            flex: 1 !important;
+            max-width: 200px !important;
+        }
+    }
     </style>
 
     {{-- HEADER & STEPS --}}
@@ -872,7 +999,7 @@
                     <input type="file" id="file-upload" style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 20;" wire:model="file" accept=".xlsx,.xls">
 
                     {{-- Loading State 1: Uploading File --}}
-                    <div wire:loading wire:target="file" class="upload-loading">
+                    <div wire:loading.flex wire:target="file" class="upload-loading">
                         <div class="spinner-wrap">
                             <div class="spinner-bg"></div>
                             <div class="spinner-spin"></div>
@@ -886,7 +1013,7 @@
                     </div>
 
                     {{-- Loading State 2: Processing File --}}
-                    <div wire:loading wire:target="processFile" class="upload-loading">
+                    <div wire:loading.flex wire:target="processFile" class="upload-loading">
                         <div class="spinner-wrap">
                             <div class="spinner-bg"></div>
                             <div class="spinner-spin"></div>
@@ -1326,36 +1453,34 @@
 
     {{-- STEP 4: SUCCESS --}}
     @if($currentStep === 4)
-    <div class="max-w-xl mx-auto py-8 animate-fade-in">
-        <div class="card-premium p-8 text-center">
-            {{-- Success Animation --}}
-            <div class="mb-8">
-                <div class="w-24 h-24 mx-auto bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-4">
-                    <x-heroicon-o-check-badge class="w-12 h-12 text-emerald-600" />
-                </div>
+    <div class="success-container animate-fade-in">
+        <div class="card-premium success-card">
+            {{-- Success Icon --}}
+            <div class="success-icon-box">
+                <x-heroicon-o-check-badge />
             </div>
 
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Import Berhasil!</h2>
-            <p class="text-gray-500 dark:text-gray-400 mb-8">Data telah diintegrasikan ke dalam database SiREKAP MCC</p>
+            <h2 class="success-title">Import Berhasil!</h2>
+            <p class="success-subtitle">Data telah diintegrasikan ke dalam database SiREKAP MCC</p>
 
             {{-- Stats Summary --}}
-            <div class="grid-3-cols-simple mb-8">
-                <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <div class="text-xl font-bold text-indigo-600">{{ number_format($validRows) }}</div>
-                    <div class="text-xs font-medium text-gray-500 mt-1 uppercase tracking-wide">Valid</div>
+            <div class="success-stats-grid">
+                <div class="success-stat-item">
+                    <div class="success-stat-value valid">{{ number_format($validRows) }}</div>
+                    <div class="success-stat-label">Valid</div>
                 </div>
-                <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <div class="text-xl font-bold text-amber-500">{{ number_format($reviewRows) }}</div>
-                    <div class="text-xs font-medium text-gray-500 mt-1 uppercase tracking-wide">Review</div>
+                <div class="success-stat-item">
+                    <div class="success-stat-value review">{{ number_format($reviewRows) }}</div>
+                    <div class="success-stat-label">Review</div>
                 </div>
-                <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <div class="text-xl font-bold text-gray-400">{{ number_format($duplikatRows) }}</div>
-                    <div class="text-xs font-medium text-gray-500 mt-1 uppercase tracking-wide">Skipped</div>
+                <div class="success-stat-item">
+                    <div class="success-stat-value skipped">{{ number_format($duplikatRows) }}</div>
+                    <div class="success-stat-label">Skipped</div>
                 </div>
             </div>
 
             {{-- Action Buttons --}}
-            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <div class="success-buttons">
                 <x-filament::button tag="a" href="{{ route('filament.admin.resources.events.index') }}" class="rounded-xl">
                     Lihat Data Event
                 </x-filament::button>

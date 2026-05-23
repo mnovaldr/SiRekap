@@ -39,6 +39,7 @@ class KelolaDatabase extends Page
         }
         Event::duplikat()->delete();
         ActivityLog::logActivity('delete', null, "Hapus {$count} data Duplikat");
+        \Illuminate\Support\Facades\Cache::flush();
         Notification::make()->title("{$count} data duplikat berhasil dihapus")->success()->send();
     }
 
@@ -52,6 +53,7 @@ class KelolaDatabase extends Page
         }
         Event::review()->update(['status_data' => 'Valid', 'catatan_review' => null]);
         ActivityLog::logActivity('validate', null, "Validasi {$count} data Review menjadi Valid");
+        \Illuminate\Support\Facades\Cache::flush();
         Notification::make()->title("{$count} data review berhasil divalidasi")->success()->send();
     }
 
@@ -61,6 +63,7 @@ class KelolaDatabase extends Page
         $count = Event::count();
         Event::truncate();
         ActivityLog::logActivity('delete', null, "Hapus SEMUA data ({$count} baris)");
+        \Illuminate\Support\Facades\Cache::flush();
         Notification::make()->title("Semua data ({$count} baris) berhasil dihapus")->success()->send();
     }
 
@@ -74,6 +77,7 @@ class KelolaDatabase extends Page
         }
         Event::whereYear('tanggal', $year)->delete();
         ActivityLog::logActivity('delete', null, "Hapus {$count} data tahun {$year}");
+        \Illuminate\Support\Facades\Cache::flush();
         Notification::make()->title("{$count} data tahun {$year} berhasil dihapus")->success()->send();
     }
 
@@ -98,6 +102,7 @@ class KelolaDatabase extends Page
             $updated++;
         }
         ActivityLog::logActivity('update', null, "Recalculate keys untuk {$updated} data");
+        \Illuminate\Support\Facades\Cache::flush();
         Notification::make()->title("{$updated} data berhasil diperbarui")->success()->send();
     }
 
@@ -140,6 +145,7 @@ class KelolaDatabase extends Page
         }
 
         ActivityLog::logActivity('update', null, "Re-detect duplikat: {$dupCount} Duplikat, {$reviewCount} Review");
+        \Illuminate\Support\Facades\Cache::flush();
         Notification::make()
             ->title("Selesai: {$dupCount} Duplikat, {$reviewCount} Review terdeteksi")
             ->success()
@@ -165,6 +171,7 @@ class KelolaDatabase extends Page
         }
 
         ActivityLog::logActivity('update', null, "Recalculate Primary Rows: {$count} baris ditandai sebagai primary");
+        \Illuminate\Support\Facades\Cache::flush();
         Notification::make()
             ->title("Selesai: {$count} baris berhasil ditandai sebagai primary row.")
             ->success()

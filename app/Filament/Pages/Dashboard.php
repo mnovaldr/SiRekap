@@ -20,12 +20,10 @@ class Dashboard extends BaseDashboard
     {
         // Pastikan filter year_start dan year_end selalu terinisialisasi
         if (empty($this->filters['year_start']) || empty($this->filters['year_end'])) {
-            $latestYear = Cache::remember('latest_data_year_v2', now()->addMinutes(30), function () {
-                return Event::valid()
-                    ->whereNotNull('tanggal')
-                    ->selectRaw('MAX(EXTRACT(YEAR FROM tanggal))::integer as max_year')
-                    ->value('max_year') ?? (int) date('Y');
-            });
+            $latestYear = Event::valid()
+                ->whereNotNull('tanggal')
+                ->selectRaw('MAX(EXTRACT(YEAR FROM tanggal))::integer as max_year')
+                ->value('max_year') ?? (int) date('Y');
 
             $currentFilters = $this->filters ?? [];
             $currentFilters['year_start'] = (string) $latestYear;
@@ -46,17 +44,15 @@ class Dashboard extends BaseDashboard
 
     public function filtersForm(Form $form): Form
     {
-        // Ambil semua tahun yang tersedia dari data (cache 30 menit)
-        $availableYears = Cache::remember('dashboard_available_years_v2', now()->addMinutes(30), function () {
-            return Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
-                ->valid()
-                ->whereNotNull('tanggal')
-                ->distinct()
-                ->orderBy('year', 'desc')
-                ->pluck('year', 'year')
-                ->mapWithKeys(fn($v, $k) => [(string)$k => (string)$v])
-                ->toArray();
-        });
+        // Ambil semua tahun yang tersedia dari data (tanpa cache agar selalu terupdate)
+        $availableYears = Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
+            ->valid()
+            ->whereNotNull('tanggal')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year', 'year')
+            ->mapWithKeys(fn($v, $k) => [(string)$k => (string)$v])
+            ->toArray();
 
         if (empty($availableYears)) {
             $latestYearDb = Event::valid()->whereNotNull('tanggal')->selectRaw('MAX(EXTRACT(YEAR FROM tanggal))::integer as max_year')->value('max_year') ?? date('Y');
