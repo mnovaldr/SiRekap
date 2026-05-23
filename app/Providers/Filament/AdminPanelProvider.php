@@ -33,22 +33,37 @@ class AdminPanelProvider extends PanelProvider
                     @verbatim
                     <style>
                         /* ===== TRANSPARENT NAVBAR (TOPBAR) ===== */
-                        .fi-topbar, 
+                        .fi-topbar,
                         .fi-topbar-header,
-                        .fi-topbar nav {
-                            background-color: rgba(255, 255, 255, 0.75) !important;
+                        .fi-topbar-header-container,
+                        .fi-topbar nav,
+                        .fi-topbar > nav,
+                        .fi-topbar > div,
+                        header.fi-topbar,
+                        [class*="fi-topbar"] {
+                            background-color: rgba(255, 255, 255, 0.7) !important;
+                            background: rgba(255, 255, 255, 0.7) !important;
                             backdrop-filter: blur(12px) !important;
                             -webkit-backdrop-filter: blur(12px) !important;
+                            box-shadow: none !important;
                         }
                         .dark .fi-topbar,
                         .dark .fi-topbar-header,
-                        .dark .fi-topbar nav {
-                            background-color: rgba(15, 23, 42, 0.75) !important;
+                        .dark .fi-topbar-header-container,
+                        .dark .fi-topbar nav,
+                        .dark .fi-topbar > nav,
+                        .dark .fi-topbar > div,
+                        .dark header.fi-topbar,
+                        .dark [class*="fi-topbar"] {
+                            background-color: rgba(15, 23, 42, 0.7) !important;
+                            background: rgba(15, 23, 42, 0.7) !important;
                         }
-                        .fi-topbar {
+                        .fi-topbar,
+                        .fi-topbar > nav {
                             border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
                         }
-                        .dark .fi-topbar {
+                        .dark .fi-topbar,
+                        .dark .fi-topbar > nav {
                             border-bottom: 1px solid rgba(51, 65, 85, 0.5) !important;
                         }
 
@@ -539,7 +554,9 @@ HTML
                             </div>
                             <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
                                 <span>Dibuat oleh</span>
-                                <span class="font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-teal-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-teal-400">Muhammad Noval Dwi Ramadhani</span>
+                                <a href="https://mnovaldr.dev" target="_blank" rel="noopener noreferrer" class="font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-teal-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-teal-400 hover:opacity-80 transition-opacity">
+                                    Muhammad Noval Dwi Ramadhani
+                                </a>
                             </div>
                         </div>
                     </div>
