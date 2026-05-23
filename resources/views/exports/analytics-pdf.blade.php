@@ -297,6 +297,95 @@
         </tbody>
     </table>
 
+    {{-- Capaian Program SDGs --}}
+    <div class="section-title">Capaian Kategori Program SDGs</div>
+    @php
+        $sdgMeta = [
+            1 => ['title' => 'Tanpa Kemiskinan', 'color' => '#E5243B', 'text' => '#ffffff'],
+            2 => ['title' => 'Tanpa Kelaparan', 'color' => '#DDA63A', 'text' => '#ffffff'],
+            3 => ['title' => 'Kehidupan Sehat & Sejahtera', 'color' => '#4C9F38', 'text' => '#ffffff'],
+            4 => ['title' => 'Pendidikan Berkualitas', 'color' => '#C5192D', 'text' => '#ffffff'],
+            5 => ['title' => 'Kesetaraan Gender', 'color' => '#FF3A21', 'text' => '#ffffff'],
+            6 => ['title' => 'Air Bersih & Sanitasi Layak', 'color' => '#26BDE2', 'text' => '#ffffff'],
+            7 => ['title' => 'Energi Bersih & Terjangkau', 'color' => '#FCC30B', 'text' => '#1f2937'],
+            8 => ['title' => 'Pekerjaan Layak & Pertumbuhan Ekonomi', 'color' => '#A21942', 'text' => '#ffffff'],
+            9 => ['title' => 'Industri, Inovasi & Infrastruktur', 'color' => '#FD6925', 'text' => '#ffffff'],
+            10 => ['title' => 'Berkurangnya Kesenjangan', 'color' => '#DD1367', 'text' => '#ffffff'],
+            11 => ['title' => 'Kota & Pemukiman Berkelanjutan', 'color' => '#FD9D24', 'text' => '#ffffff'],
+            12 => ['title' => 'Konsumsi & Produksi Bertanggung Jawab', 'color' => '#C9992D', 'text' => '#ffffff'],
+            13 => ['title' => 'Penanganan Perubahan Iklim', 'color' => '#3F7E44', 'text' => '#ffffff'],
+            14 => ['title' => 'Ekosistem Lautan', 'color' => '#0A97D9', 'text' => '#ffffff'],
+            15 => ['title' => 'Ekosistem Daratan', 'color' => '#56C02B', 'text' => '#ffffff'],
+            16 => ['title' => 'Perdamaian, Keadilan & Institusi Tangguh', 'color' => '#00689D', 'text' => '#ffffff'],
+            17 => ['title' => 'Kemitraan untuk Mencapai Tujuan', 'color' => '#19486A', 'text' => '#ffffff'],
+        ];
+    @endphp
+    <table style="width: 100%; border: none !important; margin-bottom: 16px; background: transparent !important;">
+        <tr style="background: none !important;">
+            <td style="width: 48%; border: none !important; padding: 0 !important; vertical-align: top; background: transparent !important;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%; text-align: center;">GOAL</th>
+                            <th style="width: 65%;">PROGRAM SDG</th>
+                            <th style="width: 20%; text-align: center;">EVENT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for($i = 1; $i <= 9; $i++)
+                            @php
+                                $meta = $sdgMeta[$i];
+                                $count = $data['sdgsCounts']["SDGS $i"] ?? 0;
+                            @endphp
+                            <tr>
+                                <td class="text-center" style="padding: 4px 2px;">
+                                    <span class="rank-badge" style="background: {{ $meta['color'] }}; color: {{ $meta['text'] }}; width: 16px; height: 16px; line-height: 16px;">{{ $i }}</span>
+                                </td>
+                                <td class="font-bold" style="font-size: 7.5px; padding: 4px 6px;">{{ $meta['title'] }}</td>
+                                <td class="text-center font-bold" style="font-size: 8px; padding: 4px 2px;">{{ number_format($count) }}</td>
+                            </tr>
+                        @endfor
+                    </tbody>
+                </table>
+            </td>
+            <td style="width: 4%; border: none !important; padding: 0 !important; background: transparent !important;"></td>
+            <td style="width: 48%; border: none !important; padding: 0 !important; vertical-align: top; background: transparent !important;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%; text-align: center;">GOAL</th>
+                            <th style="width: 65%;">PROGRAM SDG</th>
+                            <th style="width: 20%; text-align: center;">EVENT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for($i = 10; $i <= 17; $i++)
+                            @php
+                                $meta = $sdgMeta[$i];
+                                $count = $data['sdgsCounts']["SDGS $i"] ?? 0;
+                            @endphp
+                            <tr>
+                                <td class="text-center" style="padding: 4px 2px;">
+                                    <span class="rank-badge" style="background: {{ $meta['color'] }}; color: {{ $meta['text'] }}; width: 16px; height: 16px; line-height: 16px;">{{ $i }}</span>
+                                </td>
+                                <td class="font-bold" style="font-size: 7.5px; padding: 4px 6px;">{{ $meta['title'] }}</td>
+                                <td class="text-center font-bold" style="font-size: 8px; padding: 4px 2px;">{{ number_format($count) }}</td>
+                            </tr>
+                        @endfor
+                        {{-- Empty row to align heights --}}
+                        <tr style="background: transparent !important;">
+                            <td class="text-center" style="padding: 4px 2px; color: transparent; background: transparent !important; border: none !important;">&nbsp;</td>
+                            <td style="border: none !important; background: transparent !important;">&nbsp;</td>
+                            <td style="border: none !important; background: transparent !important;">&nbsp;</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
     {{-- Rekap Bulanan --}}
     @foreach($data['bulanan'] as $year => $yearGroup)
     @php 

@@ -180,16 +180,17 @@
         <thead>
             <tr>
                 <th style="width: 2%">NO</th>
-                <th style="width: 13%">JUDUL KEGIATAN</th>
-                <th style="width: 11%">PENYELENGGARA</th>
-                <th style="width: 7%">BIDANG</th>
-                <th style="width: 9%">SUB SEKTOR</th>
-                <th style="width: 9%">LOKASI</th>
+                <th style="width: 11%">JUDUL KEGIATAN</th>
+                <th style="width: 10%">PENYELENGGARA</th>
+                <th style="width: 6%">BIDANG</th>
+                <th style="width: 8%">SUB SEKTOR</th>
+                <th style="width: 8%">LOKASI</th>
                 <th style="width: 6%">TANGGAL</th>
-                <th style="width: 3%">LT</th>
-                <th style="width: 5%">PESERTA</th>
-                <th style="width: 7%">KOMERSIAL</th>
-                <th style="width: 9%">PIC</th>
+                <th style="width: 2%">LT</th>
+                <th style="width: 4%">PESERTA</th>
+                <th style="width: 6%">KOMERSIAL</th>
+                <th style="width: 8%">PROGRAM SDG</th>
+                <th style="width: 8%">PIC</th>
                 <th style="width: 9%">KONTAK</th>
                 <th style="width: 5%">STATUS</th>
             </tr>
@@ -219,6 +220,7 @@
                     @endif
                 </td>
                 <td class="text-center">{{ $row['komersial'] ?? '-' }}</td>
+                <td class="text-left" style="font-size: 6.5px;">{{ $row['program_sdgs'] ?? '-' }}</td>
                 <td class="text-left">{{ $row['pic'] ?? '-' }}</td>
                 <td class="text-left">
                     {{ $row['no_telepon'] ?? '-' }}
@@ -241,7 +243,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="13" class="text-center" style="padding: 15px;">
+                <td colspan="14" class="text-center" style="padding: 15px;">
                     Tidak ada data untuk periode ini
                 </td>
             </tr>
