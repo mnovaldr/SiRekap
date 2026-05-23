@@ -32,6 +32,26 @@ class AdminPanelProvider extends PanelProvider
                 fn () => Blade::render(<<<'HTML'
                     @verbatim
                     <style>
+                        /* ===== TRANSPARENT NAVBAR (TOPBAR) ===== */
+                        .fi-topbar, 
+                        .fi-topbar-header,
+                        .fi-topbar nav {
+                            background-color: rgba(255, 255, 255, 0.75) !important;
+                            backdrop-filter: blur(12px) !important;
+                            -webkit-backdrop-filter: blur(12px) !important;
+                        }
+                        .dark .fi-topbar,
+                        .dark .fi-topbar-header,
+                        .dark .fi-topbar nav {
+                            background-color: rgba(15, 23, 42, 0.75) !important;
+                        }
+                        .fi-topbar {
+                            border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+                        }
+                        .dark .fi-topbar {
+                            border-bottom: 1px solid rgba(51, 65, 85, 0.5) !important;
+                        }
+
                         /* Scrollbar */
                         ::-webkit-scrollbar { width: 5px; height: 5px; }
                         ::-webkit-scrollbar-track { background: transparent; }
@@ -506,6 +526,23 @@ HTML
                         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                     </style>
                     @endverbatim
+HTML
+                ),
+            )
+            ->renderHook(
+                PanelsRenderHook::FOOTER,
+                fn () => Blade::render(<<<'HTML'
+                    <div class="py-6 text-center text-xs text-gray-500 dark:text-slate-400 mt-auto border-t border-gray-100 dark:border-slate-800/50">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                &copy; {{ date('Y') }} <span class="font-semibold text-gray-700 dark:text-slate-300">SiREKAP MCC</span>. All rights reserved.
+                            </div>
+                            <div class="flex items-center gap-1.5 text-gray-400 dark:text-slate-500">
+                                <span>Dibuat oleh</span>
+                                <span class="font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-teal-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-teal-400">Muhammad Noval Dwi Ramadhani</span>
+                            </div>
+                        </div>
+                    </div>
 HTML
                 ),
             )
