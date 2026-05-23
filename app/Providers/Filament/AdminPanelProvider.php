@@ -46,6 +46,9 @@ class AdminPanelProvider extends PanelProvider
                             backdrop-filter: blur(12px) !important;
                             -webkit-backdrop-filter: blur(12px) !important;
                             box-shadow: none !important;
+                            --tw-ring-shadow: none !important;
+                            --tw-ring-offset-shadow: none !important;
+                            border: none !important;
                         }
                         .dark .fi-topbar,
                         .dark .fi-topbar-header,
@@ -57,13 +60,15 @@ class AdminPanelProvider extends PanelProvider
                         .dark [class*="fi-topbar"] {
                             background-color: rgba(15, 23, 42, 0.7) !important;
                             background: rgba(15, 23, 42, 0.7) !important;
+                            box-shadow: none !important;
+                            --tw-ring-shadow: none !important;
+                            --tw-ring-offset-shadow: none !important;
+                            border: none !important;
                         }
-                        .fi-topbar,
-                        .fi-topbar > nav {
+                        .fi-topbar {
                             border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
                         }
-                        .dark .fi-topbar,
-                        .dark .fi-topbar > nav {
+                        .dark .fi-topbar {
                             border-bottom: 1px solid rgba(51, 65, 85, 0.5) !important;
                         }
 

@@ -63,7 +63,7 @@ class AnalitikEkraf extends Page
             $year = array_key_first($availableYears) ?? date('Y');
         }
 
-        $cacheKey = "analitik_data_{$year}_v3";
+        $cacheKey = "analitik_data_{$year}_v4";
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(15), function () use ($year) {
             return $this->fetchAnalyticsData($year);
