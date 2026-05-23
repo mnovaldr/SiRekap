@@ -447,6 +447,41 @@ class ExcelImportService
         $result = [];
         $loggedColumns = false; // Flag untuk log kolom hanya sekali
 
+        // Detect dominant year in raw data to correct any default current year (2026) assumptions
+        $yearCounts = [];
+        $currentYear = (int)date('Y'); // 2026
+        foreach ($rawData as $item) {
+            $t = [];
+            foreach ($item as $k => $v) {
+                $t[trim((string) $k)] = is_string($v) ? trim($v) : $v;
+            }
+            $r = $this->resolveColumns($t);
+            $rawDate = $r['tanggal_raw'] ?? null;
+            if ($rawDate) {
+                $parsed = $this->parseDate($rawDate);
+                if ($parsed) {
+                    $year = (int)date('Y', strtotime($parsed));
+                    $yearCounts[$year] = ($yearCounts[$year] ?? 0) + 1;
+                }
+            }
+        }
+
+        $dominantYear = null;
+        if (!empty($yearCounts)) {
+            arsort($yearCounts);
+            foreach ($yearCounts as $yr => $count) {
+                if ($yr !== $currentYear) {
+                    $dominantYear = $yr;
+                    break;
+                }
+            }
+            if ($dominantYear === null) {
+                $dominantYear = array_key_first($yearCounts);
+            }
+        }
+
+        Log::info("Import Excel: Terdeteksi dominant year = " . ($dominantYear ?? 'NULL'));
+
         foreach ($rawData as $index => $item) {
             // Normalisasi key: trim whitespace
             $t = [];
@@ -470,8 +505,8 @@ class ExcelImportService
                 $loggedColumns = true;
             }
 
-            // Tanggal
-            $finalTanggal = $this->parseDate($r['tanggal_raw']) ?? date('Y-m-d');
+            // Tanggal - parse using dominant year logic to prevent default year 2026 mapping errors
+            $finalTanggal = $this->parseDateWithDominantYear($r['tanggal_raw'], $dominantYear) ?? date('Y-m-d');
 
             // Bulan — selalu diisi agar widget yang mengandalkan kolom `bulan` tidak null
             $finalBulan = $this->getBulanIndonesia($finalTanggal);
@@ -797,6 +832,47 @@ class ExcelImportService
         }
 
         return null;
+    }
+
+    /**
+     * Parse a date using the dominant year logic to prevent default year 2026 errors.
+     */
+    public function parseDateWithDominantYear(mixed $raw, ?int $dominantYear): ?string
+    {
+        $parsed = $this->parseDate($raw);
+        if (!$parsed) {
+            return null;
+        }
+
+        if ($dominantYear) {
+            $currentYear = (int)date('Y'); // 2026
+            $parsedYear = (int)date('Y', strtotime($parsed));
+
+            if ($parsedYear === $currentYear && $dominantYear !== $currentYear) {
+                $str = trim((string)$raw);
+                $isExplicit = false;
+
+                if (is_numeric($raw)) {
+                    $isExplicit = true;
+                } else {
+                    // Check if string contains 2026
+                    if (str_contains($str, '2026')) {
+                        $isExplicit = true;
+                    }
+                    // Check if string ends with /26, -26 or space 26
+                    elseif (preg_match('/[\/\-\s]26$/', $str)) {
+                        $isExplicit = true;
+                    }
+                }
+
+                if (!$isExplicit) {
+                    // Replace the year in parsed date with dominant year
+                    return str_replace((string)$currentYear, (string)$dominantYear, $parsed);
+                }
+            }
+        }
+
+        return $parsed;
     }
 
     /**

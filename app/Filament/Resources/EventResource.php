@@ -78,13 +78,24 @@ class EventResource extends Resource
                             ->required()
                             ->default('Non Komersial'),
                         Forms\Components\Select::make('program_sdgs')
-                            ->label('Program SDGS')
+                            ->label('Program SDGs')
+                            ->multiple()
                             ->options(array_combine(
                                 array_map(fn($i) => "SDGS $i", range(1, 17)),
                                 array_map(fn($i) => "SDGS $i", range(1, 17))
                             ))
-                            ->nullable()
-                            ->placeholder('Tidak ada / Tidak diisi'),
+                            ->placeholder('Pilih Program SDGs (bisa pilih lebih dari satu)')
+                            ->formatStateUsing(function ($state) {
+                                if (is_array($state)) return $state;
+                                if (!$state) return [];
+                                return array_filter(array_map('trim', preg_split('/[;,]/', $state)));
+                            })
+                            ->dehydrateStateUsing(function ($state) {
+                                if (is_array($state)) {
+                                    return implode('; ', array_filter($state));
+                                }
+                                return $state;
+                            }),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Waktu & Lokasi')
@@ -188,6 +199,7 @@ class EventResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('program_sdgs')
                     ->label('SDGS')
+                    ->separator('; ')
                     ->badge()
                     ->color('info')
                     ->toggleable(isToggledHiddenByDefault: true),
