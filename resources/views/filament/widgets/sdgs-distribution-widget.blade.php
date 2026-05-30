@@ -423,24 +423,22 @@
                                     <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;" class="dark:text-gray-400">
                                         Daftar Event Terkait SDGs
                                     </div>
-                                    <div style="position: relative; width: 100%; max-width: 320px;">
-                                        <!-- Search Icon -->
-                                        <div style="position: absolute; inset-y: 0; left: 0; padding-left: 12px; display: flex; align-items: center; pointer-events: none;">
-                                            <x-heroicon-o-magnifying-glass style="width: 15px; height: 15px; color: #94a3b8;" />
+                                    <div style="position: relative; width: 100%; max-width: 320px; display: flex; align-items: center;">
+                                        <div style="position: absolute; left: 12px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                                            <x-heroicon-o-magnifying-glass style="width: 14px; height: 14px; color: #94a3b8;" />
                                         </div>
-                                        <!-- Search Input -->
                                         <input 
                                             type="text" 
                                             wire:model.live.debounce.300ms="sdgSearch"
                                             placeholder="Cari organisasi atau kegiatan..."
                                             class="sdg-search-input"
+                                            style="width: 100% !important;"
                                         >
-                                        <!-- Reset Button -->
                                         @if($sdgSearch)
                                             <button 
                                                 wire:click="resetSearch" 
                                                 type="button" 
-                                                style="position: absolute; inset-y: 0; right: 0; padding-right: 12px; display: flex; align-items: center; color: #94a3b8; border: none; background: transparent; cursor: pointer;"
+                                                style="position: absolute; right: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; border: none; background: transparent; cursor: pointer; padding: 0;"
                                             >
                                                 <x-heroicon-o-x-mark style="width: 14px; height: 14px;" />
                                             </button>

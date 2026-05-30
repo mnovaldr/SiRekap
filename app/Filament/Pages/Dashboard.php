@@ -39,7 +39,9 @@ class Dashboard extends BaseDashboard
 
     public function getColumns(): int | string | array
     {
-        return 2;
+        return [
+            'default' => 2,
+        ];
     }
 
     public function filtersForm(Form $form): Form
