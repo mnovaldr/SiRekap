@@ -2,25 +2,54 @@
 <div class="space-y-6">
     @php $stats = $this->getStats(); @endphp
 
+    <style>
+    .custom-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+    @media (min-width: 768px) {
+        .custom-stats-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+    }
+    .custom-stat-card {
+        background-color: #fff;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+        border: 1px solid #e5e7eb;
+    }
+    .dark .custom-stat-card {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+    @media (max-width: 767px) {
+        .custom-stat-card-span-2 {
+            grid-column: span 2 / span 2;
+        }
+    }
+    </style>
+
     {{-- Stats --}}
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
+    <div class="custom-stats-grid">
+        <div class="custom-stat-card">
             <p class="text-xs text-gray-500 dark:text-gray-400">Total Data</p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ number_format($stats['total']) }}</p>
         </div>
-        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
+        <div class="custom-stat-card">
             <p class="text-xs text-gray-500 dark:text-gray-400">Valid</p>
             <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{{ number_format($stats['valid']) }}</p>
         </div>
-        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
+        <div class="custom-stat-card">
             <p class="text-xs text-gray-500 dark:text-gray-400">Review</p>
             <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{{ number_format($stats['review']) }}</p>
         </div>
-        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
+        <div class="custom-stat-card">
             <p class="text-xs text-gray-500 dark:text-gray-400">Duplikat</p>
             <p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{{ number_format($stats['duplikat']) }}</p>
         </div>
-        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4 col-span-2 md:col-span-1">
+        <div class="custom-stat-card custom-stat-card-span-2">
             <p class="text-xs text-gray-500 dark:text-gray-400">Activity Logs</p>
             <p class="text-2xl font-bold text-gray-600 dark:text-gray-300 mt-1">{{ number_format($stats['logs']) }}</p>
         </div>
