@@ -4,26 +4,26 @@
 
     {{-- Stats --}}
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <x-filament::section>
+        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
             <p class="text-xs text-gray-500 dark:text-gray-400">Total Data</p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ number_format($stats['total']) }}</p>
-        </x-filament::section>
-        <x-filament::section>
+        </div>
+        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
             <p class="text-xs text-gray-500 dark:text-gray-400">Valid</p>
             <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{{ number_format($stats['valid']) }}</p>
-        </x-filament::section>
-        <x-filament::section>
+        </div>
+        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
             <p class="text-xs text-gray-500 dark:text-gray-400">Review</p>
             <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{{ number_format($stats['review']) }}</p>
-        </x-filament::section>
-        <x-filament::section>
+        </div>
+        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
             <p class="text-xs text-gray-500 dark:text-gray-400">Duplikat</p>
             <p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{{ number_format($stats['duplikat']) }}</p>
-        </x-filament::section>
-        <x-filament::section>
+        </div>
+        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4 col-span-2 md:col-span-1">
             <p class="text-xs text-gray-500 dark:text-gray-400">Activity Logs</p>
             <p class="text-2xl font-bold text-gray-600 dark:text-gray-300 mt-1">{{ number_format($stats['logs']) }}</p>
-        </x-filament::section>
+        </div>
     </div>
 
     {{-- Maintenance Actions --}}
