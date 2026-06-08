@@ -72,7 +72,7 @@
                 @if($this->listMode === 'all')
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pencarian</span>
                     <div class="relative w-full">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <div class="absolute inset-y-0 flex items-center pointer-events-none" style="left: 1rem;">
                             <x-heroicon-o-magnifying-glass class="w-4 h-4 text-gray-400" />
                         </div>
                         <input 
