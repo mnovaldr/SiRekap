@@ -69,7 +69,7 @@
 
             <!-- Search Input (only when listMode is 'all') -->
             @if($this->listMode === 'all')
-                <div class="flex flex-col gap-1 w-full sm:w-72">
+                <div class="flex flex-col gap-1 w-full sm:w-80">
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pencarian</span>
                     <div class="relative w-full">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -79,7 +79,8 @@
                             type="search" 
                             wire:model.live.debounce.300ms="search" 
                             placeholder="Cari organisasi, judul, lokasi..."
-                            class="w-full pl-9 pr-4 py-2 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 dark:text-gray-100 shadow-sm"
+                            style="padding-left: 2.5rem !important;"
+                            class="w-full pr-4 py-2 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 dark:text-gray-100 shadow-sm"
                         />
                     </div>
                 </div>

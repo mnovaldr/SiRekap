@@ -47,12 +47,12 @@ class TopOrganisasiWidget extends Widget
         $cacheKey = "top_organisasi_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_{$this->displayType}";
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg) {
-            $query = Event::query()->valid();
+            $query = Event::query();
 
             $query = $this->applyEventFilters($query, ['primary']);
 
             if ($this->displayType === 'unique') {
-                $query->primary();
+                $query->valid()->primary();
             }
 
             $data = $query->select(DB::raw('UPPER(TRIM(nama_organisasi)) as nama_organisasi'))
@@ -77,12 +77,12 @@ class TopOrganisasiWidget extends Widget
 
     public function getDetailedRecords()
     {
-        $query = Event::query()->valid();
+        $query = Event::query();
 
         $query = $this->applyEventFilters($query, ['primary']);
 
         if ($this->displayType === 'unique') {
-            $query->primary();
+            $query->valid()->primary();
         }
 
         $s = trim($this->search);
