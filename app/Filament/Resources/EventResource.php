@@ -29,6 +29,50 @@ class EventResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Kegiatan')
                     ->schema([
+                        Forms\Components\Select::make('autofill_event_id')
+                            ->label('Cari & Duplikasi Event Sebelumnya')
+                            ->placeholder('Ketik nama organisasi atau judul kegiatan untuk duplikasi data...')
+                            ->searchable()
+                            ->dehydrated(false)
+                            ->columnSpanFull()
+                            ->getSearchResultsUsing(function (string $search) {
+                                return \App\Models\Event::query()
+                                    ->where('nama_organisasi', 'ilike', "%{$search}%")
+                                    ->orWhere('judul_kegiatan', 'ilike', "%{$search}%")
+                                    ->limit(15)
+                                    ->get()
+                                    ->mapWithKeys(fn ($event) => [
+                                        $event->id => "[{$event->nama_organisasi}] - {$event->judul_kegiatan} (" . ($event->tanggal ? $event->tanggal->format('d M Y') : '-') . ")"
+                                    ]);
+                            })
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if (!$state) return;
+                                
+                                $event = \App\Models\Event::find($state);
+                                if (!$event) return;
+
+                                $set('nama_organisasi', $event->nama_organisasi);
+                                $set('judul_kegiatan', $event->judul_kegiatan);
+                                $set('bidang', $event->bidang);
+                                $set('jenis_kegiatan', $event->jenis_kegiatan);
+                                $set('sub_sektor', $event->sub_sektor);
+                                $set('komersial', $event->komersial);
+                                
+                                // SDGs parsing
+                                $sdgs = [];
+                                if ($event->program_sdgs) {
+                                    $sdgs = array_filter(array_map('trim', preg_split('/[;,]/', $event->program_sdgs)));
+                                }
+                                $set('program_sdgs', $sdgs);
+                                
+                                $set('lantai', $event->lantai);
+                                $set('lokasi', $event->lokasi);
+                                $set('jumlah_peserta', $event->jumlah_peserta);
+                                $set('pic', $event->pic);
+                                $set('email', $event->email);
+                                $set('no_telepon', $event->no_telepon);
+                            }),
                         Forms\Components\TextInput::make('nama_organisasi')
                             ->required()
                             ->maxLength(255),
