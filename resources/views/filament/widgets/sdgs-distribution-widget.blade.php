@@ -14,6 +14,7 @@
                 backdrop-filter: blur(12px) !important;
                 -webkit-backdrop-filter: blur(12px) !important;
                 z-index: 1000 !important;
+                pointer-events: auto !important;
             }
             .dark .sdg-modal-backdrop {
                 background-color: rgba(10, 15, 30, 0.85) !important;
