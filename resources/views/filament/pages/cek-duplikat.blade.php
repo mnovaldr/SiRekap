@@ -132,13 +132,22 @@
                 <x-heroicon-o-presentation-chart-bar class="w-5 h-5 text-primary-500" />
                 Analisis Statistik Duplikat
             </h2>
-            <div class="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-1.5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tahun Laporan:</span>
-                <select wire:model.live="selectedYear" class="rounded-lg border-transparent dark:border-transparent bg-transparent dark:bg-transparent text-xs font-black text-primary-600 dark:text-primary-400 p-0 focus:outline-none focus:ring-0 focus:border-transparent cursor-pointer">
-                    @foreach($availableYears as $year)
-                        <option value="{{ $year }}">{{ $year }}</option>
-                    @endforeach
-                </select>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tahun Laporan</span>
+                <div class="relative">
+                    <select 
+                        wire:model.live="selectedYear" 
+                        class="appearance-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-black text-primary-600 dark:text-primary-400 pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-sm cursor-pointer"
+                        style="appearance: none; -webkit-appearance: none; -moz-appearance: none;"
+                    >
+                        @foreach($availableYears as $year)
+                            <option value="{{ $year }}">{{ $year }}</option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-500 dark:text-gray-400">
+                        <x-heroicon-o-chevron-down class="w-3.5 h-3.5" />
+                    </div>
+                </div>
             </div>
         </div>
 
