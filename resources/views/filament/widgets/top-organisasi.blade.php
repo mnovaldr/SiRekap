@@ -264,13 +264,49 @@
                 </div>
             @endif
 
-            <!-- Pagination Links -->
-            <div class="mt-4 flex justify-between items-center px-2">
-                <span class="text-xs text-gray-500 font-medium">
-                    Menampilkan {{ number_format(($currentPage - 1) * $perPage + 1) }} - {{ number_format(min($currentPage * $perPage, $records->total())) }} dari {{ number_format($records->total()) }} data
-                </span>
-                <div>
-                    {{ $records->links() }}
+            <!-- Custom Pagination Links -->
+            <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-900 px-6 py-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div class="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    Menampilkan <span class="text-gray-900 dark:text-white font-black">{{ ($currentPage - 1) * $perPage + 1 }}</span> - 
+                    <span class="text-gray-900 dark:text-white font-black">{{ min($currentPage * $perPage, $records->total()) }}</span> dari 
+                    <span class="text-gray-900 dark:text-white font-black">{{ $records->total() }}</span> data
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button 
+                        wire:click="previousPage('listPage')"
+                        @disabled($currentPage <= 1)
+                        class="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-black text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 shadow-sm"
+                    >
+                        <x-heroicon-o-chevron-left class="w-3.5 h-3.5" />
+                        Prev
+                    </button>
+
+                    <div class="flex items-center gap-1">
+                        @php
+                            $lastPage = $records->lastPage();
+                            $start = max(1, $currentPage - 2);
+                            $end = min($lastPage, $start + 4);
+                            if ($end - $start < 4) $start = max(1, $end - 4);
+                        @endphp
+                        @for($i = max(1, $start); $i <= $end; $i++)
+                            <button 
+                                wire:click="gotoPage({{ $i }}, 'listPage')"
+                                class="w-8 h-8 rounded-lg text-xs font-black transition-all {{ $currentPage === $i ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800' }}"
+                            >
+                                {{ $i }}
+                            </button>
+                        @endfor
+                    </div>
+
+                    <button 
+                        wire:click="nextPage('listPage')"
+                        @disabled($currentPage >= $lastPage)
+                        class="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-black text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 shadow-sm"
+                    >
+                        Next
+                        <x-heroicon-o-chevron-right class="w-3.5 h-3.5" />
+                    </button>
                 </div>
             </div>
         @endif
