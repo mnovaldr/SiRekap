@@ -76,6 +76,23 @@
             font-size: 0.7rem;
             font-weight: 700;
         }
+
+        /* Custom grids to bypass Tailwind compilation limits */
+        .stats-grid-monthly {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+        @media (max-width: 1024px) {
+            .stats-grid-monthly {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 640px) {
+            .stats-grid-monthly {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
     </style>
 
     <div class="integrity-wrapper space-y-6">
@@ -110,16 +127,31 @@
         </div>
 
         {{-- Duplicate Statistics Panel --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6">
+            <h2 class="text-base font-extrabold tracking-tight text-gray-900 dark:text-white uppercase flex items-center gap-2">
+                <x-heroicon-o-presentation-chart-bar class="w-5 h-5 text-primary-500" />
+                Analisis Statistik Duplikat
+            </h2>
+            <div class="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-1.5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tahun Laporan:</span>
+                <select wire:model.live="selectedYear" class="rounded-lg border-transparent dark:border-transparent bg-transparent dark:bg-transparent text-xs font-black text-primary-600 dark:text-primary-400 p-0 focus:outline-none focus:ring-0 focus:border-transparent cursor-pointer">
+                    @foreach($availableYears as $year)
+                        <option value="{{ $year }}">{{ $year }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
             {{-- Monthly Breakdown --}}
             <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
                 <h3 class="text-xs font-black uppercase text-gray-400 tracking-wider mb-4 flex items-center gap-2">
                     <x-heroicon-o-calendar class="w-4 h-4 text-primary-500" />
-                    Rekap Duplikat Per Bulan (Tahun {{ $duplicateStats['tahun_berjalan'] }})
+                    Rekap Duplikat Per Bulan
                 </h3>
-                <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                <div class="stats-grid-monthly">
                     @foreach($duplicateStats['bulanan'] as $bulan => $total)
-                        <div class="flex flex-col items-center justify-center p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                        <div class="flex flex-col items-center justify-center p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 transition-all hover:border-rose-100 dark:hover:border-rose-950">
                             <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tighter">{{ substr($bulan, 0, 3) }}</span>
                             <span class="text-lg font-black mt-1 {{ $total > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400' }}">{{ $total }}</span>
                         </div>

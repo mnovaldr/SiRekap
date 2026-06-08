@@ -24,19 +24,36 @@ class CekDuplikat extends Page
     public int $duplikatCount = 0;
     public int $reviewCount = 0;
     public int $currentPage = 1;
+    
+    public int $selectedYear;
+    public array $availableYears = [];
     public array $duplicateStats = [];
 
     public function mount(): void
+    {
+        $this->availableYears = Event::selectRaw('EXTRACT(YEAR FROM tanggal)::integer as year')
+            ->whereNotNull('tanggal')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->all() ?: [(int) date('Y')];
+
+        $this->selectedYear = $this->availableYears[0] ?? (int) date('Y');
+
+        $this->analyze();
+    }
+
+    public function updatedSelectedYear(): void
     {
         $this->analyze();
     }
 
     public function getDuplicateStatsData(): array
     {
-        $currentYear = (int) date('Y');
+        $currentYear = $this->selectedYear ?? (int) date('Y');
         $currentMonth = (int) date('n');
 
-        // 1. Rekap Per Bulan (Tahun Berjalan)
+        // 1. Rekap Per Bulan (Tahun Terpilih)
         $monthlyRaw = Event::whereYear('tanggal', $currentYear)
             ->whereIn('status_data', ['Duplikat', 'Review'])
             ->selectRaw('EXTRACT(MONTH FROM tanggal)::integer as bulan, count(*) as total')
@@ -59,8 +76,9 @@ class CekDuplikat extends Page
             ->all();
 
         // 3. Rekap Awal Tahun hingga Bulan Berjalan (YTD)
+        $effectiveMonth = ($currentYear === (int) date('Y')) ? $currentMonth : 12;
         $ytdBulanBerjalan = Event::whereYear('tanggal', $currentYear)
-            ->whereMonth('tanggal', '<=', $currentMonth)
+            ->whereMonth('tanggal', '<=', $effectiveMonth)
             ->whereIn('status_data', ['Duplikat', 'Review'])
             ->count();
 
@@ -71,7 +89,7 @@ class CekDuplikat extends Page
 
         return [
             'tahun_berjalan' => $currentYear,
-            'bulan_berjalan_nama' => Event::getBulanIndonesia($currentMonth),
+            'bulan_berjalan_nama' => Event::getBulanIndonesia($effectiveMonth),
             'bulanan' => $rekapBulanan,
             'tahunan' => $rekapTahunan,
             'ytd_berjalan' => $ytdBulanBerjalan,
