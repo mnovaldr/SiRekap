@@ -94,6 +94,6 @@ class TopOrganisasiWidget extends Widget
             });
         }
 
-        return $query->orderBy('tanggal', 'desc')->paginate(15, ['*'], 'listPage');
+        return $query->orderBy('tanggal', 'desc')->paginate(10, ['*'], 'listPage');
     }
 }
