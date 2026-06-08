@@ -58,7 +58,7 @@ trait ResolvesYearFilter
         $komersial = $this->filters['komersial'] ?? null;
         $sdg = $this->filters['sdg'] ?? null;
 
-        return [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg];
+        return [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, 'unique'];
     }
 
     protected function applyEventFilters($query, array $exclude = []): \Illuminate\Database\Eloquent\Builder
