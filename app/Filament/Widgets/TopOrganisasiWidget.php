@@ -82,23 +82,39 @@ class TopOrganisasiWidget extends Widget
 
     public function getDetailedRecords()
     {
-        $query = Event::query();
+        $query = Event::query()->valid();
 
         $query = $this->applyEventFilters($query, ['primary']);
 
         if ($this->displayType === 'unique') {
-            $query->valid()->primary();
-        }
+            $query->select(
+                DB::raw('UPPER(TRIM(nama_organisasi)) as nama_organisasi'),
+                DB::raw('MIN(bidang) as bidang'),
+                DB::raw('COUNT(*) as total_event'),
+                DB::raw('SUM(jumlah_peserta) as total_peserta'),
+                DB::raw('MAX(tanggal) as tanggal_terakhir')
+            )
+            ->whereNotNull('nama_organisasi')
+            ->where('nama_organisasi', '!=', '')
+            ->groupBy(DB::raw('UPPER(TRIM(nama_organisasi))'));
 
-        $s = trim($this->search);
-        if ($s !== '') {
-            $query->where(function ($q) use ($s) {
-                $q->where('nama_organisasi', 'ilike', "%{$s}%")
-                  ->orWhere('judul_kegiatan', 'ilike', "%{$s}%")
-                  ->orWhere('lokasi', 'ilike', "%{$s}%");
-            });
-        }
+            $s = trim($this->search);
+            if ($s !== '') {
+                $query->having('UPPER(TRIM(nama_organisasi)) ilike ?', ["%{$s}%"]);
+            }
 
-        return $query->orderBy('tanggal', 'desc')->paginate(10, ['*'], 'listPage');
+            return $query->orderBy('total_event', 'desc')->paginate(10, ['*'], 'listPage');
+        } else {
+            $s = trim($this->search);
+            if ($s !== '') {
+                $query->where(function ($q) use ($s) {
+                    $q->where('nama_organisasi', 'ilike', "%{$s}%")
+                      ->orWhere('judul_kegiatan', 'ilike', "%{$s}%")
+                      ->orWhere('lokasi', 'ilike', "%{$s}%");
+                });
+            }
+
+            return $query->orderBy('tanggal', 'desc')->paginate(10, ['*'], 'listPage');
+        }
     }
 }

@@ -156,69 +156,113 @@
             </div>
         @else
             <!-- Detailed Table -->
-            <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50/75 dark:bg-gray-800/75 border-b border-gray-100 dark:border-gray-800">
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-16 text-center">No</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Organisasi</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Judul Kegiatan</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-32">Tanggal</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Lokasi</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-16">Lt</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-24">Peserta</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-28">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50 dark:divide-gray-800/50">
-                        @php
-                            $records = $this->getDetailedRecords();
-                            $currentPage = $records->currentPage();
-                            $perPage = $records->perPage();
-                        @endphp
-                        @forelse($records as $index => $record)
-                        <tr class="hover:bg-gray-50/50 dark:hover:bg-primary-900/5 transition-all group">
-                            <td class="px-5 py-4 text-center text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums">
-                                {{ ($currentPage - 1) * $perPage + $index + 1 }}
-                            </td>
-                            <td class="px-5 py-4">
-                                <span class="text-sm font-black dark:text-gray-200 group-hover:text-primary-600 transition-colors">{{ $record->nama_organisasi }}</span>
-                            </td>
-                            <td class="px-5 py-4 text-xs text-gray-700 dark:text-gray-300 font-semibold max-w-xs truncate" title="{{ $record->judul_kegiatan }}">
-                                {{ $record->judul_kegiatan }}
-                            </td>
-                            <td class="px-5 py-4 text-center text-xs text-gray-500 dark:text-gray-400 tabular-nums font-medium">
-                                {{ $record->tanggal ? $record->tanggal->format('d M Y') : '-' }}
-                            </td>
-                            <td class="px-5 py-4 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate font-medium" title="{{ $record->lokasi }}">
-                                {{ $record->lokasi }}
-                            </td>
-                            <td class="px-5 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300">
-                                {{ $record->lantai }}
-                            </td>
-                            <td class="px-5 py-4 text-center">
-                                <span class="text-xs font-black dark:text-gray-300 tabular-nums">{{ number_format($record->jumlah_peserta) }}</span>
-                            </td>
-                            <td class="px-5 py-4 text-center">
-                                @if($record->is_primary_row)
+            @php
+                $records = $this->getDetailedRecords();
+                $currentPage = $records->currentPage();
+                $perPage = $records->perPage();
+            @endphp
+
+            @if($this->displayType === 'unique')
+                <!-- Unique Organizations Table -->
+                <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50/75 dark:bg-gray-800/75 border-b border-gray-100 dark:border-gray-800">
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-16 text-center">No</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Organisasi</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Bidang / Kategori</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-28">Total Event</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-32">Total Peserta</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-36">Kegiatan Terakhir</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 dark:divide-gray-800/50">
+                            @forelse($records as $index => $record)
+                            <tr class="hover:bg-gray-50/50 dark:hover:bg-primary-900/5 transition-all group">
+                                <td class="px-5 py-4 text-center text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums">
+                                    {{ ($currentPage - 1) * $perPage + $index + 1 }}
+                                </td>
+                                <td class="px-5 py-4">
+                                    <span class="text-sm font-black dark:text-gray-200 group-hover:text-primary-600 transition-colors">{{ $record->nama_organisasi }}</span>
+                                </td>
+                                <td class="px-5 py-4 text-xs text-gray-500 dark:text-gray-400 font-semibold">
+                                    {{ $record->bidang ?: '-' }}
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <span class="inline-flex items-center px-2.5 py-1 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-xs font-black text-primary-700 dark:text-primary-400 tabular-nums">
+                                        {{ number_format($record->total_event) }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <span class="text-xs font-black dark:text-gray-300 tabular-nums">{{ number_format($record->total_peserta) }}</span>
+                                </td>
+                                <td class="px-5 py-4 text-center text-xs text-gray-500 dark:text-gray-400 tabular-nums font-medium">
+                                    {{ $record->tanggal_terakhir ? \Carbon\Carbon::parse($record->tanggal_terakhir)->format('d M Y') : '-' }}
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="px-5 py-8 text-center text-gray-400 text-sm italic">Tidak ada data ditemukan</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <!-- All Events Table -->
+                <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50/75 dark:bg-gray-800/75 border-b border-gray-100 dark:border-gray-800">
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-16 text-center">No</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Organisasi</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Judul Kegiatan</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-32">Tanggal</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Lokasi</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-16">Lt</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-24">Peserta</th>
+                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-28">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 dark:divide-gray-800/50">
+                            @forelse($records as $index => $record)
+                            <tr class="hover:bg-gray-50/50 dark:hover:bg-primary-900/5 transition-all group">
+                                <td class="px-5 py-4 text-center text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums">
+                                    {{ ($currentPage - 1) * $perPage + $index + 1 }}
+                                </td>
+                                <td class="px-5 py-4">
+                                    <span class="text-sm font-black dark:text-gray-200 group-hover:text-primary-600 transition-colors">{{ $record->nama_organisasi }}</span>
+                                </td>
+                                <td class="px-5 py-4 text-xs text-gray-700 dark:text-gray-300 font-semibold max-w-xs truncate" title="{{ $record->judul_kegiatan }}">
+                                    {{ $record->judul_kegiatan }}
+                                </td>
+                                <td class="px-5 py-4 text-center text-xs text-gray-500 dark:text-gray-400 tabular-nums font-medium">
+                                    {{ $record->tanggal ? $record->tanggal->format('d M Y') : '-' }}
+                                </td>
+                                <td class="px-5 py-4 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate font-medium" title="{{ $record->lokasi }}">
+                                    {{ $record->lokasi }}
+                                </td>
+                                <td class="px-5 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300">
+                                    {{ $record->lantai }}
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <span class="text-xs font-black dark:text-gray-300 tabular-nums">{{ number_format($record->jumlah_peserta) }}</span>
+                                </td>
+                                <td class="px-5 py-4 text-center">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
-                                        Unik
+                                        Valid
                                     </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30">
-                                        Duplikat
-                                    </span>
-                                @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="px-5 py-8 text-center text-gray-400 text-sm italic">Tidak ada data ditemukan</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="8" class="px-5 py-8 text-center text-gray-400 text-sm italic">Tidak ada data ditemukan</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            @endif
 
             <!-- Pagination Links -->
             <div class="mt-4 flex justify-between items-center px-2">
