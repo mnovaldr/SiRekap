@@ -7,7 +7,7 @@
                         <x-heroicon-o-map-pin class="w-5 h-5 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                        <span class="text-base font-extrabold tracking-tight">Top 10 Lokasi Paling Aktif</span>
+                        <span class="text-base font-extrabold tracking-tight">Lokasi Paling Aktif</span>
                     </div>
                 </div>
                 
