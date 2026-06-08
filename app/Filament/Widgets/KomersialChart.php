@@ -49,14 +49,15 @@ class KomersialChart extends ChartWidget
 
     protected function getData(): array
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode] = $this->resolveFilters();
 
-        $cacheKey = "komersial_chart_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$this->filter}";
+        $cacheKey = "komersial_chart_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_{$displayMode}_{$this->filter}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
-            $query = Event::valid()
-                ->primary()
-                ->bySubSektor($subSektor);
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode) {
+            $query = Event::valid();
+
+            
+            $query = $this->applyEventFilters($query, ['year', 'month']);
             
             if ($this->filter === 'snapshot') {
                 $query->byYearRange($yearStart, $yearEnd)
@@ -70,6 +71,7 @@ class KomersialChart extends ChartWidget
                 COUNT(CASE WHEN komersial = 'Komersial' THEN 1 END) as komersial,
                 COUNT(CASE WHEN komersial = 'Non Komersial' THEN 1 END) as non_komersial
             ")->first();
+
 
             $komersial    = (int) ($row->komersial ?? 0);
             $nonKomersial = (int) ($row->non_komersial ?? 0);

@@ -21,24 +21,24 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode] = $this->resolveFilters();
 
-        $cacheKey = "stats_overview_v2_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}";
+        $cacheKey = "stats_overview_v2_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_{$displayMode}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
-            $query     = Event::valid()
-                ->byYearRange($yearStart, $yearEnd)
-                ->byMonth($month)
-                ->bySubSektor($subSektor);
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode) {
+            $query     = Event::valid();
+            $query     = $this->applyEventFilters($query);
+
             
             $baseQuery = (clone $query);
 
             $statsRow = $query->selectRaw('
-                COUNT(CASE WHEN "is_primary_row" = true THEN 1 END) as total_events,
-                SUM(CASE WHEN "is_primary_row" = true THEN "jumlah_peserta" ELSE 0 END) as total_peserta,
+                COUNT(*) as total_events,
+                COALESCE(SUM("jumlah_peserta"), 0) as total_peserta,
                 COUNT(DISTINCT CASE WHEN "nama_organisasi" IS NOT NULL AND "nama_organisasi" != \'\' THEN "nama_organisasi" END) as ekraf_unik,
-                COUNT(CASE WHEN "is_primary_row" = true AND "komersial" = \'Non Komersial\' THEN 1 END) as total_non_komersial
+                COUNT(CASE WHEN "komersial" = \'Non Komersial\' THEN 1 END) as total_non_komersial
             ')->first();
+
 
             $ekrafUnik = $statsRow->ekraf_unik ?? 0;
             
@@ -61,6 +61,18 @@ class StatsOverview extends BaseWidget
             $periodLabel = ($month ? Event::getBulanIndonesia($month) . ' ' : '') . $yearLabel;
             if ($subSektor) {
                 $periodLabel .= " — $subSektor";
+            }
+            if ($bidang) {
+                $periodLabel .= " — $bidang";
+            }
+            if ($jenisKegiatan) {
+                $periodLabel .= " — $jenisKegiatan";
+            }
+            if ($komersial) {
+                $periodLabel .= " — $komersial";
+            }
+            if ($sdg) {
+                $periodLabel .= " — $sdg";
             }
 
             $totalKomersial   = $totalEvents - $totalNonKomersial;

@@ -170,4 +170,32 @@ class Event extends Model
     {
         return $query->when($subSektor, fn($q) => $q->where('sub_sektor', $subSektor));
     }
+
+    public function scopeByBidang($query, $bidang)
+    {
+        return $query->when($bidang, fn($q) => $q->where('bidang', $bidang));
+    }
+
+    public function scopeByJenisKegiatan($query, $jenisKegiatan)
+    {
+        return $query->when($jenisKegiatan, fn($q) => $q->where('jenis_kegiatan', $jenisKegiatan));
+    }
+
+    public function scopeByKomersial($query, $komersial)
+    {
+        return $query->when($komersial, fn($q) => $q->where('komersial', $komersial));
+    }
+
+    public function scopeBySdg($query, $sdg)
+    {
+        return $query->when($sdg, function ($q) use ($sdg) {
+            if (preg_match('/sdgs?\s*(\d{1,2})/i', $sdg, $m)) {
+                $num = (int)$m[1];
+                $q->whereRaw('program_sdgs ~* ?', ["(\\ySDGS?\\s*{$num}\\y|\\y{$num}\\y)"]);
+            } else {
+                $q->where('program_sdgs', 'ilike', '%' . $sdg . '%');
+            }
+        });
+    }
 }
+

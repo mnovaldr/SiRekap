@@ -53,7 +53,29 @@ trait ResolvesYearFilter
         
         $month = $this->filters['month'] ?? null;
         $subSektor = $this->filters['sub_sektor'] ?? null;
+        $bidang = $this->filters['bidang'] ?? null;
+        $jenisKegiatan = $this->filters['jenis_kegiatan'] ?? null;
+        $komersial = $this->filters['komersial'] ?? null;
+        $sdg = $this->filters['sdg'] ?? null;
 
-        return [$yearStart, $yearEnd, $month, $subSektor];
+        return [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg];
     }
+
+    protected function applyEventFilters($query, array $exclude = []): \Illuminate\Database\Eloquent\Builder
+    {
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg] = $this->resolveFilters();
+
+        return $query
+            ->when(!in_array('year', $exclude), fn($q) => $q->byYearRange($yearStart, $yearEnd))
+            ->when(!in_array('month', $exclude) && $month, fn($q) => $q->whereMonth('tanggal', $month))
+            ->when(!in_array('sub_sektor', $exclude) && $subSektor, fn($q) => $q->bySubSektor($subSektor))
+            ->when(!in_array('bidang', $exclude) && $bidang, fn($q) => $q->byBidang($bidang))
+            ->when(!in_array('jenis_kegiatan', $exclude) && $jenisKegiatan, fn($q) => $q->byJenisKegiatan($jenisKegiatan))
+            ->when(!in_array('komersial', $exclude) && $komersial, fn($q) => $q->byKomersial($komersial))
+            ->when(!in_array('sdg', $exclude) && $sdg, fn($q) => $q->bySdg($sdg))
+            ->when(!in_array('primary', $exclude), fn($q) => $q->primary());
+    }
+
+
 }
+

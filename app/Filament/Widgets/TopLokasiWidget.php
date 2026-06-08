@@ -25,19 +25,15 @@ class TopLokasiWidget extends Widget
 
     public function getTopLokasiData(): array
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode] = $this->resolveFilters();
 
-        $cacheKey = "top_lokasi_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}";
+        $cacheKey = "top_lokasi_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_{$displayMode}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
-            $query = Event::query()->valid()
-                ->primary()
-                ->byYearRange($yearStart, $yearEnd)
-                ->bySubSektor($subSektor);
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode) {
+            $query = Event::query()->valid();
 
-            if ($month) {
-                $query->whereMonth('tanggal', $month);
-            }
+
+            $query = $this->applyEventFilters($query);
 
             $data = $query->select('lokasi')
                 ->selectRaw('count(*) as total')
@@ -46,6 +42,7 @@ class TopLokasiWidget extends Widget
                 ->orderBy('total', 'desc')
                 ->limit(10)
                 ->get();
+
 
             $grandTotal = $data->sum('total') ?: 1;
 

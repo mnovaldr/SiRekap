@@ -52,7 +52,7 @@ class SdgsDistributionWidget extends Widget
             return null;
         }
 
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode] = $this->resolveFilters();
 
         if (preg_match('/sdgs?\s*(\d{1,2})/i', $this->selectedSdg, $m)) {
             $num = (int)$m[1];
@@ -60,14 +60,9 @@ class SdgsDistributionWidget extends Widget
             return null;
         }
 
-        $query = Event::query()->valid()
-            ->primary()
-            ->byYearRange($yearStart, $yearEnd)
-            ->bySubSektor($subSektor);
+        $query = Event::query()->valid();
 
-        if ($month) {
-            $query->whereMonth('tanggal', $month);
-        }
+        $query = $this->applyEventFilters($query);
 
         // Gunakan case-insensitive regex PostgreSQL dengan batas kata (\y)
         $query->whereRaw('program_sdgs ~* ?', ["(\\ySDGS?\\s*{$num}\\y|\\y{$num}\\y)"]);
@@ -86,19 +81,16 @@ class SdgsDistributionWidget extends Widget
 
     public function getSdgsData(): array
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode] = $this->resolveFilters();
 
-        $cacheKey = "sdgs_distribution_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}";
+        $cacheKey = "sdgs_distribution_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_{$displayMode}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
-            $baseQuery = Event::query()->valid()
-                ->primary()
-                ->byYearRange($yearStart, $yearEnd)
-                ->bySubSektor($subSektor);
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode) {
+            $baseQuery = Event::query()->valid();
 
-            if ($month) {
-                $baseQuery->whereMonth('tanggal', $month);
-            }
+            $baseQuery = $this->applyEventFilters($baseQuery);
+
+
 
             // Total event primary yang sesuai filter
             $totalEvents = $baseQuery->count();

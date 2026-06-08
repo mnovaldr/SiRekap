@@ -31,11 +31,9 @@ class RekapBulananWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode] = $this->resolveFilters();
 
-        return $table
-            ->query(
-                Event::select(
+        $query = Event::select(
                     DB::raw('CASE EXTRACT(MONTH FROM "tanggal")
                         WHEN 1 THEN \'Januari\'
                         WHEN 2 THEN \'Februari\'
@@ -50,17 +48,22 @@ class RekapBulananWidget extends BaseWidget
                         WHEN 11 THEN \'November\'
                         WHEN 12 THEN \'Desember\'
                     END as bulan'),
-                    DB::raw('COUNT(CASE WHEN "is_primary_row" = true THEN 1 END) as total_event'),
-                    DB::raw('SUM(CASE WHEN "is_primary_row" = true THEN "jumlah_peserta" ELSE 0 END) as total_peserta'),
+                    DB::raw('COUNT(*) as total_event'),
+                    DB::raw('COALESCE(SUM("jumlah_peserta"), 0) as total_peserta'),
                     DB::raw('COUNT(DISTINCT CASE WHEN "nama_organisasi" IS NOT NULL AND "nama_organisasi" != \'\' THEN "nama_organisasi" END) as total_organisasi')
                 )
-                ->valid()
-                ->byYearRange($yearStart, $yearEnd)
-                ->bySubSektor($subSektor)
-                ->whereNotNull('tanggal')
-                ->groupBy(DB::raw('EXTRACT(MONTH FROM "tanggal")'))
-                ->orderBy(DB::raw('EXTRACT(MONTH FROM "tanggal")'))
-            )
+                ->valid();
+
+
+        $query = $this->applyEventFilters($query, ['month']);
+
+        $query->whereNotNull('tanggal')
+            ->groupBy(DB::raw('EXTRACT(MONTH FROM "tanggal")'))
+            ->orderBy(DB::raw('EXTRACT(MONTH FROM "tanggal")'));
+
+        return $table
+            ->query($query)
+
             ->columns([
                 Tables\Columns\TextColumn::make('bulan')
                     ->label('Bulan')

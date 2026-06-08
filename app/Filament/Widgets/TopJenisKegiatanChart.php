@@ -49,27 +49,29 @@ class TopJenisKegiatanChart extends ChartWidget
 
     protected function getData(): array
     {
-        [$yearStart, $yearEnd, $month, $subSektor] = $this->resolveFilters();
+        [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode] = $this->resolveFilters();
 
-        $cacheKey = "top_jenis_keg_v5_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$this->filter}";
+        $cacheKey = "top_jenis_keg_v5_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_{$displayMode}_{$this->filter}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor) {
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg, $displayMode) {
             $query = Event::select('jenis_kegiatan')
-                ->primary()
+
                 ->selectRaw('count(*) as count')
-                ->valid()
-                ->bySubSektor($subSektor)
-                ->groupBy('jenis_kegiatan')
-                ->orderBy('count', 'desc');
+                ->valid();
+
+            $query = $this->applyEventFilters($query, ['year', 'month']);
 
             if ($this->filter === 'snapshot') {
-                $query->whereRaw('EXTRACT(YEAR FROM "tanggal") BETWEEN ? AND ?', [(int)$yearStart, (int)$yearEnd])
-                    ->when($month, fn($q) => $q->whereRaw('EXTRACT(MONTH FROM "tanggal") = ?', [(int)$month]));
+                $query->byYearRange($yearStart, $yearEnd)
+                    ->byMonth($month);
             } elseif ($this->filter === 'monthly') {
-                $query->whereRaw('EXTRACT(YEAR FROM "tanggal") BETWEEN ? AND ?', [(int)$yearStart, (int)$yearEnd]);
+                $query->byYearRange($yearStart, $yearEnd);
             }
 
-            $data = $query->get();
+            $data = $query->groupBy('jenis_kegiatan')
+                ->orderBy('count', 'desc')
+                ->get();
+
 
             return [
                 'datasets' => [
