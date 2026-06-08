@@ -12,7 +12,9 @@
                 </div>
                 
                 @php
-                    $year = $this->filters['year'] ?? null;
+                    $yearStart = $this->filters['year_start'] ?? null;
+                    $yearEnd = $this->filters['year_end'] ?? null;
+                    $year = ($yearStart && $yearEnd && $yearStart === $yearEnd) ? $yearStart : (($yearStart && $yearEnd) ? $yearStart . ' - ' . $yearEnd : null);
                     $month = $this->filters['month'] ?? null;
                     $period = ($month ? \App\Models\Event::getBulanIndonesia($month) : '') . ($year ? ' ' . $year : '');
                     $period = trim($period) ?: 'Semua Periode';

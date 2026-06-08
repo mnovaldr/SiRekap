@@ -25,6 +25,11 @@ class TopOrganisasiWidget extends Widget
     public string $displayType = 'unique'; // 'unique' (Hanya Data Unik) or 'all' (Semua Data)
     public string $search = '';
 
+    public function updatedFilters(): void
+    {
+        $this->resetPage('listPage');
+    }
+
     public function updatedListMode(): void
     {
         $this->resetPage('listPage');
