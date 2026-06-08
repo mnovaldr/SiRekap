@@ -97,7 +97,7 @@
                             <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Lokasi</th>
                             <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-28">Event</th>
                             <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-28">Peserta</th>
-                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Utilitas</th>
+                            <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-48">Utilitas</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50 dark:divide-gray-800/50">
@@ -128,7 +128,7 @@
                             <td class="px-5 py-4 text-center">
                                 <span class="text-sm font-black dark:text-gray-300 tabular-nums">{{ number_format($item['total_peserta']) }}</span>
                             </td>
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 w-48">
                                 <div class="flex items-center gap-3">
                                     <div class="flex-1 bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
                                         <div class="bg-primary-500 h-full rounded-full transition-all duration-1000" 
