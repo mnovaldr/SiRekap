@@ -100,7 +100,7 @@ class TopOrganisasiWidget extends Widget
 
             $s = trim($this->search);
             if ($s !== '') {
-                $query->having('UPPER(TRIM(nama_organisasi)) ilike ?', ["%{$s}%"]);
+                $query->where('nama_organisasi', 'ilike', "%{$s}%");
             }
 
             return $query->orderBy('total_event', 'desc')->paginate(10, ['*'], 'listPage');

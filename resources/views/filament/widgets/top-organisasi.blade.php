@@ -24,54 +24,52 @@
         </x-slot>
 
         <!-- Widget Controls -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 mb-4 pb-4 border-b border-gray-100 dark:border-gray-800">
-            <div class="flex flex-wrap items-center gap-3">
-                <!-- Tipe Data Toggler -->
-                <div class="flex flex-col gap-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipe Data</span>
-                    <div class="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1" role="group">
-                        <button 
-                            type="button" 
-                            wire:click="$set('displayType', 'unique')"
-                            class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->displayType === 'unique' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
-                        >
-                            Hanya Data Unik
-                        </button>
-                        <button 
-                            type="button" 
-                            wire:click="$set('displayType', 'all')"
-                            class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->displayType === 'all' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
-                        >
-                            Semua Data
-                        </button>
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 mb-6 pb-4 border-b border-gray-100 dark:border-gray-800 items-end">
+            <!-- Tipe Data Toggler -->
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipe Data</span>
+                <div class="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full sm:w-fit" role="group">
+                    <button 
+                        type="button" 
+                        wire:click="$set('displayType', 'unique')"
+                        class="flex-1 sm:flex-initial text-center px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->displayType === 'unique' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
+                    >
+                        Hanya Data Unik
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="$set('displayType', 'all')"
+                        class="flex-1 sm:flex-initial text-center px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->displayType === 'all' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
+                    >
+                        Semua Data
+                    </button>
                 </div>
+            </div>
 
-                <!-- Mode Tampilan Toggler -->
-                <div class="flex flex-col gap-1">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tampilan</span>
-                    <div class="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1" role="group">
-                        <button 
-                            type="button" 
-                            wire:click="$set('listMode', 'top10')"
-                            class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->listMode === 'top10' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
-                        >
-                            Top 10
-                        </button>
-                        <button 
-                            type="button" 
-                            wire:click="$set('listMode', 'all')"
-                            class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->listMode === 'all' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
-                        >
-                            Lihat Semua
-                        </button>
-                    </div>
+            <!-- Tampilan Toggler -->
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tampilan</span>
+                <div class="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full sm:w-fit" role="group">
+                    <button 
+                        type="button" 
+                        wire:click="$set('listMode', 'top10')"
+                        class="flex-1 sm:flex-initial text-center px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->listMode === 'top10' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
+                    >
+                        Top 10
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="$set('listMode', 'all')"
+                        class="flex-1 sm:flex-initial text-center px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->listMode === 'all' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
+                    >
+                        Lihat Semua
+                    </button>
                 </div>
             </div>
 
             <!-- Search Input (only when listMode is 'all') -->
-            @if($this->listMode === 'all')
-                <div class="flex flex-col gap-1 w-full sm:w-80">
+            <div class="flex flex-col gap-1.5">
+                @if($this->listMode === 'all')
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pencarian</span>
                     <div class="relative w-full">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -85,8 +83,8 @@
                             class="w-full pr-4 py-2 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 dark:text-gray-100 shadow-sm"
                         />
                     </div>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
 
         @if($this->listMode === 'top10')
