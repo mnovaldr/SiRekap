@@ -30,7 +30,8 @@ class DuplicateAlert extends BaseWidget
             Stat::make('Perhatian: Data Duplikat/Review', number_format($duplicateCount))
                 ->description('Segera lakukan pengecekan pada menu Cek Duplikat')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color('danger'),
+                ->color('danger')
+                ->url(\App\Filament\Pages\CekDuplikat::getUrl()),
         ];
     }
 }

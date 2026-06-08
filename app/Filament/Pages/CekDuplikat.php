@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use Filament\Pages\Page;
 use Filament\Notifications\Notification;
 use App\Models\Event;
+use Illuminate\Support\Facades\DB;
 
 class CekDuplikat extends Page
 {
@@ -23,20 +24,67 @@ class CekDuplikat extends Page
     public int $duplikatCount = 0;
     public int $reviewCount = 0;
     public int $currentPage = 1;
+    public array $duplicateStats = [];
 
     public function mount(): void
     {
         $this->analyze();
     }
 
-    // ... properti tetap sama seperti kode sebelumnya ...
+    public function getDuplicateStatsData(): array
+    {
+        $currentYear = (int) date('Y');
+        $currentMonth = (int) date('n');
+
+        // 1. Rekap Per Bulan (Tahun Berjalan)
+        $monthlyRaw = Event::whereYear('tanggal', $currentYear)
+            ->whereIn('status_data', ['Duplikat', 'Review'])
+            ->selectRaw('EXTRACT(MONTH FROM tanggal)::integer as bulan, count(*) as total')
+            ->groupBy(DB::raw('EXTRACT(MONTH FROM tanggal)'))
+            ->pluck('total', 'bulan')
+            ->all();
+
+        $rekapBulanan = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $rekapBulanan[Event::getBulanIndonesia($m)] = $monthlyRaw[$m] ?? 0;
+        }
+
+        // 2. Rekap Per Tahun (5 Tahun Terakhir)
+        $rekapTahunan = Event::whereIn('status_data', ['Duplikat', 'Review'])
+            ->selectRaw('EXTRACT(YEAR FROM tanggal)::integer as tahun, count(*) as total')
+            ->groupBy(DB::raw('EXTRACT(YEAR FROM tanggal)'))
+            ->orderBy('tahun', 'desc')
+            ->limit(5)
+            ->pluck('total', 'tahun')
+            ->all();
+
+        // 3. Rekap Awal Tahun hingga Bulan Berjalan (YTD)
+        $ytdBulanBerjalan = Event::whereYear('tanggal', $currentYear)
+            ->whereMonth('tanggal', '<=', $currentMonth)
+            ->whereIn('status_data', ['Duplikat', 'Review'])
+            ->count();
+
+        // 4. Rekap Awal Tahun hingga Bulan Mendatang (Semua data terakumulasi di tahun berjalan)
+        $ytdBulanMendatang = Event::whereYear('tanggal', $currentYear)
+            ->whereIn('status_data', ['Duplikat', 'Review'])
+            ->count();
+
+        return [
+            'tahun_berjalan' => $currentYear,
+            'bulan_berjalan_nama' => Event::getBulanIndonesia($currentMonth),
+            'bulanan' => $rekapBulanan,
+            'tahunan' => $rekapTahunan,
+            'ytd_berjalan' => $ytdBulanBerjalan,
+            'ytd_mendatang' => $ytdBulanMendatang,
+        ];
+    }
 
     public function analyze(): void
     {
         $this->isLoading = true;
         $this->duplikatGroups = [];
 
-        // Gunakan cursor atau get untuk mengambil data
+        // Ambil data
         $events = Event::select('id','nama_organisasi','judul_kegiatan','tanggal','lokasi','lantai','status_data','jumlah_peserta')
             ->orderBy('tanggal', 'desc')
             ->get()
@@ -47,15 +95,15 @@ class CekDuplikat extends Page
 
         foreach ($events as $row) {
             // Key untuk Duplikat Identik (Semua Field Utama Sama)
-            $kf = strtoupper(trim($row['nama_organisasi'])) . '|' .
-                strtoupper(trim($row['judul_kegiatan']))   . '|' .
+            $kf = strtoupper(trim($row['nama_organisasi'] ?? '')) . '|' .
+                strtoupper(trim($row['judul_kegiatan'] ?? ''))   . '|' .
                 ($row['tanggal'] ?? '')                  . '|' .
-                strtoupper(trim($row['lokasi']))           . '|' .
-                strtoupper(trim($row['lantai']));
+                strtoupper(trim($row['lokasi'] ?? ''))           . '|' .
+                strtoupper(trim($row['lantai'] ?? ''));
 
             // Key untuk Review (Nama & Tanggal Sama tapi Ruang Beda)
-            $ks = strtoupper(trim($row['nama_organisasi'])) . '|' .
-                strtoupper(trim($row['judul_kegiatan']))   . '|' .
+            $ks = strtoupper(trim($row['nama_organisasi'] ?? '')) . '|' .
+                strtoupper(trim($row['judul_kegiatan'] ?? ''))   . '|' .
                 ($row['tanggal'] ?? '');
 
             $fullMap[$kf][]  = $row;
@@ -107,6 +155,9 @@ class CekDuplikat extends Page
         } elseif ($totalGroups === 0) {
             $this->currentPage = 1;
         }
+
+        // Fetch duplicate stats
+        $this->duplicateStats = $this->getDuplicateStatsData();
 
         $this->isLoading = false;
     }

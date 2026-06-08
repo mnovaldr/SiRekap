@@ -109,6 +109,67 @@
             </div>
         </div>
 
+        {{-- Duplicate Statistics Panel --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            {{-- Monthly Breakdown --}}
+            <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
+                <h3 class="text-xs font-black uppercase text-gray-400 tracking-wider mb-4 flex items-center gap-2">
+                    <x-heroicon-o-calendar class="w-4 h-4 text-primary-500" />
+                    Rekap Duplikat Per Bulan (Tahun {{ $duplicateStats['tahun_berjalan'] }})
+                </h3>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    @foreach($duplicateStats['bulanan'] as $bulan => $total)
+                        <div class="flex flex-col items-center justify-center p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                            <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tighter">{{ substr($bulan, 0, 3) }}</span>
+                            <span class="text-lg font-black mt-1 {{ $total > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400' }}">{{ $total }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- YTD & Yearly Summary --}}
+            <div class="space-y-6">
+                {{-- YTD Accumulation --}}
+                <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
+                    <h3 class="text-xs font-black uppercase text-gray-400 tracking-wider mb-4 flex items-center gap-2">
+                        <x-heroicon-o-arrow-trending-up class="w-4 h-4 text-amber-500" />
+                        Akumulasi Data Terduplikasi (YTD)
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Jan - {{ $duplicateStats['bulan_berjalan_nama'] }}</span>
+                            <div class="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1">{{ $duplicateStats['ytd_berjalan'] }} <span class="text-xs font-bold text-amber-500">Kasus</span></div>
+                            <span class="text-[10px] text-gray-500 mt-1 block">Awal tahun s.d bulan berjalan</span>
+                        </div>
+                        
+                        <div class="p-4 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">Jan - Des (Mendatang)</span>
+                            <div class="text-2xl font-black text-rose-700 dark:text-rose-300 mt-1">{{ $duplicateStats['ytd_mendatang'] }} <span class="text-xs font-bold text-rose-500">Kasus</span></div>
+                            <span class="text-[10px] text-gray-500 mt-1 block">Akumulasi penuh tahun berjalan</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Yearly Summary --}}
+                <div class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 shadow-sm">
+                    <h3 class="text-xs font-black uppercase text-gray-400 tracking-wider mb-4 flex items-center gap-2">
+                        <x-heroicon-o-clock class="w-4 h-4 text-emerald-500" />
+                        Rekap Duplikat Per Tahun
+                    </h3>
+                    <div class="flex flex-wrap gap-3">
+                        @forelse($duplicateStats['tahunan'] as $tahun => $total)
+                            <div class="flex-1 min-w-[80px] p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-center">
+                                <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400">{{ $tahun }}</span>
+                                <div class="text-lg font-black mt-1 text-gray-700 dark:text-gray-300">{{ $total }}</div>
+                            </div>
+                        @empty
+                            <div class="text-gray-400 text-xs italic">Tidak ada data tahunan terdokumentasi.</div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Content --}}
         @if(count($duplikatGroups) > 0)
             @php
