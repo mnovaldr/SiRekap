@@ -47,6 +47,15 @@ class Event extends Model
         // Logika pengisian otomatis (bulan, key, duplikat) 
         // sekarang ditangani oleh Database Trigger di Supabase.
 
+        static::saving(function ($event) {
+            $textFields = ['nama_organisasi', 'judul_kegiatan', 'pic', 'lokasi', 'bidang'];
+            foreach ($textFields as $field) {
+                if ($event->$field) {
+                    $event->$field = self::toTitleCaseWithAbbreviations($event->$field);
+                }
+            }
+        });
+
         static::saved(function () {
             \Illuminate\Support\Facades\Cache::flush();
         });
@@ -54,6 +63,32 @@ class Event extends Model
         static::deleted(function () {
             \Illuminate\Support\Facades\Cache::flush();
         });
+    }
+
+    public static function toTitleCaseWithAbbreviations(?string $value): ?string
+    {
+        if (!$value) {
+            return $value;
+        }
+
+        // Bersihkan spasi ganda/berlebih dan lakukan Title Case standar
+        $cleaned = trim(preg_replace('/\s+/', ' ', $value));
+        $titleCased = \Illuminate\Support\Str::title($cleaned);
+
+        // Daftar kata yang harus tetap UPPERCASE
+        $uppercaseWords = [
+            'SMA', 'SMK', 'SMP', 'SD', 'MI', 'MTS', 'MA', 
+            'PT', 'CV', 'UD', 'EO', 'ITN', 'UM', 'UB', 'ITS', 
+            'UNAIR', 'SPK', 'MCC', 'PIC', 'SDG', 'SDGS', 'VO', 
+            'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'
+        ];
+
+        // Ganti kecocokan kata secara case-insensitive
+        foreach ($uppercaseWords as $word) {
+            $titleCased = preg_replace('/\b' . preg_quote($word, '/') . '\b/i', $word, $titleCased);
+        }
+
+        return $titleCased;
     }
 
     public static function getBulanIndonesia($date)

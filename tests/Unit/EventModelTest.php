@@ -331,4 +331,38 @@ class EventModelTest extends TestCase
         $this->assertIsBool($event->is_primary_row);
         $this->assertTrue($event->is_primary_row);
     }
+
+    // =========================================================================
+    // Title Case & Abbreviation Logic
+    // =========================================================================
+
+    #[Test]
+    public function helper_to_title_case_with_abbreviations_works_correctly(): void
+    {
+        $this->assertEquals('SMA Negeri 9 Malang', Event::toTitleCaseWithAbbreviations('  sma   negeri   9   malang  '));
+        $this->assertEquals('CV Bunga Mekar', Event::toTitleCaseWithAbbreviations('cv bunga mekar'));
+        $this->assertEquals('ITN Malang', Event::toTitleCaseWithAbbreviations('itn malang'));
+        $this->assertEquals('Sosialisasi Program SDGS', Event::toTitleCaseWithAbbreviations('sosialisasi program sdgs'));
+        $this->assertEquals('Sanggar Angkasa', Event::toTitleCaseWithAbbreviations('SANGGAR ANGKASA'));
+        $this->assertNull(Event::toTitleCaseWithAbbreviations(null));
+    }
+
+    #[Test]
+    public function model_automatically_formats_text_fields_on_save(): void
+    {
+        $event = Event::factory()->make([
+            'nama_organisasi' => '  sma   negeri   9   malang  ',
+            'judul_kegiatan' => '  sosialisasi   program  sdgs   ',
+            'pic' => '  pic   kegiatan  ',
+            'lokasi' => '  ruang  meeting  ',
+            'bidang' => '  komunitas  ',
+        ]);
+        $event->save();
+
+        $this->assertEquals('SMA Negeri 9 Malang', $event->nama_organisasi);
+        $this->assertEquals('Sosialisasi Program SDGS', $event->judul_kegiatan);
+        $this->assertEquals('PIC Kegiatan', $event->pic);
+        $this->assertEquals('Ruang Meeting', $event->lokasi);
+        $this->assertEquals('Komunitas', $event->bidang);
+    }
 }
