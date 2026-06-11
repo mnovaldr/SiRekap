@@ -30,6 +30,7 @@ class ImportData extends Page
     public int $validRows = 0;
     public int $duplikatRows = 0;
     public int $reviewRows = 0;
+    public int $skippedRows = 0; // Baris yang dilewati karena tanggal tidak valid
     
     public bool $isProcessing = false;
     public string $processMessage = '';
@@ -54,6 +55,7 @@ class ImportData extends Page
         $this->validRows = 0;
         $this->duplikatRows = 0;
         $this->reviewRows = 0;
+        $this->skippedRows = 0;
         $this->imported = false;
         $this->currentPage = 1;
         $this->detectedMonths = [];
@@ -131,6 +133,9 @@ class ImportData extends Page
             }
 
             $standardized = $service->standardize($raw);
+            // Hitung baris yang di-skip (raw – standardized = baris tanpa tanggal valid)
+            $this->skippedRows = count($raw) - count($standardized);
+
             $withStatus = $service->detectDuplicates($standardized);
 
             $detected = [];
@@ -151,8 +156,17 @@ class ImportData extends Page
 
             $this->currentStep = 2; // Move to validation step
             $this->currentPage = 1;
-            
-            Notification::make()->title('File berhasil diproses!')->success()->send();
+
+            $successMsg = 'File berhasil diproses!';
+            if ($this->skippedRows > 0) {
+                Notification::make()
+                    ->title("Perhatian: {$this->skippedRows} baris dilewati")
+                    ->body("Baris tersebut tidak memiliki tanggal yang valid dan tidak akan diimpor. Pastikan kolom Tanggal di Excel terisi dengan format yang benar (misal: 15 Januari 2025 atau 2025-01-15).")
+                    ->warning()
+                    ->persistent()
+                    ->send();
+            }
+            Notification::make()->title($successMsg)->success()->send();
         } catch (\Throwable $e) {
             Notification::make()->title('Gagal: ' . $e->getMessage())->danger()->send();
             $this->resetImport();
@@ -233,8 +247,13 @@ class ImportData extends Page
                         // Pastikan nilai nullable tidak berupa string kosong
                         foreach (['program_sdgs', 'sub_sektor', 'email', 'no_telepon', 'pic', 'catatan_review'] as $nullable) {
                             if (isset($row[$nullable]) && $row[$nullable] === '') {
-                                $row[$nullable] = null;
+                                    $row[$nullable] = null;
                             }
+                        }
+
+                        // Cast is_primary_row to DB::raw('true'/'false') for strict boolean compatibility (e.g. PostgreSQL)
+                        if (isset($row['is_primary_row'])) {
+                            $row['is_primary_row'] = $row['is_primary_row'] ? DB::raw('true') : DB::raw('false');
                         }
 
                         // Hapus semua kolom yang tidak ada di tabel untuk menghindari error

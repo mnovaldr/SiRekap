@@ -19,7 +19,7 @@ class TopOrganisasiWidget extends Widget
     protected static string $view = 'filament.widgets.top-organisasi';
     protected static ?int $sort = 6;
     protected int | string | array $columnSpan = 'full';
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
 
     public string $listMode = 'top10'; // 'top10' or 'all'
     public string $displayType = 'unique'; // 'unique' (Hanya Data Unik) or 'all' (Semua Data)

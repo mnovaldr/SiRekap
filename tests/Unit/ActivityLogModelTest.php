@@ -48,7 +48,7 @@ class ActivityLogModelTest extends TestCase
         $cases = [
             ActivityLog::ACTION_CREATE   => 'Tambah Data',
             ActivityLog::ACTION_UPDATE   => 'Edit Data',
-            ActivityLog::ACTION_DELETE   => 'Hapus Data',
+            ActivityLog::ACTION_DELETE   => 'Hapus Data (Soft Delete)',
             ActivityLog::ACTION_IMPORT   => 'Import Excel',
             ActivityLog::ACTION_EXPORT   => 'Export Data',
             ActivityLog::ACTION_VALIDATE => 'Validasi',
@@ -84,11 +84,11 @@ class ActivityLogModelTest extends TestCase
         $cases = [
             ActivityLog::ACTION_CREATE   => 'success',
             ActivityLog::ACTION_UPDATE   => 'info',
-            ActivityLog::ACTION_DELETE   => 'danger',
+            ActivityLog::ACTION_DELETE   => 'warning',
             ActivityLog::ACTION_IMPORT   => 'primary',
             ActivityLog::ACTION_EXPORT   => 'gray',
             ActivityLog::ACTION_VALIDATE => 'success',
-            ActivityLog::ACTION_LOGIN    => 'gray',
+            ActivityLog::ACTION_LOGIN    => 'success',
             ActivityLog::ACTION_LOGOUT   => 'gray',
             ActivityLog::ACTION_DB_CLEAN => 'warning',
         ];

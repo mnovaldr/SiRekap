@@ -24,6 +24,28 @@ class EventObserver
         unset($changed['updated_at']);
         if (empty($changed)) return;
 
+        // Cek jika status diubah menjadi Dihapus
+        if (isset($changed['status_data']) && $changed['status_data'] === 'Dihapus') {
+            ActivityLog::log(
+                ActivityLog::ACTION_DELETE,
+                $event,
+                "Hapus event (Status): {$event->judul_kegiatan} ({$event->nama_organisasi}) - Alasan: " . ($event->alasan_dihapus ?? 'Tidak ada alasan'),
+                ['data' => $this->eventSummary($event), 'alasan' => $event->alasan_dihapus]
+            );
+            return;
+        }
+
+        // Cek jika status dipulihkan dari Dihapus
+        if (isset($changed['status_data']) && $event->getOriginal('status_data') === 'Dihapus') {
+            ActivityLog::log(
+                'restore',
+                $event,
+                "Memulihkan event (Status): {$event->judul_kegiatan} ({$event->nama_organisasi})",
+                ['data' => $this->eventSummary($event)]
+            );
+            return;
+        }
+
         // Cek apakah hanya status_data yang berubah (validasi)
         $isValidation = array_keys($changed) === ['status_data']
             || (count($changed) === 2 && isset($changed['status_data'], $changed['catatan_review']));
@@ -46,12 +68,18 @@ class EventObserver
 
     public function deleted(Event $event): void
     {
+        // Tetap catat log jika ada penghapusan fisik dari sistem/kodingan lain
         ActivityLog::log(
-            ActivityLog::ACTION_DELETE,
+            'force_delete',
             $event,
-            "Hapus event: {$event->judul_kegiatan} ({$event->nama_organisasi})",
+            "Hapus fisik event dari database: {$event->judul_kegiatan} ({$event->nama_organisasi})",
             ['data' => $this->eventSummary($event)]
         );
+    }
+
+    public function restored(Event $event): void
+    {
+        // Kosongkan karena sudah dihandle di updated()
     }
 
     private function eventSummary(Event $event): array

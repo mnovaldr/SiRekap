@@ -32,6 +32,7 @@ class Event extends Model
         'catatan_review',
         'key_full',
         'key_short',
+        'alasan_dihapus',
     ];
 
     protected $casts = [
@@ -182,6 +183,16 @@ class Event extends Model
     public function scopeDuplikat($query)
     {
         return $query->where('status_data', '=', 'Duplikat');
+    }
+
+    public function scopeDihapus($query)
+    {
+        return $query->where('status_data', '=', 'Dihapus');
+    }
+
+    public function scopeDiarsipkan($query)
+    {
+        return $query->where('status_data', '=', 'Diarsipkan');
     }
 
     public function scopeByYear($query, $year)

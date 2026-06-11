@@ -16,7 +16,7 @@ class SubSektorDistributionChart extends ChartWidget
     use ResolvesYearFilter;
 
     public ?string $filter = 'snapshot';
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true;
 
 
 

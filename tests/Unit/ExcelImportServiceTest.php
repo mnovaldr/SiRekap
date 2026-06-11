@@ -97,6 +97,32 @@ class ExcelImportServiceTest extends TestCase
         $this->assertEquals('2024-12-01', $this->service->parseDate('01 Des 2024'));
     }
 
+    #[Test]
+    public function parse_date_strips_english_day_of_week_prefix(): void
+    {
+        $this->assertEquals('2025-02-12', $this->service->parseDate('Wednesday, 12 Februari 2025'));
+        $this->assertEquals('2025-03-05', $this->service->parseDate('Thursday, 05 Maret 2025'));
+        $this->assertEquals('2024-08-16', $this->service->parseDate('Friday, 16 Agustus 2024'));
+    }
+
+    #[Test]
+    public function parse_date_returns_null_for_ambiguous_text_with_year(): void
+    {
+        // Bug regression: teks judul kegiatan yang mengandung tahun seharusnya TIDAK ter-parse sebagai tanggal
+        $this->assertNull($this->service->parseDate('FIRST MEETING & WELCOMING PARTY PERIODE 2025-2026'));
+        $this->assertNull($this->service->parseDate('bukan tanggal'));
+        $this->assertNull($this->service->parseDate('Wednesday')); // nama hari saja tanpa tanggal
+        $this->assertNull($this->service->parseDate('Kamis')); // nama hari Indonesia saja
+    }
+
+    #[Test]
+    public function parse_date_returns_null_for_numeric_outside_serial_range(): void
+    {
+        // Angka biasa (bukan serial Excel 40000-70000) harus dikembalikan null
+        $this->assertNull($this->service->parseDate(2025)); // tahun saja
+        $this->assertNull($this->service->parseDate(100));
+    }
+
     // =========================================================================
     // parseDateWithDominantYear()
     // =========================================================================
@@ -105,6 +131,8 @@ class ExcelImportServiceTest extends TestCase
     public function parse_date_with_dominant_year_returns_null_for_unparseable_input(): void
     {
         $this->assertNull($this->service->parseDateWithDominantYear('bukan tanggal', 2024));
+        // Bug regression: teks yang mengandung tahun di tengah harus tetap null
+        $this->assertNull($this->service->parseDateWithDominantYear('PERIODE 2025-2026', 2025));
     }
 
     #[Test]
@@ -113,6 +141,7 @@ class ExcelImportServiceTest extends TestCase
         $currentYear = (int) date('Y');
         $dominant    = $currentYear - 1;
 
+        // Format "DD Bulan YYYY" yang eksplisit menyebut tahun sekarang di akhir → TIDAK dikoreksi
         $raw    = "01 Januari {$currentYear}";
         $parsed = $this->service->parseDateWithDominantYear($raw, $dominant);
 
@@ -121,7 +150,7 @@ class ExcelImportServiceTest extends TestCase
     }
 
     #[Test]
-    public function parse_date_with_dominant_year_corrects_iso_date_with_wrong_year(): void
+    public function parse_date_with_dominant_year_does_not_replace_explicit_iso_current_year(): void
     {
         $currentYear = (int) date('Y');
         $dominant    = 2024;
@@ -130,13 +159,26 @@ class ExcelImportServiceTest extends TestCase
             $this->markTestSkipped('Test tidak relevan saat tahun sekarang adalah 2024');
         }
 
-        // ISO string TANPA tahun eksplisit yang akan default ke tahun sekarang
-        // Kita simulate dengan string yang sudah parsed ke tahun sekarang
+        // ISO date dengan tahun eksplisit sekarang → TIDAK dikoreksi
         $rawWithCurrentYear = "{$currentYear}-06-15";
         $parsed = $this->service->parseDateWithDominantYear($rawWithCurrentYear, $dominant);
 
-        // Karena raw mengandung tahun sekarang secara eksplisit, TIDAK dikoreksi
         $this->assertStringContainsString((string) $currentYear, $parsed);
+    }
+
+    #[Test]
+    public function parse_date_with_dominant_year_corrects_year_from_title_text_regression(): void
+    {
+        $currentYear = (int) date('Y');
+        $dominant    = 2025;
+
+        if ($dominant === $currentYear) {
+            $this->markTestSkipped('Test tidak relevan saat tahun sekarang adalah 2025');
+        }
+
+        // Bug regression: string judul "PERIODE 2025-2026" seharusnya null, bukan dikira tanggal
+        $result = $this->service->parseDateWithDominantYear('FIRST MEETING PERIODE 2025-2026', $dominant);
+        $this->assertNull($result, 'Teks judul dengan tahun di tengah seharusnya dikembalikan null, bukan dibuat tanggal');
     }
 
     // =========================================================================

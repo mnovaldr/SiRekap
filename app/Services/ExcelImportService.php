@@ -506,7 +506,18 @@ class ExcelImportService
             }
 
             // Tanggal - parse using dominant year logic to prevent default year 2026 mapping errors
-            $finalTanggal = $this->parseDateWithDominantYear($r['tanggal_raw'], $dominantYear) ?? date('Y-m-d');
+            $finalTanggal = $this->parseDateWithDominantYear($r['tanggal_raw'], $dominantYear);
+
+            // CRITICAL: Skip baris yang tanggalnya tidak dapat di-parse
+            // Jangan gunakan fallback date('Y-m-d') — ini akan menyimpan tanggal HARI INI yang salah.
+            if ($finalTanggal === null) {
+                Log::warning("Import Excel: Baris #{$index} dilewati karena tanggal tidak dapat di-parse.", [
+                    'tanggal_raw' => $r['tanggal_raw'] ?? 'NULL',
+                    'judul'       => $r['judul_kegiatan'] ?? 'NULL',
+                    'organisasi'  => $r['nama_organisasi'] ?? 'NULL',
+                ]);
+                continue;
+            }
 
             // Bulan — selalu diisi agar widget yang mengandalkan kolom `bulan` tidak null
             $finalBulan = $this->getBulanIndonesia($finalTanggal);
@@ -771,12 +782,16 @@ class ExcelImportService
 
     /**
      * Parse a date string or Excel serial to YYYY-MM-DD.
+     *
+     * Hanya mendukung format tanggal yang eksplisit dan terstruktur.
+     * TIDAK menggunakan strtotime() sebagai fallback karena terlalu permisif
+     * dan dapat salah menginterpretasi teks bebas (seperti judul kegiatan) sebagai tanggal.
      */
     public function parseDate(mixed $raw): ?string
     {
         if ($raw === null || $raw === '') return null;
 
-        // Excel serial number
+        // Excel serial number (rentang 40000-70000 mencakup ~2009-2091)
         if (is_numeric($raw)) {
             $serial = (int) $raw;
             if ($serial > 40000 && $serial < 70000) {
@@ -784,21 +799,36 @@ class ExcelImportService
                     $dt = ExcelDate::excelToDateTimeObject($serial);
                     return $dt->format('Y-m-d');
                 } catch (\Exception $e) {
-                    // fall through
+                    // fall through — bukan serial Excel yang valid
                 }
             }
+            // Angka di luar rentang serial Excel bukan tanggal yang valid
+            return null;
         }
 
         $str = trim((string) $raw);
 
-        // Already ISO: 2024-04-01 or 2024-04-01 00:00:00
+        // Jika string kosong setelah trim, kembalikan null
+        if ($str === '') return null;
+
+        // Format ISO: 2024-04-01 atau 2024-04-01 00:00:00
         if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $str, $m)) {
-            return "{$m[1]}-{$m[2]}-{$m[3]}";
+            // Validasi: tahun harus masuk akal (1990-2099)
+            $yr = (int)$m[1];
+            if ($yr >= 1990 && $yr <= 2099) {
+                return "{$m[1]}-{$m[2]}-{$m[3]}";
+            }
         }
 
-        // Strip day-of-week prefix: "Kamis, 01 Februari 2024"
+        // Strip awalan nama hari Indonesia: "Kamis, 01 Februari 2024"
         $str = preg_replace('/^(senin|selasa|rabu|kamis|jumat|sabtu|minggu),?\s*/i', '', $str);
 
+        // Strip awalan nama hari Inggris: "Wednesday, 01 February 2024"
+        $str = preg_replace('/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s*/i', '', $str);
+
+        $str = trim($str);
+
+        // Cek apakah string mengandung nama bulan (Indonesia atau Inggris)
         $hasMonthName = false;
         foreach (array_keys($this->monthMap) as $mn) {
             if (str_contains(strtolower($str), $mn)) {
@@ -810,32 +840,58 @@ class ExcelImportService
         if ($hasMonthName) {
             $str = str_replace('.', ' ', $str);
             $str = preg_replace('/\s+/', ' ', trim($str));
-            if (preg_match('/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/', $str, $m)) {
+            // Format: DD NamaBulan YYYY (misal: 15 Januari 2025)
+            if (preg_match('/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/', $str, $m)) {
                 $day   = str_pad($m[1], 2, '0', STR_PAD_LEFT);
                 $month = $this->monthMap[strtolower($m[2])] ?? null;
-                $year  = $m[3];
-                if ($month) return "{$year}-{$month}-{$day}";
+                $year  = (int)$m[3];
+                if ($month && $year >= 1990 && $year <= 2099) {
+                    return "{$year}-{$month}-{$day}";
+                }
             }
         }
 
-        // Slash: DD/MM/YYYY
+        // Format slash: DD/MM/YYYY
         if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $str, $m)) {
-            $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $d  = str_pad($m[1], 2, '0', STR_PAD_LEFT);
             $mo = str_pad($m[2], 2, '0', STR_PAD_LEFT);
-            return "{$m[3]}-{$mo}-{$d}";
+            $yr = (int)$m[3];
+            if ($yr >= 1990 && $yr <= 2099) {
+                return "{$yr}-{$mo}-{$d}";
+            }
         }
 
-        // Last resort: PHP date
-        $ts = strtotime($str);
-        if ($ts !== false) {
-            return date('Y-m-d', $ts);
+        // Format dengan tanda minus: DD-MM-YYYY
+        if (preg_match('/^(\d{1,2})-(\d{1,2})-(\d{4})$/', $str, $m)) {
+            $d  = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $mo = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+            $yr = (int)$m[3];
+            if ($yr >= 1990 && $yr <= 2099) {
+                return "{$yr}-{$mo}-{$d}";
+            }
         }
 
+        // Format YYYY/MM/DD
+        if (preg_match('/^(\d{4})\/(\d{2})\/(\d{2})$/', $str, $m)) {
+            $yr = (int)$m[1];
+            if ($yr >= 1990 && $yr <= 2099) {
+                return "{$m[1]}-{$m[2]}-{$m[3]}";
+            }
+        }
+
+        // TIDAK menggunakan strtotime() — terlalu permisif dan dapat
+        // salah menginterpretasi teks bebas (misal judul kegiatan "PERIODE 2025-2026")
+        // sebagai tanggal yang valid.
         return null;
     }
 
     /**
-     * Parse a date using the dominant year logic to prevent default year 2026 errors.
+     * Parse a date using the dominant year logic to prevent default year errors.
+     *
+     * Jika tanggal ter-parse dengan tahun saat ini (misal 2026) namun dominant year
+     * adalah tahun berbeda (misal 2025), maka tahun akan diganti — KECUALI jika
+     * raw input-nya adalah format tanggal eksplisit yang benar-benar menyebutkan
+     * tahun saat ini secara langsung.
      */
     public function parseDateWithDominantYear(mixed $raw, ?int $dominantYear): ?string
     {
@@ -845,28 +901,30 @@ class ExcelImportService
         }
 
         if ($dominantYear) {
-            $currentYear = (int)date('Y'); // 2026
-            $parsedYear = (int)date('Y', strtotime($parsed));
+            $currentYear = (int)date('Y');
+            $parsedYear  = (int)substr($parsed, 0, 4); // ambil tahun dari YYYY-MM-DD
 
             if ($parsedYear === $currentYear && $dominantYear !== $currentYear) {
-                $str = trim((string)$raw);
+                $str        = trim((string)$raw);
                 $isExplicit = false;
 
                 if (is_numeric($raw)) {
+                    // Excel serial number — tahun sudah pasti (berasal dari konversi langsung)
                     $isExplicit = true;
-                } else {
-                    // Check if string contains 2026
-                    if (str_contains($str, '2026')) {
-                        $isExplicit = true;
-                    }
-                    // Check if string ends with /26, -26 or space 26
-                    elseif (preg_match('/[\/\-\s]26$/', $str)) {
-                        $isExplicit = true;
-                    }
+                } elseif (
+                    // Format ISO eksplisit: dimulai dengan tahun saat ini
+                    preg_match('/^' . $currentYear . '-\d{2}-\d{2}/', $str) ||
+                    // Format slash YYYY/MM/DD dengan tahun saat ini
+                    preg_match('/^' . $currentYear . '\/\d{2}\/\d{2}/', $str) ||
+                    // Format "DD NamaBulan YYYY" yang benar-benar menyebutkan tahun saat ini di akhir
+                    preg_match('/\b' . $currentYear . '$/', $str)
+                ) {
+                    $isExplicit = true;
                 }
+                // CATATAN: String seperti "PERIODE 2025-2026" yang mengandung angka tahun
+                // di tengah teks TIDAK dianggap eksplisit — akan dikoreksi ke dominant year.
 
                 if (!$isExplicit) {
-                    // Replace the year in parsed date with dominant year
                     return str_replace((string)$currentYear, (string)$dominantYear, $parsed);
                 }
             }

@@ -186,25 +186,70 @@
 
     {{-- Hapus Per Tahun --}}
     <x-filament::section heading="Hapus Data Per Tahun" description="Hapus semua data event untuk tahun tertentu">
-        @php $years = $this->getAvailableYears(); @endphp
-        @if(empty($years))
+        @php
+            // Ambil semua tahun beserta hitungan data aktif dan total (termasuk Dihapus)
+            $yearData = \App\Models\Event::selectRaw(
+                'EXTRACT(YEAR FROM tanggal)::integer as year,
+                 COUNT(*) as total_count,
+                 SUM(CASE WHEN status_data != \'Dihapus\' THEN 1 ELSE 0 END) as active_count'
+            )->whereNotNull('tanggal')
+             ->groupByRaw('EXTRACT(YEAR FROM tanggal)::integer')
+             ->orderByRaw('year DESC')
+             ->get();
+        @endphp
+
+        @if($yearData->isEmpty())
             <p class="text-sm text-gray-500 dark:text-gray-400">Tidak ada data tersedia.</p>
         @else
             <div class="flex flex-wrap gap-3">
-                @foreach($years as $year)
-                    @php $yearCount = \App\Models\Event::whereYear('tanggal', $year)->count(); @endphp
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 min-w-[160px]">
-                        <p class="font-bold text-gray-900 dark:text-white text-lg">{{ $year }}</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ number_format($yearCount) }} data</p>
-                        <div class="mt-3">
-                            <x-filament::button
-                                x-on:click.prevent="if(await window.siConfirm('Hapus Data Tahun', 'Hapus semua {{ $yearCount }} data tahun {{ $year }}? Tindakan ini tidak bisa dibatalkan.')) { $wire.hapusDataTahun({{ $year }}) }"
-                                color="danger"
-                                size="sm"
-                                icon="heroicon-o-trash"
-                            >
-                                Hapus {{ $year }}
-                            </x-filament::button>
+                @foreach($yearData as $yd)
+                    @php
+                        $yr     = (int) $yd->year;
+                        $active = (int) $yd->active_count;
+                        $total  = (int) $yd->total_count;
+                        $allDeleted = $active === 0 && $total > 0;
+                    @endphp
+                    <div class="border {{ $allDeleted ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 opacity-70' : 'border-gray-200 dark:border-gray-700' }} rounded-lg p-4 min-w-[180px]">
+                        <div class="flex items-center gap-2 mb-1">
+                            <p class="font-bold text-gray-900 dark:text-white text-lg">{{ $yr }}</p>
+                            @if($allDeleted)
+                                <span class="text-xs bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded">Semua dihapus</span>
+                            @endif
+                        </div>
+                        @if($allDeleted)
+                            <p class="text-xs text-gray-400 dark:text-gray-500">{{ number_format($total) }} data (sudah Dihapus)</p>
+                            <p class="text-xs text-red-500 dark:text-red-400 mt-0.5">Tidak ada data aktif</p>
+                        @else
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ number_format($active) }} aktif</p>
+                            @if($total > $active)
+                                <p class="text-xs text-gray-400 dark:text-gray-500">{{ number_format($total - $active) }} sudah dihapus</p>
+                            @endif
+                        @endif
+                        <div class="mt-3 flex flex-col gap-2">
+                            @if(!$allDeleted)
+                                <x-filament::button
+                                    x-on:click.prevent="if(await window.siConfirm('Hapus Data Tahun', 'Hapus semua {{ $active }} data aktif tahun {{ $yr }}? Status akan diubah menjadi Dihapus.')) { $wire.hapusDataTahun({{ $yr }}) }"
+                                    color="danger"
+                                    size="sm"
+                                    icon="heroicon-o-trash"
+                                >
+                                    Hapus {{ $yr }}
+                                </x-filament::button>
+                            @endif
+                            @if($total > 0)
+                                <x-filament::button
+                                     x-on:click.prevent="
+                                         if (await window.siConfirm(`Hapus Permanen Tahun {{ $yr }}`, `PERHATIAN: Ini akan menghapus PERMANEN {{ $total }} data tahun {{ $yr }} dari database (termasuk yang sudah dihapus). Tindakan ini TIDAK DAPAT DIBATALKAN!`, `danger`, `Ya, Lanjut`, `{{ $yr }}`)) {
+                                             $wire.forceDeleteByYear({{ $yr }});
+                                         }
+                                     "
+                                     color="gray"
+                                     size="sm"
+                                     icon="heroicon-o-x-circle"
+                                 >
+                                     Hapus Permanen
+                                 </x-filament::button>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -215,29 +260,6 @@
     {{-- Danger Zone --}}
     <x-filament::section heading="⚠️ Danger Zone" description="Tindakan berbahaya yang tidak bisa dibatalkan">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {{-- Hapus Activity Log --}}
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <div class="flex items-start gap-3">
-                    <x-heroicon-o-document-minus class="w-6 h-6 text-gray-600 dark:text-gray-400 mt-0.5 shrink-0" />
-                    <div class="flex-1">
-                        <p class="font-semibold text-gray-900 dark:text-white">Hapus Activity Log</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Hapus semua riwayat aktivitas ({{ number_format($stats['logs']) }} log).
-                        </p>
-                        <div class="mt-3">
-                            <x-filament::button
-                                x-on:click.prevent="if(await window.siConfirm('Hapus Activity Log', 'Hapus semua activity log? Riwayat aktivitas akan hilang permanen.')) { $wire.hapusActivityLog() }"
-                                color="gray"
-                                size="sm"
-                                icon="heroicon-o-trash"
-                            >
-                                Hapus Log ({{ number_format($stats['logs']) }})
-                            </x-filament::button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {{-- Hapus Semua Data --}}
             <div class="border border-red-300 dark:border-red-700 rounded-lg p-4 bg-red-50 dark:bg-red-900/20">

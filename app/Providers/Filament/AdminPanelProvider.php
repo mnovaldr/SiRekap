@@ -274,6 +274,13 @@ class AdminPanelProvider extends PanelProvider
                             </div>
                             <h3 class="si-modal-title" id="si-modal-title">Konfirmasi</h3>
                             <p class="si-modal-body" id="si-modal-body">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+                            
+                            <!-- Custom confirmation input -->
+                            <div id="si-modal-input-container" style="display: none; margin-bottom: 24px; text-align: left;">
+                                <label id="si-modal-input-label" class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2"></label>
+                                <input type="text" id="si-modal-input-field" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-lg font-bold" placeholder="">
+                            </div>
+
                             <div class="si-modal-actions" id="si-modal-actions">
                                 <button class="si-btn si-btn-cancel" id="si-modal-btn-cancel">Batal</button>
                                 <button class="si-btn si-btn-confirm" id="si-modal-btn-confirm">Ya, Lanjut</button>
@@ -381,23 +388,60 @@ class AdminPanelProvider extends PanelProvider
                             const mBody = document.getElementById("si-modal-body");
                             const mConfirm = document.getElementById("si-modal-btn-confirm");
                             const mCancel = document.getElementById("si-modal-btn-cancel");
+                            const mInputContainer = document.getElementById("si-modal-input-container");
+                            const mInputLabel = document.getElementById("si-modal-input-label");
+                            const mInputField = document.getElementById("si-modal-input-field");
 
-                            window.siConfirm = function(title, body, type = "danger", confirmText = "Ya, Lanjut") {
+                            window.siConfirm = function(title, body, type = "danger", confirmText = "Ya, Lanjut", requireInputVal = null) {
                                 return new Promise((resolve) => {
                                     mTitle.textContent = title;
                                     mBody.textContent = body;
                                     mConfirm.className = "si-btn " + (type === "danger" ? "si-btn-confirm" : "si-btn-primary");
                                     mConfirm.textContent = confirmText;
                                     
-                                    // Reset buttons
+                                    // Reset buttons and inputs
                                     mConfirm.disabled = false;
+                                    mConfirm.style.opacity = "1";
+                                    mConfirm.style.pointerEvents = "auto";
                                     mConfirm.removeAttribute("data-si-loading");
                                     mCancel.disabled = false;
+                                    mInputField.value = "";
+                                    
+                                    if (requireInputVal) {
+                                        mInputContainer.style.display = "block";
+                                        mInputLabel.textContent = `Ketik angka "${requireInputVal}" untuk mengonfirmasi tindakan ini:`;
+                                        mInputField.placeholder = requireInputVal;
+                                        
+                                        // Disable confirm button initially
+                                        mConfirm.disabled = true;
+                                        mConfirm.style.opacity = "0.5";
+                                        mConfirm.style.pointerEvents = "none";
+                                        
+                                        const onInput = () => {
+                                            if (mInputField.value.trim() === String(requireInputVal)) {
+                                                mConfirm.disabled = false;
+                                                mConfirm.style.opacity = "1";
+                                                mConfirm.style.pointerEvents = "auto";
+                                            } else {
+                                                mConfirm.disabled = true;
+                                                mConfirm.style.opacity = "0.5";
+                                                mConfirm.style.pointerEvents = "none";
+                                            }
+                                        };
+                                        mInputField.addEventListener("input", onInput);
+                                        mInputField._onInput = onInput;
+                                    } else {
+                                        mInputContainer.style.display = "none";
+                                    }
                                     
                                     const onConfirm = () => {
                                         mConfirm.setAttribute("data-si-loading", "true");
                                         mConfirm.disabled = true;
                                         mCancel.disabled = true;
+                                        if (mInputField._onInput) {
+                                            mInputField.removeEventListener("input", mInputField._onInput);
+                                            delete mInputField._onInput;
+                                        }
                                         
                                         // Delay closing modal slightly if it's a redirect to show loading
                                         setTimeout(() => modal.classList.remove("show"), 400);
@@ -409,6 +453,10 @@ class AdminPanelProvider extends PanelProvider
                                     
                                     const onCancel = () => {
                                         modal.classList.remove("show");
+                                        if (mInputField._onInput) {
+                                            mInputField.removeEventListener("input", mInputField._onInput);
+                                            delete mInputField._onInput;
+                                        }
                                         mConfirm.removeEventListener("click", onConfirm);
                                         mCancel.removeEventListener("click", onCancel);
                                         resolve(false);
@@ -417,6 +465,10 @@ class AdminPanelProvider extends PanelProvider
                                     mConfirm.addEventListener("click", onConfirm);
                                     mCancel.addEventListener("click", onCancel);
                                     modal.classList.add("show");
+                                    
+                                    if (requireInputVal) {
+                                        setTimeout(() => mInputField.focus(), 100);
+                                    }
                                 });
                             };
 
@@ -620,6 +672,7 @@ HTML
             ->favicon('/favicon.png')
             ->defaultThemeMode(ThemeMode::Light)
             ->sidebarCollapsibleOnDesktop()
+            ->profile()
             ->databaseNotifications();
     }
 }

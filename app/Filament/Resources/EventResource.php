@@ -253,12 +253,15 @@ class EventResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status_data')
+                    ->label('Status Data')
                     ->options([
                         'Valid' => 'Valid',
                         'Review' => 'Review',
                         'Duplikat' => 'Duplikat',
+                        'Dihapus' => 'Dihapus',
                     ]),
                 Tables\Filters\SelectFilter::make('bidang')
+                    ->label('Bidang')
                     ->options([
                         'Komunitas' => 'Komunitas',
                         'Bisnis' => 'Bisnis',
@@ -268,10 +271,46 @@ class EventResource extends Resource
                         'Perorangan' => 'Perorangan',
                         'Institusi Finansial' => 'Institusi Finansial',
                     ]),
+                Tables\Filters\SelectFilter::make('sub_sektor')
+                    ->label('Kategori Ekraf')
+                    ->options(fn () => Event::whereNotNull('sub_sektor')
+                        ->where('sub_sektor', '!=', '')
+                        ->distinct()
+                        ->orderBy('sub_sektor')
+                        ->pluck('sub_sektor', 'sub_sektor')
+                        ->toArray()
+                    ),
+                Tables\Filters\SelectFilter::make('jenis_kegiatan')
+                    ->label('Jenis Kegiatan')
+                    ->options(fn () => Event::whereNotNull('jenis_kegiatan')
+                        ->where('jenis_kegiatan', '!=', '')
+                        ->distinct()
+                        ->orderBy('jenis_kegiatan')
+                        ->pluck('jenis_kegiatan', 'jenis_kegiatan')
+                        ->toArray()
+                    ),
+                Tables\Filters\SelectFilter::make('komersial')
+                    ->label('Komersial / Non-Komersial')
+                    ->options([
+                        'Komersial' => 'Komersial',
+                        'Non Komersial' => 'Non Komersial',
+                    ]),
+                Tables\Filters\SelectFilter::make('sdg')
+                    ->label('SDGs')
+                    ->options(array_combine(
+                        array_map(fn($i) => "SDGS $i", range(1, 17)),
+                        array_map(fn($i) => "SDGS $i", range(1, 17))
+                    ))
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $value): Builder => $query->bySdg($value)
+                        );
+                    }),
                 Tables\Filters\Filter::make('tanggal')
                     ->form([
-                        Forms\Components\DatePicker::make('dari'),
-                        Forms\Components\DatePicker::make('sampai'),
+                        Forms\Components\DatePicker::make('dari')->label('Dari'),
+                        Forms\Components\DatePicker::make('sampai')->label('Sampai'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -287,10 +326,95 @@ class EventResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('delete')
+                    ->label('Hapus')
+                    ->color('danger')
+                    ->icon('heroicon-o-trash')
+                    ->requiresConfirmation()
+                    ->modalHeading('Hapus Event (Ubah Status)')
+                    ->modalDescription('Apakah Anda yakin ingin menghapus event ini? Tindakan ini akan mengubah status data menjadi Dihapus agar tetap dapat diaudit.')
+                    ->form([
+                        Forms\Components\Textarea::make('alasan_dihapus')
+                            ->label('Alasan Penghapusan')
+                            ->placeholder('Tuliskan alasan mengapa data ini dihapus...')
+                            ->required(),
+                    ])
+                    ->action(function (Event $record, array $data): void {
+                        $record->update([
+                            'status_data' => 'Dihapus',
+                            'alasan_dihapus' => $data['alasan_dihapus'],
+                        ]);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Data berhasil dipindahkan ke Sampah')
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn (Event $record): bool => $record->status_data !== 'Dihapus'),
+                Tables\Actions\Action::make('restore')
+                    ->label('Pulihkan')
+                    ->color('success')
+                    ->icon('heroicon-o-arrow-path')
+                    ->requiresConfirmation()
+                    ->visible(fn (Event $record): bool => $record->status_data === 'Dihapus')
+                    ->action(function (Event $record): void {
+                        $record->update([
+                            'status_data' => 'Valid',
+                            'alasan_dihapus' => null,
+                        ]);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Data berhasil dipulihkan')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('delete_status')
+                        ->label('Hapus Terpilih')
+                        ->color('danger')
+                        ->icon('heroicon-o-trash')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus Event Terpilih')
+                        ->modalDescription('Apakah Anda yakin ingin menghapus semua data event terpilih? Status data akan diubah menjadi Dihapus.')
+                        ->form([
+                            Forms\Components\Textarea::make('alasan_dihapus')
+                                ->label('Alasan Penghapusan Massal')
+                                ->placeholder('Tuliskan alasan mengapa data ini dihapus...')
+                                ->required(),
+                        ])
+                        ->action(function (\Illuminate\Support\Collection $records, array $data): void {
+                            $records->each(function ($record) use ($data) {
+                                if ($record->status_data !== 'Dihapus') {
+                                    $record->update([
+                                        'status_data' => 'Dihapus',
+                                        'alasan_dihapus' => $data['alasan_dihapus'],
+                                    ]);
+                                }
+                            });
+                            \Filament\Notifications\Notification::make()
+                                ->title('Data terpilih berhasil dipindahkan ke Sampah')
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\BulkAction::make('restore_status')
+                        ->label('Pulihkan Terpilih')
+                        ->color('success')
+                        ->icon('heroicon-o-arrow-path')
+                        ->requiresConfirmation()
+                        ->action(function (\Illuminate\Support\Collection $records): void {
+                            $records->each(function ($record) {
+                                if ($record->status_data === 'Dihapus') {
+                                    $record->update([
+                                        'status_data' => 'Valid',
+                                        'alasan_dihapus' => null,
+                                    ]);
+                                }
+                            });
+                            \Filament\Notifications\Notification::make()
+                                ->title('Data terpilih berhasil dipulihkan')
+                                ->success()
+                                ->send();
+                        }),
                 ]),
             ]);
     }

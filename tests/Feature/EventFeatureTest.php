@@ -121,24 +121,31 @@ class EventFeatureTest extends TestCase
     // =========================================================================
 
     #[Test]
-    public function event_can_be_deleted(): void
+    public function event_can_be_deleted_virtually(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['status_data' => 'Valid']);
 
-        $event->delete();
+        $event->update([
+            'status_data' => 'Dihapus',
+            'alasan_dihapus' => 'Testing deletion reason',
+        ]);
 
-        $this->assertDatabaseMissing('events', ['id' => $event->id]);
+        $this->assertEquals('Dihapus', $event->fresh()->status_data);
+        $this->assertEquals('Testing deletion reason', $event->fresh()->alasan_dihapus);
     }
 
     #[Test]
-    public function deleting_event_does_not_affect_other_events(): void
+    public function deleting_event_virtually_does_not_affect_other_events(): void
     {
-        $events   = Event::factory()->count(3)->create();
+        $events   = Event::factory()->count(3)->create(['status_data' => 'Valid']);
         $toDelete = $events->first();
 
-        $toDelete->delete();
+        $toDelete->update([
+            'status_data' => 'Dihapus',
+            'alasan_dihapus' => 'Testing deletion reason',
+        ]);
 
-        $this->assertCount(2, Event::all());
+        $this->assertEquals(2, Event::where('status_data', '!=', 'Dihapus')->count());
     }
 
     // =========================================================================
@@ -157,14 +164,14 @@ class EventFeatureTest extends TestCase
     }
 
     #[Test]
-    public function cache_is_flushed_when_event_is_deleted(): void
+    public function cache_is_flushed_when_event_is_deleted_virtually(): void
     {
-        $event = Event::factory()->create();
+        $event = Event::factory()->create(['status_data' => 'Valid']);
 
         Cache::put('test_key', 'some_data', 60);
         $this->assertEquals('some_data', Cache::get('test_key'));
 
-        $event->delete();
+        $event->update(['status_data' => 'Dihapus']);
 
         $this->assertNull(Cache::get('test_key'));
     }
