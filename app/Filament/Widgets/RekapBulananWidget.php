@@ -17,7 +17,7 @@ class RekapBulananWidget extends BaseWidget
 
     protected static ?string $heading = 'Rekapitulasi Performa Bulanan';
     protected int | string | array $columnSpan = 'full';
-    protected static ?int $sort = 8;
+    protected static ?int $sort = 12;
     protected static bool $isLazy = true;
 
 

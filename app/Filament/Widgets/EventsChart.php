@@ -16,7 +16,7 @@ class EventsChart extends Widget
 
     protected static bool $isLazy = true;
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 3;
     protected int | string | array $columnSpan = 'full';
     protected static string $view = 'filament.widgets.events-chart';
 

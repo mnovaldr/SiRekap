@@ -44,7 +44,7 @@ class BidangDistributionChart extends ChartWidget
         return "Total: " . number_format($total) . " Event";
     }
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 4;
     protected int | string | array $columnSpan = 1;
 
     protected function getData(): array

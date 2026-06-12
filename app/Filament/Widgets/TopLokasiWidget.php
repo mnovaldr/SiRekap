@@ -17,12 +17,11 @@ class TopLokasiWidget extends Widget
     use WithPagination;
 
     protected static string $view = 'filament.widgets.top-lokasi';
-    protected static ?int $sort = 7;
+    protected static ?int $sort = 11;
     protected int | string | array $columnSpan = 'full';
-    protected static bool $isLazy = true;
+    protected static bool $isLazy = false;
 
     public string $listMode = 'top10'; // 'top10' or 'all'
-    public string $displayType = 'unique'; // 'unique' (Hanya Data Unik) or 'all' (Semua Data)
     public string $search = '';
 
     public function updatedFilters(): void
@@ -31,11 +30,6 @@ class TopLokasiWidget extends Widget
     }
 
     public function updatedListMode(): void
-    {
-        $this->resetPage('listPage');
-    }
-
-    public function updatedDisplayType(): void
     {
         $this->resetPage('listPage');
     }
@@ -49,18 +43,14 @@ class TopLokasiWidget extends Widget
     {
         [$yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg] = $this->resolveFilters();
 
-        $cacheKey = "top_lokasi_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_{$this->displayType}";
+        $cacheKey = "top_lokasi_{$yearStart}_{$yearEnd}_{$month}_{$subSektor}_{$bidang}_{$jenisKegiatan}_{$komersial}_{$sdg}_unique";
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($yearStart, $yearEnd, $month, $subSektor, $bidang, $jenisKegiatan, $komersial, $sdg) {
             $query = Event::query();
 
             $query = $this->applyEventFilters($query, ['primary']);
 
-            if ($this->displayType === 'unique') {
-                $query->valid()->primary();
-            } else {
-                $query->valid();
-            }
+            $query->valid()->primary();
 
             $data = $query->select(DB::raw('UPPER(TRIM(lokasi)) as lokasi'))
                 ->whereNotNull('lokasi')
@@ -87,35 +77,23 @@ class TopLokasiWidget extends Widget
 
         $query = $this->applyEventFilters($query, ['primary']);
 
-        if ($this->displayType === 'unique') {
-            $query->select(
-                DB::raw('UPPER(TRIM(lokasi)) as lokasi'),
-                DB::raw('MIN(lantai) as lantai'),
-                DB::raw('COUNT(*) as total_event'),
-                DB::raw('SUM(jumlah_peserta) as total_peserta'),
-                DB::raw('MAX(tanggal) as tanggal_terakhir')
-            )
-            ->whereNotNull('lokasi')
-            ->where('lokasi', '!=', '')
-            ->groupBy(DB::raw('UPPER(TRIM(lokasi))'));
+        $query->primary()
+        ->select(
+            DB::raw('UPPER(TRIM(lokasi)) as lokasi'),
+            DB::raw('MIN(lantai) as lantai'),
+            DB::raw('COUNT(*) as total_event'),
+            DB::raw('SUM(jumlah_peserta) as total_peserta'),
+            DB::raw('MAX(tanggal) as tanggal_terakhir')
+        )
+        ->whereNotNull('lokasi')
+        ->where('lokasi', '!=', '')
+        ->groupBy(DB::raw('UPPER(TRIM(lokasi))'));
 
-            $s = trim($this->search);
-            if ($s !== '') {
-                $query->where('lokasi', 'ilike', "%{$s}%");
-            }
-
-            return $query->orderBy('total_event', 'desc')->paginate(10, ['*'], 'listPage');
-        } else {
-            $s = trim($this->search);
-            if ($s !== '') {
-                $query->where(function ($q) use ($s) {
-                    $q->where('lokasi', 'ilike', "%{$s}%")
-                      ->orWhere('judul_kegiatan', 'ilike', "%{$s}%")
-                      ->orWhere('nama_organisasi', 'ilike', "%{$s}%");
-                });
-            }
-
-            return $query->orderBy('tanggal', 'desc')->paginate(10, ['*'], 'listPage');
+        $s = trim($this->search);
+        if ($s !== '') {
+            $query->where('lokasi', 'ilike', "%{$s}%");
         }
+
+        return $query->orderBy('total_event', 'desc')->paginate(10, ['*'], 'listPage');
     }
 }

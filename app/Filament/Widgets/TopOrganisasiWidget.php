@@ -17,7 +17,7 @@ class TopOrganisasiWidget extends Widget
     use WithPagination;
 
     protected static string $view = 'filament.widgets.top-organisasi';
-    protected static ?int $sort = 6;
+    protected static ?int $sort = 10;
     protected int | string | array $columnSpan = 'full';
     protected static bool $isLazy = true;
 

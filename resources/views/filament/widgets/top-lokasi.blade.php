@@ -25,26 +25,7 @@
 
         <!-- Widget Controls -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 mb-6 pb-4 border-b border-gray-100 dark:border-gray-800 items-end">
-            <!-- Tipe Data Toggler -->
-            <div class="flex flex-col gap-1.5">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipe Data</span>
-                <div class="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full sm:w-fit" role="group">
-                    <button 
-                        type="button" 
-                        wire:click="$set('displayType', 'unique')"
-                        class="flex-1 sm:flex-initial text-center px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->displayType === 'unique' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
-                    >
-                        Hanya Data Unik
-                    </button>
-                    <button 
-                        type="button" 
-                        wire:click="$set('displayType', 'all')"
-                        class="flex-1 sm:flex-initial text-center px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 {{ $this->displayType === 'all' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}"
-                    >
-                        Semua Data
-                    </button>
-                </div>
-            </div>
+
 
             <!-- Tampilan Toggler -->
             <div class="flex flex-col gap-1.5">
@@ -150,7 +131,7 @@
                 $perPage = $records->perPage();
             @endphp
 
-            @if($this->displayType === 'unique')
+
                 <!-- Unique Locations Table -->
                 <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                     <table class="w-full text-left border-collapse">
@@ -196,61 +177,7 @@
                         </tbody>
                     </table>
                 </div>
-            @else
-                <!-- All Events Table -->
-                <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50/75 dark:bg-gray-800/75 border-b border-gray-100 dark:border-gray-800">
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-16 text-center">No</th>
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Lokasi</th>
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Judul Kegiatan</th>
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Organisasi</th>
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-32">Tanggal</th>
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-16">Lt</th>
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-24">Peserta</th>
-                                <th class="px-5 py-3.5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-28">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50 dark:divide-gray-800/50">
-                            @forelse($records as $index => $record)
-                            <tr class="hover:bg-gray-50/50 dark:hover:bg-primary-900/5 transition-all group">
-                                <td class="px-5 py-4 text-center text-xs font-bold text-gray-400 dark:text-gray-500 tabular-nums">
-                                    {{ ($currentPage - 1) * $perPage + $index + 1 }}
-                                </td>
-                                <td class="px-5 py-4">
-                                    <span class="text-sm font-black dark:text-gray-200 group-hover:text-primary-600 transition-colors">{{ $record->lokasi }}</span>
-                                </td>
-                                <td class="px-5 py-4 text-xs text-gray-700 dark:text-gray-300 font-semibold max-w-xs truncate" title="{{ $record->judul_kegiatan }}">
-                                    {{ $record->judul_kegiatan }}
-                                </td>
-                                <td class="px-5 py-4 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate font-medium" title="{{ $record->nama_organisasi }}">
-                                    {{ $record->nama_organisasi }}
-                                </td>
-                                <td class="px-5 py-4 text-center text-xs text-gray-500 dark:text-gray-400 tabular-nums font-medium">
-                                    {{ $record->tanggal ? $record->tanggal->format('d M Y') : '-' }}
-                                </td>
-                                <td class="px-5 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300">
-                                    {{ $record->lantai }}
-                                </td>
-                                <td class="px-5 py-4 text-center">
-                                    <span class="text-xs font-black dark:text-gray-300 tabular-nums">{{ number_format($record->jumlah_peserta) }}</span>
-                                </td>
-                                <td class="px-5 py-4 text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
-                                        Valid
-                                    </span>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="8" class="px-5 py-8 text-center text-gray-400 text-sm italic">Tidak ada data ditemukan</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+
 
             <!-- Custom Pagination Links -->
             <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-900 px-6 py-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
