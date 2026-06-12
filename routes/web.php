@@ -16,3 +16,12 @@ Route::get('/do-logout', function () {
 
     return redirect('/login?logged_out=1');
 })->name('admin.do-logout');
+
+// Redirect legacy /admin path to root
+Route::get('/admin', function () {
+    return redirect('/');
+});
+
+Route::get('/admin/{any}', function () {
+    return redirect('/');
+})->where('any', '.*');

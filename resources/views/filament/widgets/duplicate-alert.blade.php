@@ -19,7 +19,7 @@
                 </div>
                 <x-filament::button
                     tag="a"
-                    href="{{ url('/admin/cek-duplikat') }}"
+                    href="{{ url('/cek-duplikat') }}"
                     color="warning"
                     size="sm"
                 >
