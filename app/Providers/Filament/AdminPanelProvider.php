@@ -485,7 +485,7 @@ class AdminPanelProvider extends PanelProvider
                             document.addEventListener("livewire:error", function(e) {
                                 if (e.detail && e.detail.status === 419) {
                                     e.preventDefault();
-                                    window.location.href = "/admin/login?logged_out=1&expired=1";
+                                    window.location.href = "/login?logged_out=1&expired=1";
                                 }
                             });
                         })();
@@ -529,7 +529,7 @@ HTML
 
                                          if (confirmed) {
                                              if (typeof startBar === "function") startBar();
-                                             window.location.href = "/admin/do-logout";
+                                             window.location.href = "/do-logout";
                                          }
                                      });
                                 }
@@ -555,7 +555,7 @@ HTML
                             var banner = document.createElement("div");
                             banner.id = "si-idle-warning";
                             banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:999999;background:linear-gradient(90deg,#dc2626,#b91c1c);color:white;text-align:center;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.3);animation:slideDown 0.3s ease;";
-                            banner.innerHTML = "⚠️ Sesi Anda akan berakhir dalam <span id='si-countdown'>2:00</span> karena tidak ada aktivitas. <button onclick='resetIdleTimer()' style='margin-left:12px;background:white;color:#dc2626;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:700;'>Tetap Login</button> <button onclick='window.location.href=\"/admin/do-logout\"' style='margin-left:6px;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:600;'>Keluar Sekarang</button>";
+                            banner.innerHTML = "⚠️ Sesi Anda akan berakhir dalam <span id='si-countdown'>2:00</span> karena tidak ada aktivitas. <button onclick='resetIdleTimer()' style='margin-left:12px;background:white;color:#dc2626;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:700;'>Tetap Login</button> <button onclick='window.location.href=\"/do-logout\"' style='margin-left:6px;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:600;'>Keluar Sekarang</button>";
                             document.body.prepend(banner);
 
                             var remaining = WARNING_BEFORE;
@@ -587,7 +587,7 @@ HTML
                                 createWarningBanner();
                             }, IDLE_TIMEOUT - WARNING_BEFORE);
                             idleTimer = setTimeout(function() {
-                                window.location.href = "/admin/do-logout";
+                                window.location.href = "/do-logout";
                             }, IDLE_TIMEOUT);
                         };
 
@@ -599,7 +599,7 @@ HTML
                         });
 
                         /* Start the timer */
-                        if (document.body.innerHTML.indexOf("filament") !== -1 || window.location.pathname.indexOf("/admin") !== -1) {
+                        if (document.body.innerHTML.indexOf("filament") !== -1 || window.location.pathname.indexOf("/") !== -1) {
                             resetIdleTimer();
                         }
                     })();
@@ -631,7 +631,7 @@ HTML
                 ),
             )
             ->id('admin')
-            ->path('admin')
+            ->path('')
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->colors([
                 'primary' => Color::hex('#4f46e5'), // Indigo
