@@ -259,6 +259,7 @@ class EventResource extends Resource
                         'Review' => 'Review',
                         'Duplikat' => 'Duplikat',
                         'Dihapus' => 'Dihapus',
+                        'Diarsipkan' => 'Diarsipkan',
                     ]),
                 Tables\Filters\SelectFilter::make('bidang')
                     ->label('Bidang')
@@ -355,7 +356,7 @@ class EventResource extends Resource
                     ->color('success')
                     ->icon('heroicon-o-arrow-path')
                     ->requiresConfirmation()
-                    ->visible(fn (Event $record): bool => $record->status_data === 'Dihapus')
+                    ->visible(fn (Event $record): bool => in_array($record->status_data, ['Dihapus', 'Diarsipkan']))
                     ->action(function (Event $record): void {
                         $record->update([
                             'status_data' => 'Valid',
@@ -403,7 +404,7 @@ class EventResource extends Resource
                         ->requiresConfirmation()
                         ->action(function (\Illuminate\Support\Collection $records): void {
                             $records->each(function ($record) {
-                                if ($record->status_data === 'Dihapus') {
+                                if (in_array($record->status_data, ['Dihapus', 'Diarsipkan'])) {
                                     $record->update([
                                         'status_data' => 'Valid',
                                         'alasan_dihapus' => null,

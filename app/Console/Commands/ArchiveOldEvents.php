@@ -14,14 +14,14 @@ class ArchiveOldEvents extends Command
      *
      * @var string
      */
-    protected $signature = 'app:archive-old-events {--years=5 : The retention period in years}';
+    protected $signature = 'app:archive-old-events {--years=10 : The retention period in years}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Archive events that are older than the specified retention period (default: 5 years)';
+    protected $description = 'Archive events that are older than the specified retention period (default: 10 years)';
 
     /**
      * Execute the console command.
