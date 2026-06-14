@@ -19,6 +19,8 @@ class EventResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static ?string $navigationLabel = 'Data Event';
+    protected static ?string $modelLabel = 'Event';
+    protected static ?string $pluralModelLabel = 'Data Event';
     protected static ?string $navigationGroup = 'Data Management';
     protected static ?int $navigationSort = 1;
     protected static ?string $recordTitleAttribute = 'judul_kegiatan';

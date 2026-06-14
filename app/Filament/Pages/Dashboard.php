@@ -16,6 +16,9 @@ class Dashboard extends BaseDashboard
 {
     use HasFiltersForm;
 
+    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $title = 'Dashboard';
+
     public function mount(): void
     {
         // Pastikan filter year_start dan year_end selalu terinisialisasi

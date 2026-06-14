@@ -19,9 +19,10 @@ class MasterKategoriResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
     protected static ?string $navigationLabel = 'Master Kategori';
+    protected static ?string $modelLabel = 'Master Kategori';
+    protected static ?string $pluralModelLabel = 'Master Kategori';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 2;
-    protected static ?string $pluralLabel = 'Master Kategori';
 
     public static function form(Form $form): Form
     {

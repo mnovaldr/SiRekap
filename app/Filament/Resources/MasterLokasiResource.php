@@ -19,6 +19,8 @@ class MasterLokasiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
     protected static ?string $navigationLabel = 'Master Lokasi';
+    protected static ?string $modelLabel = 'Master Lokasi';
+    protected static ?string $pluralModelLabel = 'Master Lokasi';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?int $navigationSort = 3;
 
