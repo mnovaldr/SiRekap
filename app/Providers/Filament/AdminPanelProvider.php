@@ -109,17 +109,21 @@ class AdminPanelProvider extends PanelProvider
                         .si-processing a, 
                         .si-processing button { pointer-events: none !important; opacity: 0.7 !important; }
                         
-                        [data-si-loading="true"],
-                        [data-si-loading="true"] * { 
+                        button[data-si-loading="true"],
+                        button[data-si-loading="true"] * { 
                             pointer-events: none !important; 
                             color: transparent !important;
                         }
-                        [data-si-loading="true"] { 
+                        button[data-si-loading="true"] { 
                             opacity: 0.8 !important; 
                             position: relative !important; 
                             min-width: 40px;
                         }
-                        [data-si-loading="true"]::after {
+                        a[data-si-loading="true"] {
+                            pointer-events: none !important;
+                            opacity: 0.7 !important;
+                        }
+                        button[data-si-loading="true"]::after {
                             content: "";
                             position: absolute;
                             top: 50%;
@@ -355,7 +359,7 @@ class AdminPanelProvider extends PanelProvider
                                 }
 
                                 // Auto-trigger processing for regular navigation links and non-ajax buttons
-                                if (trigger.tagName === "A" && trigger.href && !trigger.href.includes("#") && !trigger.getAttribute("target") && !trigger.hasAttribute("wire:click") && !trigger.hasAttribute("wire:navigate")) {
+                                if (trigger.tagName === "A" && trigger.href && !trigger.href.includes("#") && !trigger.getAttribute("target") && !trigger.hasAttribute("wire:click") && !trigger.hasAttribute("wire:navigate") && !trigger.hasAttribute("download") && !trigger.hasAttribute("data-no-loading")) {
                                     startBar();
                                     trigger.setAttribute("data-si-loading", "true");
                                 }
@@ -647,7 +651,6 @@ HTML
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                \App\Filament\Widgets\DuplicateAlert::class,
                 \App\Filament\Widgets\StatsOverview::class,
                 \App\Filament\Widgets\EventsChart::class,
                 \App\Filament\Widgets\BidangDistributionChart::class,

@@ -200,6 +200,14 @@ class ImportData extends Page
         }
     }
 
+    public function setPage(int $page): void
+    {
+        $totalPages = ceil($this->totalRows / $this->perPage);
+        if ($page >= 1 && $page <= $totalPages) {
+            $this->currentPage = $page;
+        }
+    }
+
     public function confirmImport(): void
     {
         if (!$this->importUuid) {
@@ -231,6 +239,68 @@ class ImportData extends Page
             ];
 
             DB::transaction(function() use ($toInsert, $now, $allowedColumns, $service) {
+                // -- Auto populate Master Data (Data Dictionary) --
+                $organizers = [];
+                $kategoris = [];
+                $lokasis = [];
+
+                foreach ($toInsert as $row) {
+                    if (!empty($row['nama_organisasi'])) {
+                        $organizers[$row['nama_organisasi']] = [
+                            'nama' => mb_substr($row['nama_organisasi'], 0, 255),
+                            'bidang' => isset($row['bidang']) ? mb_substr($row['bidang'], 0, 255) : null,
+                            'email' => isset($row['email']) ? mb_substr($row['email'], 0, 255) : null,
+                            'no_telepon' => isset($row['no_telepon']) ? mb_substr($row['no_telepon'], 0, 255) : null,
+                        ];
+                    }
+                    if (!empty($row['jenis_kegiatan'])) {
+                        $kategoris[$row['jenis_kegiatan']] = [
+                            'type' => 'Jenis Kegiatan',
+                            'raw_value' => mb_substr($row['jenis_kegiatan'], 0, 255),
+                            'standard_value' => mb_substr($row['jenis_kegiatan'], 0, 255),
+                        ];
+                    }
+                    if (!empty($row['sub_sektor'])) {
+                        $kategoris[$row['sub_sektor']] = [
+                            'type' => 'Sub Sektor',
+                            'raw_value' => mb_substr($row['sub_sektor'], 0, 255),
+                            'standard_value' => mb_substr($row['sub_sektor'], 0, 255),
+                        ];
+                    }
+                    if (!empty($row['lokasi'])) {
+                        $lokasis[$row['lokasi']] = [
+                            'raw_value' => mb_substr($row['lokasi'], 0, 255),
+                            'standard_value' => mb_substr($row['lokasi'], 0, 255),
+                        ];
+                    }
+                }
+
+                foreach ($organizers as $org) {
+                    \App\Models\Organizer::firstOrCreate(['nama' => $org['nama']], [
+                        'bidang' => $org['bidang'],
+                        'email' => $org['email'],
+                        'no_telepon' => $org['no_telepon'],
+                    ]);
+                }
+
+                foreach ($kategoris as $kat) {
+                    \App\Models\MasterKategori::firstOrCreate([
+                        'type' => $kat['type'],
+                        'raw_value' => $kat['raw_value']
+                    ], [
+                        'standard_value' => $kat['standard_value']
+                    ]);
+                }
+
+                foreach ($lokasis as $lok) {
+                    \App\Models\MasterLokasi::firstOrCreate([
+                        'raw_value' => $lok['raw_value']
+                    ], [
+                        'standard_value' => $lok['standard_value']
+                    ]);
+                }
+                // -- End Master Data --
+
                 foreach (array_chunk($toInsert, 300) as $chunk) {
                     $bulkData = [];
                     foreach ($chunk as $row) {

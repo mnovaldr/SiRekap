@@ -1,7 +1,7 @@
 <x-filament-panels::page>
 @php $data = $this->getAnalyticsData(); @endphp
 
-<style>
+<style data-navigate-once="true">
 /* ── Base ── */
 .dashboard-wrap { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 
@@ -121,6 +121,7 @@
     background: #f9fafb; border-bottom: 1px solid #f3f4f6;
 }
 .perf-table td { padding: 11px 16px; border-bottom: 1px solid #f9fafb; font-size: .85rem; color: #374151; }
+.perf-table tbody tr:nth-child(even) td { background-color: #f8fafc; }
 .perf-table tr:last-child td { border-bottom: none; }
 .perf-table tr:hover td { background: #fafafa; }
 .perf-table .td-num { font-weight: 700; color: #111827; text-align: right; }
@@ -145,6 +146,7 @@
 .dark .legend-pill{ background: #374151; border-color: #4b5563; color: #d1d5db; }
 .dark .perf-table th { background: #374151; color: #9ca3af; border-color: #4b5563; }
 .dark .perf-table td { color: #d1d5db; border-color: #374151; }
+.dark .perf-table tbody tr:nth-child(even) td { background-color: #1e293b; }
 .dark .perf-table tr:hover td { background: #374151; }
 .dark .perf-table tfoot td { background: #374151; border-color: #4b5563; color: #f9fafb; }
 .dark .donut-center .dc-val { color: #f9fafb; }
@@ -152,6 +154,25 @@
 .dark .badge-emerald{ background: #064e3b; color: #6ee7b7; }
 .dark .badge-blue   { background: #1e3a5f; color: #93c5fd; }
 .dark .badge-purple { background: #3b0764; color: #c4b5fd; }
+
+/* ── Table Styling (from Rekap Bulanan) ── */
+.premium-table-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+.dark .premium-table-card { background: #111827; border-color: #1f2937; }
+.p-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.p-table th { padding: 16px 24px; background: #f9fafb; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; border-bottom: 1px solid #f3f4f6; }
+.dark .p-table th { background: #1f2937; color: #9ca3af; border-color: #374151; }
+.p-table td { padding: 20px 24px; font-size: 0.875rem; color: #374151; border-bottom: 1px solid #f3f4f6; transition: background 0.2s; }
+.dark .p-table td { color: #d1d5db; border-color: #1f2937; }
+.p-table tr:hover td { background: #f9fafb; }
+.dark .p-table tr:hover td { background: #1f2937/40; }
+.p-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.01em; }
+.pb-indigo { background: #eef2ff; color: #4338ca; }
+.pb-emerald { background: #ecfdf5; color: #059669; }
+.pb-amber { background: #fffbeb; color: #d97706; }
+.dark .pb-indigo { background: #312e81; color: #a5b4fc; }
+.p-progress-track { width: 100px; height: 6px; background: #f3f4f6; border-radius: 999px; overflow: hidden; }
+.dark .p-progress-track { background: #374151; }
+.p-progress-fill { height: 100%; border-radius: 999px; transition: width 1s ease-out; }
 </style>
 
 @php
@@ -292,8 +313,12 @@
             <div class="flex flex-wrap gap-2">
                 <span class="legend-pill"><span class="legend-dot" style="background:#4f46e5"></span>Event</span>
                 <span class="legend-pill"><span class="legend-dot" style="background:#10b981"></span>Peserta</span>
-                <span class="legend-pill"><span class="legend-dot" style="background:#f59e0b"></span>Komersial</span>
-                <span class="legend-pill"><span class="legend-dot" style="background:#6366f1"></span>Non-Komersial</span>
+                <span class="legend-pill" style="color:#f59e0b;border-color:#fde68a;background:#fffbeb">
+                    <span style="width:20px;height:3px;border-radius:2px;flex-shrink:0;background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 7px);color:#f59e0b"></span>Komersial
+                </span>
+                <span class="legend-pill" style="color:#0ea5e9;border-color:#bae6fd;background:#f0f9ff">
+                    <span style="width:20px;height:3px;border-radius:2px;flex-shrink:0;background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 7px);color:#0ea5e9"></span>Non-Komersial
+                </span>
             </div>
         </div>
         <div class="chart-card-body">
@@ -537,6 +562,91 @@
         </div>
     </div>
 
+    {{-- ══════════════════════════════════════════
+         TABLE: BREAKDOWN BULANAN (Merged from RekapBulanan)
+    ══════════════════════════════════════════ --}}
+    <div class="premium-table-card mt-6">
+        <div class="border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-900" style="padding: 1.5rem 2rem;">
+            <div>
+                <h3 class="text-lg font-black text-gray-900 dark:text-white tracking-tight">Breakdown Performa Bulanan</h3>
+                <p class="text-xs text-gray-500 font-medium mt-0.5 uppercase tracking-wide">Data teragregasi per bulan di tahun {{ $data['year'] }}</p>
+            </div>
+            <div class="flex items-center gap-2 rounded-xl border border-emerald-100 dark:border-emerald-800" style="padding: 0.375rem 0.75rem; background-color: #ecfdf5;">
+                <div class="w-2 h-2 rounded-full animate-pulse" style="background-color: #10b981;"></div>
+                <span class="text-[10px] font-black uppercase" style="color: #059669;">Valid Data Only</span>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="p-table">
+                <thead>
+                    <tr>
+                        <th class="whitespace-nowrap">Bulan</th>
+                        <th class="text-center whitespace-nowrap">Event</th>
+                        <th class="text-center whitespace-nowrap">Pengunjung</th>
+                        <th class="text-center whitespace-nowrap">Pelaku Unik</th>
+                        <th class="text-right whitespace-nowrap">Rasio Non-Kom</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($data['bulanan'] as $index => $row)
+                        @php
+                            $pct = $row->total_event > 0 ? round($row->total_non_komersil / $row->total_event * 100) : 0;
+                        @endphp
+                        <tr>
+                            <td>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700">
+                                        <span class="text-[10px] font-black text-gray-400">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</span>
+                                    </div>
+                                    <span class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">{{ $row->bulan }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="p-badge pb-indigo">{{ number_format($row->total_event) }}</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-sm font-black text-gray-900 dark:text-white tabular-nums">{{ number_format($row->total_pengunjung) }}</span>
+                                    <div class="w-8 h-1 bg-emerald-500/20 rounded-full mt-1.5 overflow-hidden">
+                                        <div class="h-full bg-emerald-500 rounded-full" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="text-sm font-bold text-gray-600 dark:text-gray-400 tabular-nums">{{ number_format($row->total_pelaku) }}</span>
+                            </td>
+                            <td class="text-right">
+                                <div class="flex items-center justify-end gap-4">
+                                    <div class="p-progress-track hidden sm:block w-24">
+                                        <div class="p-progress-fill" style="width: {{ $pct }}%; background-color: #6366f1;"></div>
+                                    </div>
+                                    <span class="text-sm font-black tabular-nums text-right" style="min-width: 3.5rem; color: #4f46e5;">{{ $pct }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot class="bg-gray-50 dark:bg-gray-800/50">
+                    <tr>
+                        <td class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Total Tahun Ini</td>
+                        <td class="text-center">
+                            <span class="p-badge pb-indigo" style="font-size: 0.875rem">{{ number_format($totalEvents) }}</span>
+                        </td>
+                        <td class="text-center font-black text-gray-900 dark:text-white tabular-nums text-base">
+                            {{ number_format($totalPeserta) }}
+                        </td>
+                        <td class="text-center font-bold text-gray-600 dark:text-gray-400 tabular-nums">
+                            {{ number_format($data['totalPelakuYear']) }}
+                        </td>
+                        <td class="text-right">
+                            <span class="text-base font-black tabular-nums" style="display:inline-block; min-width: 3.5rem; color: #4f46e5;">{{ $nonKomPct }}%</span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
 </div>{{-- end .dashboard-wrap --}}
 
 {{-- ══════════════════════════════════════════
@@ -583,6 +693,135 @@
         }
 
         const ctx = canvas.getContext('2d');
+
+        const hoverLabelsPlugin = {
+            id: 'hoverLabels',
+            afterDatasetsDraw(chart) {
+                const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                const activeElements = chart.getActiveElements();
+                
+                if (!activeElements || activeElements.length === 0) return;
+                
+                const index = activeElements[0].index;
+                const x = activeElements[0].element.x;
+                
+                // 1. Draw vertical reference line
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(x, top);
+                ctx.lineTo(x, bottom);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+                ctx.stroke();
+                ctx.restore();
+                
+                // 2. Collect visible dataset points
+                const tooltips = [];
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    if (meta.hidden || !chart.isDatasetVisible(datasetIndex)) return;
+                    
+                    const element = meta.data[index];
+                    if (!element) return;
+                    
+                    const y = element.y;
+                    const value = dataset.data[index];
+                    const labelText = dataset.label + ': ' + Number(value).toLocaleString('id-ID');
+                    
+                    tooltips.push({
+                        y: y,
+                        origY: y,
+                        labelText: labelText,
+                        borderColor: dataset.borderColor
+                    });
+                });
+                
+                if (tooltips.length === 0) return;
+                
+                // Sort by Y position (ascending: top to bottom)
+                tooltips.sort((a, b) => a.origY - b.origY);
+                
+                // Solve overlaps by pushing overlapping boxes downwards
+                const boxHeight = 20;
+                const spacing = 4;
+                const minSpacing = boxHeight + spacing;
+                
+                for (let i = 1; i < tooltips.length; i++) {
+                    if (tooltips[i].y - tooltips[i-1].y < minSpacing) {
+                        tooltips[i].y = tooltips[i-1].y + minSpacing;
+                    }
+                }
+                
+                // Push upwards if the bottom-most box goes out of bounds
+                const maxBoundary = bottom - (boxHeight / 2) - 4;
+                if (tooltips[tooltips.length - 1].y > maxBoundary) {
+                    tooltips[tooltips.length - 1].y = maxBoundary;
+                    for (let i = tooltips.length - 2; i >= 0; i--) {
+                        if (tooltips[i+1].y - tooltips[i].y < minSpacing) {
+                            tooltips[i].y = tooltips[i+1].y - minSpacing;
+                        }
+                    }
+                }
+
+                // Push downwards if the top-most box goes out of bounds
+                const minBoundary = top + (boxHeight / 2) + 4;
+                if (tooltips[0].y < minBoundary) {
+                    tooltips[0].y = minBoundary;
+                    for (let i = 1; i < tooltips.length; i++) {
+                        if (tooltips[i].y - tooltips[i-1].y < minSpacing) {
+                            tooltips[i].y = tooltips[i-1].y + minSpacing;
+                        }
+                    }
+                }
+                
+                // Draw each resolved tooltip box
+                tooltips.forEach((t) => {
+                    ctx.save();
+                    ctx.font = 'bold 10px Inter, sans-serif';
+                    const textWidth = ctx.measureText(t.labelText).width;
+                    
+                    const paddingX = 8;
+                    const indicatorWidth = 3;
+                    const indicatorGap = 5;
+                    
+                    const boxWidth = textWidth + (paddingX * 2) + indicatorWidth + indicatorGap;
+                    
+                    const gap = 10;
+                    let boxX = x + gap;
+                    if (boxX + boxWidth > right) {
+                        boxX = x - boxWidth - gap;
+                    }
+                    const boxY = t.y - (boxHeight / 2);
+                    
+                    // Draw background box
+                    ctx.beginPath();
+                    const radius = 5;
+                    if (typeof ctx.roundRect === 'function') {
+                        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, radius);
+                    } else {
+                        ctx.rect(boxX, boxY, boxWidth, boxHeight);
+                    }
+                    ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'rgba(15, 23, 42, 0.95)' : 'rgba(30, 41, 59, 0.9)';
+                    ctx.fill();
+                    
+                    // Draw color indicator bar
+                    ctx.beginPath();
+                    if (typeof ctx.roundRect === 'function') {
+                        ctx.roundRect(boxX + paddingX, boxY + (boxHeight - 10) / 2, indicatorWidth, 10, 1);
+                    } else {
+                        ctx.rect(boxX + paddingX, boxY + (boxHeight - 10) / 2, indicatorWidth, 10);
+                    }
+                    ctx.fillStyle = t.borderColor;
+                    ctx.fill();
+                    
+                    // Draw text
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(t.labelText, boxX + paddingX + indicatorWidth + indicatorGap, boxY + (boxHeight / 2) + 0.5);
+                    ctx.restore();
+                });
+            }
+        };
 
         window.analitikChartInstance = new Chart(ctx, {
             type: 'line',
@@ -638,13 +877,13 @@
                     {
                         label: 'Non-Komersial',
                         data: nonKom,
-                        borderColor: '#6366f1',
+                        borderColor: '#0ea5e9',
                         backgroundColor: 'transparent',
                         borderWidth: 2,
                         borderDash: [6, 3],
                         fill: false,
                         tension: 0.42,
-                        pointBackgroundColor: '#6366f1',
+                        pointBackgroundColor: '#0ea5e9',
                         pointBorderColor: '#fff',
                         pointBorderWidth: 2,
                         pointRadius: 4,
@@ -660,18 +899,7 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: tooltipBg,
-                        borderColor: tooltipBdr,
-                        borderWidth: 1,
-                        titleColor: tooltipTxt,
-                        bodyColor: tickColor,
-                        padding: 12,
-                        cornerRadius: 10,
-                        callbacks: {
-                            label: function(ctx) {
-                                return '  ' + ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('id-ID');
-                            }
-                        }
+                        enabled: false
                     }
                 },
                 scales: {
@@ -703,7 +931,8 @@
                         }
                     }
                 }
-            }
+            },
+            plugins: [hoverLabelsPlugin]
         });
 
         console.log('Chart initialized successfully');

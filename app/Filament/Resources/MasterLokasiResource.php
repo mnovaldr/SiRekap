@@ -42,6 +42,7 @@ class MasterLokasiResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('raw_value')
                     ->searchable(),

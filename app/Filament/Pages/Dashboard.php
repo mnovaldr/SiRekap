@@ -276,4 +276,20 @@ class Dashboard extends BaseDashboard
 
             ]);
     }
+
+    public function getWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\StatsOverview::class,
+            \App\Filament\Widgets\EventsChart::class,
+            \App\Filament\Widgets\BidangDistributionChart::class,
+            \App\Filament\Widgets\KomersialChart::class,
+            \App\Filament\Widgets\TopJenisKegiatanChart::class,
+            \App\Filament\Widgets\SubSektorDistributionChart::class,
+            \App\Filament\Widgets\SdgsDistributionWidget::class,
+            \App\Filament\Widgets\TopOrganisasiWidget::class,
+            \App\Filament\Widgets\TopLokasiWidget::class,
+            \App\Filament\Widgets\RekapBulananWidget::class,
+        ];
+    }
 }

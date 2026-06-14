@@ -224,4 +224,11 @@ class CekDuplikat extends Page
         $this->isProcessing = false;
         $this->analyze();
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\DuplicateAlert::class,
+        ];
+    }
 }

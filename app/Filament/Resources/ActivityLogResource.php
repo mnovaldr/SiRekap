@@ -34,6 +34,7 @@ class ActivityLogResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped()
             ->columns([
                 // Waktu
                 Tables\Columns\TextColumn::make('created_at')

@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <style>
+    <style data-navigate-once="true">
         /* ── Base ── */
         .rekap-wrap { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
         

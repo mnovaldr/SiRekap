@@ -63,7 +63,7 @@ class RekapBulananWidget extends BaseWidget
 
         return $table
             ->query($query)
-
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('bulan')
                     ->label('Bulan')

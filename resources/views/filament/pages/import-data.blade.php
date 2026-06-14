@@ -1,8 +1,8 @@
 <x-filament-panels::page>
 <div class="import-wrap pb-10">
 
-    <style>
-    /* Ã¢â€â‚¬Ã¢â€â‚¬ Import Design System Ã¢â€â‚¬Ã¢â€â‚¬ */
+    <style data-navigate-once="true">
+    /* ── Import Design System ── */
     .import-wrap {
         font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
         display: flex !important;
@@ -620,8 +620,8 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        height: 100%;
-        min-height: 24rem;
+        flex-grow: 1 !important;
+        min-height: 20rem !important;
         border: 2px dashed #d1d5db;
         border-radius: 1rem;
         cursor: pointer;
@@ -982,7 +982,7 @@
     @if($currentStep === 1)
     <div class="import-grid">
         <div class="import-col-span-2">
-            <div class="card-premium p-6 h-full">
+            <div class="card-premium p-6 h-full" style="display: flex !important; flex-direction: column !important; justify-content: space-between !important;">
                 <label for="file-upload" 
                     x-data="{ isDragging: false }"
                     x-on:dragover.prevent="isDragging = true"
@@ -994,7 +994,8 @@
                         }
                     "
                     x-bind:class="{ 'upload-zone-dropping': isDragging }"
-                    class="upload-zone">
+                    class="upload-zone"
+                    style="margin-bottom: 1.5rem !important;">
                     
                     <input type="file" id="file-upload" style="position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 20;" wire:model="file" accept=".xlsx,.xls">
 
@@ -1045,6 +1046,12 @@
                         </div>
                     </div>
                 </label>
+                <div class="mt-4 text-center">
+                    <a href="{{ route('admin.download-template') }}" download data-no-loading="true" class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors" style="text-decoration: underline;">
+                        <x-heroicon-m-arrow-down-tray class="w-3.5 h-3.5" />
+                        Unduh Template Excel
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -1406,45 +1413,73 @@
                 </table>
             </div>
 
-            <div class="px-6 py-5 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-xs font-medium text-gray-500">
-                    Menampilkan {{ number_format(($currentPage - 1) * $perPage + 1) }} - {{ number_format(min($currentPage * $perPage, $totalRows)) }} 
-                    dari {{ number_format($totalRows) }} data
-                </p>
+            <div class="px-6 py-5 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                    <p class="text-xs font-medium text-gray-500">
+                        Menampilkan {{ number_format(($currentPage - 1) * $perPage + 1) }} - {{ number_format(min($currentPage * $perPage, $totalRows)) }} 
+                        dari {{ number_format($totalRows) }} data
+                    </p>
+                    
+                    @php
+                        $totalPages = ceil($totalRows / $perPage);
+                    @endphp
+                    @if($totalPages > 1)
+                        <div class="flex items-center gap-1.5">
+                            <button wire:click="prevPage" @disabled($currentPage === 1) class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-all">
+                                <x-heroicon-o-chevron-left class="w-4 h-4" />
+                            </button>
+                            
+                            @php
+                                $start = max(1, $currentPage - 2);
+                                $end = min($totalPages, $start + 4);
+                                if ($end - $start < 4) $start = max(1, $end - 4);
+                            @endphp
+                            
+                            @if($start > 1)
+                                <button wire:click="setPage(1)" 
+                                    class="w-8 h-8 rounded-lg text-xs font-bold transition-all {{ $currentPage === 1 ? 'shadow-lg shadow-indigo-500/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400' }}"
+                                    style="{{ $currentPage === 1 ? 'background-color: #4f46e5 !important; color: #ffffff !important;' : '' }}">
+                                    1
+                                </button>
+                                @if($start > 2)
+                                    <span class="text-gray-400 text-xs px-1">...</span>
+                                @endif
+                            @endif
+                            
+                            @for($i = $start; $i <= $end; $i++)
+                                <button wire:click="setPage({{ $i }})" 
+                                    class="w-8 h-8 rounded-lg text-xs font-bold transition-all {{ $currentPage === $i ? 'shadow-lg shadow-indigo-500/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400' }}"
+                                    style="{{ $currentPage === $i ? 'background-color: #4f46e5 !important; color: #ffffff !important;' : '' }}">
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                            
+                            @if($end < $totalPages)
+                                @if($end < $totalPages - 1)
+                                    <span class="text-gray-400 text-xs px-1">...</span>
+                                @endif
+                                <button wire:click="setPage({{ $totalPages }})" 
+                                    class="w-8 h-8 rounded-lg text-xs font-bold transition-all {{ $currentPage === $totalPages ? 'shadow-lg shadow-indigo-500/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400' }}"
+                                    style="{{ $currentPage === $totalPages ? 'background-color: #4f46e5 !important; color: #ffffff !important;' : '' }}">
+                                    {{ $totalPages }}
+                                </button>
+                            @endif
+                            
+                            <button wire:click="nextPage" @disabled($currentPage === $totalPages) class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-all">
+                                <x-heroicon-o-chevron-right class="w-4 h-4" />
+                            </button>
+                        </div>
+                    @endif
+                </div>
+                
                 <div class="flex items-center gap-3">
-                    <x-filament::button wire:click="resetImport" wire:loading.attr="disabled" color="gray" variant="outline" class="rounded-xl px-6">
+                    <x-filament::button wire:click="resetImport" wire:loading.attr="disabled" wire:target="resetImport, confirmImport" color="gray" variant="outline" class="rounded-xl px-6" style="white-space: nowrap !important;">
                         Batalkan
                     </x-filament::button>
-                    <x-filament::button wire:click="confirmImport" wire:loading.attr="disabled" class="bg-indigo-700 hover:bg-indigo-800 rounded-xl px-8 shadow-md">
+                    <x-filament::button wire:click="confirmImport" wire:loading.attr="disabled" class="bg-indigo-700 hover:bg-indigo-800 rounded-xl px-8 shadow-md" style="white-space: nowrap !important;">
                         <span wire:loading.remove wire:target="confirmImport">Import {{ number_format($validRows + $reviewRows) }} Data</span>
                         <span wire:loading wire:target="confirmImport">Memproses...</span>
                     </x-filament::button>
-                </div>
-            </div>
-        </div>
-
-        {{-- Info Cards (Bottom) --}}
-        <div class="grid-2-cols mt-6">
-            <div class="card-premium p-6 flex gap-4 bg-white dark:bg-gray-900">
-                <div class="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-                    <x-heroicon-o-eye class="w-6 h-6 text-indigo-500" />
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Data Verification</h4>
-                    <p class="text-xs text-gray-500 leading-relaxed">
-                        We have identified {{ number_format($validRows + $reviewRows) }} records ready for import. Please review any flagged "Review" or "Duplikat" entries to ensure data accuracy before final confirmation.
-                    </p>
-                </div>
-            </div>
-            <div class="card-premium p-6 flex gap-4 bg-white dark:bg-gray-900">
-                <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                    <x-heroicon-o-shield-check class="w-6 h-6 text-emerald-500" />
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Secure Processing</h4>
-                    <p class="text-xs text-gray-500 leading-relaxed">
-                        Your data is processed through our secure encryption layer. Once confirmed, the information will be synchronized across all MCC ecosystem modules immediately.
-                    </p>
                 </div>
             </div>
         </div>

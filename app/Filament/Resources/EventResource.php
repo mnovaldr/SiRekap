@@ -208,6 +208,7 @@ class EventResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('nama_organisasi')
                     ->label('Organisasi')

@@ -23,6 +23,15 @@
             </div>
         </x-slot>
 
+        <style>
+        .rank-1 { background-color: #fef3c7; color: #b45309; }
+        .dark .rank-1 { background-color: rgba(120,53,15,0.4); color: #fbbf24; }
+        .rank-2 { background-color: #f1f5f9; color: #334155; }
+        .dark .rank-2 { background-color: #334155; color: #cbd5e1; }
+        .rank-3 { background-color: #ffedd5; color: #c2410c; }
+        .dark .rank-3 { background-color: rgba(124,45,18,0.4); color: #fb923c; }
+        </style>
+
         <!-- Widget Controls -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 mb-6 pb-4 border-b border-gray-100 dark:border-gray-800 items-end">
             <!-- Tipe Data Toggler -->
@@ -111,9 +120,9 @@
                         <tr class="hover:bg-gray-50/50 dark:hover:bg-primary-900/5 transition-all group">
                             <td class="px-5 py-4 text-center">
                                 <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg font-black text-xs
-                                    {{ $index === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' : '' }}
-                                    {{ $index === 1 ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' : '' }}
-                                    {{ $index === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' : '' }}
+                                    {{ $index === 0 ? 'rank-1' : '' }}
+                                    {{ $index === 1 ? 'rank-2' : '' }}
+                                    {{ $index === 2 ? 'rank-3' : '' }}
                                     {{ $index > 2 ? 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400' : '' }}">
                                     {{ $index + 1 }}
                                 </span>
@@ -268,35 +277,50 @@
                     <button 
                         wire:click="previousPage('listPage')"
                         @disabled($currentPage <= 1)
-                        class="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-black text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 shadow-sm"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                     >
                         <x-heroicon-o-chevron-left class="w-3.5 h-3.5" />
-                        Prev
                     </button>
 
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1.5">
                         @php
                             $lastPage = $records->lastPage();
-                            $start = max(1, $currentPage - 2);
-                            $end = min($lastPage, $start + 4);
-                            if ($end - $start < 4) $start = max(1, $end - 4);
+                            $elements = [];
+                            if ($lastPage < 6) {
+                                for ($i = 1; $i <= $lastPage; $i++) {
+                                    $elements[] = $i;
+                                }
+                            } else {
+                                if ($currentPage <= 3) {
+                                    $elements = [1, 2, 3, 4, '...', $lastPage];
+                                } elseif ($currentPage >= $lastPage - 2) {
+                                    $elements = [1, '...', $lastPage - 3, $lastPage - 2, $lastPage - 1, $lastPage];
+                                } else {
+                                    $elements = [1, '...', $currentPage - 1, $currentPage, $currentPage + 1, '...', $lastPage];
+                                }
+                            }
                         @endphp
-                        @for($i = max(1, $start); $i <= $end; $i++)
-                            <button 
-                                wire:click="gotoPage({{ $i }}, 'listPage')"
-                                class="w-8 h-8 rounded-lg text-xs font-black transition-all {{ $currentPage === $i ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800' }}"
-                            >
-                                {{ $i }}
-                            </button>
-                        @endfor
+                        @foreach($elements as $element)
+                            @if(is_string($element))
+                                <span class="w-8 h-8 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400">
+                                    {{ $element }}
+                                </span>
+                            @else
+                                <button 
+                                    wire:click="gotoPage({{ $element }}, 'listPage')"
+                                    class="w-8 h-8 rounded-lg text-xs font-black transition-all flex items-center justify-center {{ $currentPage === $element ? 'bg-primary-600 text-white shadow-md shadow-primary-500/30 border-transparent' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm' }}"
+                                >
+                                    {{ $element }}
+                                </button>
+                            @endif
+                        @endforeach
                     </div>
 
                     <button 
                         wire:click="nextPage('listPage')"
                         @disabled($currentPage >= $lastPage)
-                        class="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-black text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 shadow-sm"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                     >
-                        Next
                         <x-heroicon-o-chevron-right class="w-3.5 h-3.5" />
                     </button>
                 </div>

@@ -2,7 +2,7 @@
 <div class="space-y-6">
     @php $stats = $this->getStats(); @endphp
 
-    <style>
+    <style data-navigate-once="true">
     .custom-stats-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));

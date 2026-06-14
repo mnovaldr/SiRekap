@@ -16,7 +16,8 @@
     $totalEvents = Event::valid()->primary()->count();
 @endphp
 
-<style>
+<div>
+<style data-navigate-once="true">
     /* ── Dashboard Header ── */
     .dash-header-wrap {
         background: #fff;
@@ -155,4 +156,5 @@
             {{ number_format($totalEvents) }} Event Valid
         </span>
     </div>
+</div>
 </div>

@@ -1,7 +1,7 @@
 <x-filament-panels::page>
 <div class="space-y-6 pb-8" style="font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;">
 
-    <style>
+    <style data-navigate-once="true">
         /* ===== PREMIUM OVERRIDES FOR EXPORT PAGE ===== */
         .export-card {
             background: #fff;

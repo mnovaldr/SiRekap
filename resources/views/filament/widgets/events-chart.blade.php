@@ -74,6 +74,135 @@
             // Menggunakan Alpine.raw() untuk mencegah Proxy merusak Chart.js (penyebab a.label.call is not a function)
             const data = (typeof Alpine !== 'undefined' && Alpine.raw) ? Alpine.raw(this.payload) : this.payload;
 
+            const hoverLabelsPlugin = {
+                id: 'hoverLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                    const activeElements = chart.getActiveElements();
+                    
+                    if (!activeElements || activeElements.length === 0) return;
+                    
+                    const index = activeElements[0].index;
+                    const x = activeElements[0].element.x;
+                    
+                    // 1. Draw vertical reference line
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(x, top);
+                    ctx.lineTo(x, bottom);
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+                    ctx.stroke();
+                    ctx.restore();
+                    
+                    // 2. Collect visible dataset points
+                    const tooltips = [];
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        if (meta.hidden || !chart.isDatasetVisible(datasetIndex)) return;
+                        
+                        const element = meta.data[index];
+                        if (!element) return;
+                        
+                        const y = element.y;
+                        const value = dataset.data[index];
+                        const labelText = dataset.label + ': ' + Number(value).toLocaleString('id-ID');
+                        
+                        tooltips.push({
+                            y: y,
+                            origY: y,
+                            labelText: labelText,
+                            borderColor: dataset.borderColor
+                        });
+                    });
+                    
+                    if (tooltips.length === 0) return;
+                    
+                    // Sort by Y position (ascending: top to bottom)
+                    tooltips.sort((a, b) => a.origY - b.origY);
+                    
+                    // Solve overlaps by pushing overlapping boxes downwards
+                    const boxHeight = 20;
+                    const spacing = 4;
+                    const minSpacing = boxHeight + spacing;
+                    
+                    for (let i = 1; i < tooltips.length; i++) {
+                        if (tooltips[i].y - tooltips[i-1].y < minSpacing) {
+                            tooltips[i].y = tooltips[i-1].y + minSpacing;
+                        }
+                    }
+                    
+                    // Push upwards if the bottom-most box goes out of bounds
+                    const maxBoundary = bottom - (boxHeight / 2) - 4;
+                    if (tooltips[tooltips.length - 1].y > maxBoundary) {
+                        tooltips[tooltips.length - 1].y = maxBoundary;
+                        for (let i = tooltips.length - 2; i >= 0; i--) {
+                            if (tooltips[i+1].y - tooltips[i].y < minSpacing) {
+                                tooltips[i].y = tooltips[i+1].y - minSpacing;
+                            }
+                        }
+                    }
+
+                    // Push downwards if the top-most box goes out of bounds
+                    const minBoundary = top + (boxHeight / 2) + 4;
+                    if (tooltips[0].y < minBoundary) {
+                        tooltips[0].y = minBoundary;
+                        for (let i = 1; i < tooltips.length; i++) {
+                            if (tooltips[i].y - tooltips[i-1].y < minSpacing) {
+                                tooltips[i].y = tooltips[i-1].y + minSpacing;
+                            }
+                        }
+                    }
+                    
+                    // Draw each resolved tooltip box
+                    tooltips.forEach((t) => {
+                        ctx.save();
+                        ctx.font = 'bold 10px Inter, sans-serif';
+                        const textWidth = ctx.measureText(t.labelText).width;
+                        
+                        const paddingX = 8;
+                        const indicatorWidth = 3;
+                        const indicatorGap = 5;
+                        
+                        const boxWidth = textWidth + (paddingX * 2) + indicatorWidth + indicatorGap;
+                        
+                        const gap = 10;
+                        let boxX = x + gap;
+                        if (boxX + boxWidth > right) {
+                            boxX = x - boxWidth - gap;
+                        }
+                        const boxY = t.y - (boxHeight / 2);
+                        
+                        // Draw background box
+                        ctx.beginPath();
+                        const radius = 5;
+                        if (typeof ctx.roundRect === 'function') {
+                            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, radius);
+                        } else {
+                            ctx.rect(boxX, boxY, boxWidth, boxHeight);
+                        }
+                        ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'rgba(15, 23, 42, 0.95)' : 'rgba(30, 41, 59, 0.9)';
+                        ctx.fill();
+                        
+                        // Draw color indicator bar
+                        ctx.beginPath();
+                        if (typeof ctx.roundRect === 'function') {
+                            ctx.roundRect(boxX + paddingX, boxY + (boxHeight - 10) / 2, indicatorWidth, 10, 1);
+                        } else {
+                            ctx.rect(boxX + paddingX, boxY + (boxHeight - 10) / 2, indicatorWidth, 10);
+                        }
+                        ctx.fillStyle = t.borderColor;
+                        ctx.fill();
+                        
+                        // Draw text
+                        ctx.fillStyle = '#ffffff';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(t.labelText, boxX + paddingX + indicatorWidth + indicatorGap, boxY + (boxHeight / 2) + 0.5);
+                        ctx.restore();
+                    });
+                }
+            };
+
             chartInst = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -128,13 +257,13 @@
                         {
                             label: 'Non-Komersial',
                             data: data.nonKom,
-                            borderColor: '#6366f1',
+                            borderColor: '#0ea5e9',
                             backgroundColor: 'transparent',
                             borderWidth: 2,
                             borderDash: [6, 3],
                             fill: false,
                             tension: 0.42,
-                            pointBackgroundColor: '#6366f1',
+                            pointBackgroundColor: '#0ea5e9',
                             pointBorderColor: '#fff',
                             pointBorderWidth: 2,
                             pointRadius: 4,
@@ -150,13 +279,7 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            padding: 12,
-                            cornerRadius: 10,
-                            callbacks: {
-                                label: function(c) {
-                                    return '  ' + c.dataset.label + ': ' + Number(c.parsed.y).toLocaleString('id-ID');
-                                }
-                            }
+                            enabled: false
                         }
                     },
                     scales: {
@@ -188,7 +311,8 @@
                             }
                         }
                     }
-                }
+                },
+                plugins: [hoverLabelsPlugin]
             });
         };
         
@@ -208,8 +332,8 @@
             <span class="ech-pill" style="color:#f59e0b;border-color:#fde68a;background:#fffbeb">
                 <span class="ech-dash" style="color:#f59e0b"></span>Komersial
             </span>
-            <span class="ech-pill" style="color:#6366f1;border-color:#c7d2fe;background:#eef2ff">
-                <span class="ech-dash" style="color:#6366f1"></span>Non-Komersial
+            <span class="ech-pill" style="color:#0ea5e9;border-color:#bae6fd;background:#f0f9ff">
+                <span class="ech-dash" style="color:#0ea5e9"></span>Non-Komersial
             </span>
         </div>
     </div>

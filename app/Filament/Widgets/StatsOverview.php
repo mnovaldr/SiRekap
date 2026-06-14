@@ -79,8 +79,8 @@ class StatsOverview extends BaseWidget
             $percentKomersial = $totalEvents > 0 ? round(($totalKomersial / $totalEvents) * 100, 1) : 0;
 
             return [
-                Stat::make('Total Event (Valid)', number_format($totalEvents))
-                    ->description('Kegiatan valid: ' . $periodLabel)
+                Stat::make('Total Event', number_format($totalEvents))
+                    ->description('Kegiatan: ' . $periodLabel)
                     ->descriptionIcon('heroicon-m-calendar')
                     ->chart([7, 3, 4, 5, 6, 3, 5, 2, 3, 4, 5, 6])
                     ->color('primary'),
