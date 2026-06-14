@@ -139,10 +139,112 @@
             background: rgba(99, 102, 241, 0.03);
         }
 
-        @keyframes zoomIn {
-            from { transform: scale(0.96); opacity: 0; }
+        @keyframes bounceIn {
+            from { transform: scale(0.9); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
+
+        /* ── Custom Pagination (rp-*) ── */
+        .rp-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 14px 20px;
+            background: #fff;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.8125rem;
+        }
+        .dark .rp-wrap { background: #111827; border-color: #1f2937; }
+
+        .rp-info { color: #6b7280; white-space: nowrap; }
+        .rp-info strong { color: #111827; font-weight: 600; }
+        .dark .rp-info { color: #9ca3af; }
+        .dark .rp-info strong { color: #f9fafb; }
+
+        /* Per-page selector */
+        .rp-perpage { display: flex; align-items: center; gap: 8px; }
+        .rp-perpage-label { color: #6b7280; font-weight: 500; white-space: nowrap; font-size: 0.8125rem; }
+        .dark .rp-perpage-label { color: #9ca3af; }
+        .rp-perpage-select-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .rp-perpage-select {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            background-image: none !important;
+            padding: 5px 26px 5px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background-color: #f9fafb;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #374151;
+            cursor: pointer;
+            outline: none;
+            min-width: 65px;
+            line-height: 1.4;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .rp-perpage-select::-ms-expand { display: none; }
+        .rp-perpage-select:hover { background: #f3f4f6; border-color: #9ca3af; }
+        .rp-perpage-select:focus { border-color: #6366f1; background: #fff; }
+        .dark .rp-perpage-select { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+        .dark .rp-perpage-select:hover { background: #374151; }
+        .rp-chevron {
+            position: absolute;
+            right: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 13px;
+            height: 13px;
+            color: #6b7280;
+            pointer-events: none;
+            flex-shrink: 0;
+        }
+        .dark .rp-chevron { color: #9ca3af; }
+
+        /* Page buttons */
+        .rp-pages { display: flex; align-items: center; gap: 4px; }
+        .rp-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 6px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+        .rp-btn:hover:not(:disabled):not(.rp-btn-active) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+        .rp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .rp-btn-active {
+            background: #6366f1;
+            border-color: #6366f1;
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(99,102,241,0.4);
+        }
+        .rp-btn-nav { border-color: #e5e7eb; }
+        .dark .rp-btn { background: #1f2937; border-color: #374151; color: #d1d5db; }
+        .dark .rp-btn:hover:not(:disabled):not(.rp-btn-active) { background: #374151; }
+        .dark .rp-btn-active { background: #6366f1; border-color: #6366f1; color: #fff; }
+        .rp-nav-icon { width: 14px; height: 14px; }
+        .rp-dots { padding: 0 4px; color: #9ca3af; font-size: 0.875rem; user-select: none; }
     </style>
 
     {{-- ══════════════════════════════════════════
@@ -396,8 +498,8 @@
 
                     {{-- Pagination --}}
                     @if($exportType === 'detail' && $previewData->count() > 0)
-                        <div style="padding:16px 24px; border-top:1px solid #f3f4f6; background:#f9fafb;" class="dark:border-gray-700 dark:bg-gray-800">
-                            {{ $previewData->links() }}
+                        <div style="border-top:1px solid #f3f4f6; background:#f9fafb;" class="dark:border-gray-700 dark:bg-gray-800">
+                            {{ $previewData->links('vendor.pagination.rekap-pagination') }}
                         </div>
                     @endif
                 </div>

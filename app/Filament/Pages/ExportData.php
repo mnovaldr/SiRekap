@@ -175,22 +175,22 @@ class ExportData extends Page
     protected function getColumnLabels(): array
     {
         return [
-            'nama_organisasi' => 'Organisasi',
-            'bidang'          => 'Bidang',
+            'nama_organisasi' => 'Nama Organisasi',
+            'bidang'          => 'Bidang Ekraf',
             'jenis_kegiatan'  => 'Jenis Kegiatan',
             'sub_sektor'      => 'Sub Sektor',
             'komersial'       => 'Komersial',
-            'program_sdgs'    => 'Program SDGS',
+            'program_sdgs'    => 'Program SDGs',
             'judul_kegiatan'  => 'Judul Kegiatan',
-            'tanggal'         => 'Tanggal',
+            'tanggal'         => 'Tanggal Kegiatan',
             'bulan'           => 'Bulan',
             'lantai'          => 'Lantai',
-            'lokasi'          => 'Lokasi',
-            'jumlah_peserta'  => 'Peserta',
-            'email'           => 'Email',
-            'no_telepon'      => 'No Telepon',
-            'pic'             => 'PIC',
-            'status_data'     => 'Status',
+            'lokasi'          => 'Lokasi Kegiatan',
+            'jumlah_peserta'  => 'Jumlah Peserta',
+            'email'           => 'Email PIC',
+            'no_telepon'      => 'No WhatsApp PIC',
+            'pic'             => 'Nama PIC',
+            'status_data'     => 'Status Data',
         ];
     }
 

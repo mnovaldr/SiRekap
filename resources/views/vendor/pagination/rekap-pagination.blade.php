@@ -1,6 +1,7 @@
 @php
     // Map pageName -> Livewire per-page property
     $_perPagePropMap = [
+        'page'          => 'perPage',
         'eventPage'     => 'eventPagePerPage',
         'communityPage' => 'communityPagePerPage',
     ];
