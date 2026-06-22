@@ -72,7 +72,20 @@
     background: #f9fafb; border: 1px solid #e5e7eb;
     border-radius: 999px; padding: 4px 10px;
 }
+.legend-pill.inactive {
+    opacity: 0.4;
+    text-decoration: line-through;
+    background: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #9ca3af !important;
+}
+.dark .legend-pill.inactive {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #6b7280 !important;
+}
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
 
 /* ── Horizontal bar rows ── */
 .hbar-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
@@ -304,29 +317,193 @@
     {{-- ══════════════════════════════════════════
          TREND ACTIVITY — Area Chart (Chart.js)
     ══════════════════════════════════════════ --}}
-    <div class="chart-card">
+    @php
+        $chartPayload = [
+            'labels'   => $data['bulanan']->pluck('bulan'),
+            'events'   => $data['bulanan']->pluck('total_event')->map(fn($v) => (int)$v),
+            'peserta'  => $data['bulanan']->pluck('total_pengunjung')->map(fn($v) => (int)$v),
+            'komersil' => $data['bulanan']->pluck('total_komersil')->map(fn($v) => (int)$v),
+            'nonKom'   => $data['bulanan']->pluck('total_non_komersil')->map(fn($v) => (int)$v),
+        ];
+    @endphp
+    <div class="chart-card" wire:key="trend-chart-{{ md5(json_encode($chartPayload)) }}" x-data="{
+        payload: @js($chartPayload),
+        active: { 0: true, 1: true, 2: true, 3: true },
+        toggle(index) {
+            const canvas = this.$refs.canvas;
+            if (!canvas || !canvas._chart) return;
+            const chart = canvas._chart;
+            const vis = chart.isDatasetVisible(index);
+            chart.setDatasetVisibility(index, !vis);
+            chart.update('none');
+            this.active[index] = !vis;
+        },
+        init() {
+            const draw = () => {
+                if (typeof Chart === 'undefined') {
+                    if (!document.getElementById('__cjs_lib')) {
+                        const s = document.createElement('script');
+                        s.id = '__cjs_lib';
+                        s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js';
+                        s.onload = () => draw();
+                        document.head.appendChild(s);
+                    } else {
+                        setTimeout(draw, 100);
+                    }
+                    return;
+                }
+
+                const canvas = this.$refs.canvas;
+                if (!canvas) return;
+
+                if (canvas._chart) {
+                    canvas._chart.destroy();
+                }
+
+                const ctx = canvas.getContext('2d');
+                const dark = document.documentElement.classList.contains('dark');
+                const gc = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
+                const tc = dark ? '#6b7280' : '#9ca3af';
+
+                const mkGrad = (a, b) => {
+                    const g = ctx.createLinearGradient(0, 0, 0, 320);
+                    g.addColorStop(0, a); g.addColorStop(1, b);
+                    return g;
+                };
+
+                const data = (typeof Alpine !== 'undefined' && Alpine.raw) ? Alpine.raw(this.payload) : this.payload;
+
+                const hoverPlugin = {
+                    id: 'hoverLines',
+                    afterDatasetsDraw(chart) {
+                        const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                        const els = chart.getActiveElements();
+                        if (!els || els.length === 0) return;
+
+                        const idx = els[0].index;
+                        const x = els[0].element.x;
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(x, top); ctx.lineTo(x, bottom);
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,.15)' : 'rgba(0,0,0,.1)';
+                        ctx.stroke(); ctx.restore();
+
+                        const items = [];
+                        chart.data.datasets.forEach((ds, di) => {
+                            const meta = chart.getDatasetMeta(di);
+                            if (!chart.isDatasetVisible(di) || meta.hidden) return;
+                            const el = meta.data[idx];
+                            if (!el) return;
+                            items.push({
+                                y: el.y, oy: el.y,
+                                text: ds.label + ': ' + Number(ds.data[idx]).toLocaleString('id-ID'),
+                                color: ds.borderColor
+                            });
+                        });
+                        if (items.length === 0) return;
+
+                        items.sort((a, b) => a.oy - b.oy);
+                        const bh = 20, ms = 24;
+                        for (let i = 1; i < items.length; i++) {
+                            if (items[i].y - items[i-1].y < ms) items[i].y = items[i-1].y + ms;
+                        }
+                        const maxB = bottom - bh/2 - 4;
+                        if (items[items.length-1].y > maxB) {
+                            items[items.length-1].y = maxB;
+                            for (let i = items.length-2; i >= 0; i--) {
+                                if (items[i+1].y - items[i].y < ms) items[i].y = items[i+1].y - ms;
+                            }
+                        }
+                        const minB = top + bh/2 + 4;
+                        if (items[0].y < minB) {
+                            items[0].y = minB;
+                            for (let i = 1; i < items.length; i++) {
+                                if (items[i].y - items[i-1].y < ms) items[i].y = items[i-1].y + ms;
+                            }
+                        }
+
+                        items.forEach(t => {
+                            ctx.save();
+                            ctx.font = 'bold 10px Inter, sans-serif';
+                            const tw = ctx.measureText(t.text).width;
+                            const px = 8, iw = 3, ig = 5, bw = tw + px*2 + iw + ig;
+                            let bx = x + 10;
+                            if (bx + bw > right) bx = x - bw - 10;
+                            const by = t.y - bh/2;
+
+                            ctx.beginPath();
+                            if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, bw, bh, 5);
+                            else ctx.rect(bx, by, bw, bh);
+                            ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'rgba(15,23,42,.95)' : 'rgba(30,41,59,.9)';
+                            ctx.fill();
+
+                            ctx.beginPath();
+                            if (typeof ctx.roundRect === 'function') ctx.roundRect(bx+px, by+(bh-10)/2, iw, 10, 1);
+                            else ctx.rect(bx+px, by+(bh-10)/2, iw, 10);
+                            ctx.fillStyle = t.color; ctx.fill();
+
+                            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+                            ctx.fillText(t.text, bx+px+iw+ig, by+bh/2+.5);
+                            ctx.restore();
+                        });
+                    }
+                };
+
+                canvas._chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            { label: 'Event', data: data.events, borderColor: '#4f46e5', backgroundColor: mkGrad('rgba(79,70,229,.18)','rgba(79,70,229,.01)'), borderWidth: 2.5, fill: true, tension: 0.42, pointBackgroundColor: '#4f46e5', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7, yAxisID: 'yL' },
+                            { label: 'Peserta', data: data.peserta, borderColor: '#10b981', backgroundColor: mkGrad('rgba(16,185,129,.15)','rgba(16,185,129,.01)'), borderWidth: 2.5, fill: true, tension: 0.42, pointBackgroundColor: '#10b981', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7, yAxisID: 'yR' },
+                            { label: 'Komersial', data: data.komersil, borderColor: '#f59e0b', backgroundColor: 'transparent', borderWidth: 2, borderDash: [6,3], fill: false, tension: 0.42, pointBackgroundColor: '#f59e0b', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6, yAxisID: 'yL' },
+                            { label: 'Non-Komersial', data: data.nonKom, borderColor: '#0ea5e9', backgroundColor: 'transparent', borderWidth: 2, borderDash: [6,3], fill: false, tension: 0.42, pointBackgroundColor: '#0ea5e9', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6, yAxisID: 'yL' }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                        scales: {
+                            x: { grid: { display: false }, border: { display: false }, ticks: { color: tc, font: { size: 11, weight: '600' } } },
+                            yL: { position: 'left', grid: { color: gc, drawBorder: false }, border: { display: false, dash: [4,4] }, ticks: { color: tc, font: { size: 11 }, maxTicksLimit: 6, callback: v => Number(v).toLocaleString('id-ID') } },
+                            yR: { position: 'right', grid: { display: false }, border: { display: false }, ticks: { color: '#10b981', font: { size: 11 }, maxTicksLimit: 6, callback: v => Number(v).toLocaleString('id-ID') } }
+                        }
+                    },
+                    plugins: [hoverPlugin]
+                });
+            };
+
+            this.$nextTick(() => draw());
+        }
+    }">
         <div class="chart-card-header">
             <div>
                 <div class="chart-card-title">Trend Aktivitas Bulanan</div>
                 <div class="chart-card-subtitle">Event &amp; Peserta per bulan — {{ $data['year'] }}</div>
             </div>
             <div class="flex flex-wrap gap-2">
-                <span class="legend-pill"><span class="legend-dot" style="background:#4f46e5"></span>Event</span>
-                <span class="legend-pill"><span class="legend-dot" style="background:#10b981"></span>Peserta</span>
-                <span class="legend-pill" style="color:#f59e0b;border-color:#fde68a;background:#fffbeb">
+                <span class="legend-pill cursor-pointer select-none" :class="!active[0] && 'inactive'" @click="toggle(0)"><span class="legend-dot" style="background:#4f46e5"></span>Event</span>
+                <span class="legend-pill cursor-pointer select-none" :class="!active[1] && 'inactive'" @click="toggle(1)"><span class="legend-dot" style="background:#10b981"></span>Peserta</span>
+                <span class="legend-pill cursor-pointer select-none" :class="!active[2] && 'inactive'" @click="toggle(2)" style="color:#f59e0b;border-color:#fde68a;background:#fffbeb">
                     <span style="width:20px;height:3px;border-radius:2px;flex-shrink:0;background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 7px);color:#f59e0b"></span>Komersial
                 </span>
-                <span class="legend-pill" style="color:#0ea5e9;border-color:#bae6fd;background:#f0f9ff">
+                <span class="legend-pill cursor-pointer select-none" :class="!active[3] && 'inactive'" @click="toggle(3)" style="color:#0ea5e9;border-color:#bae6fd;background:#f0f9ff">
                     <span style="width:20px;height:3px;border-radius:2px;flex-shrink:0;background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 7px);color:#0ea5e9"></span>Non-Komersial
                 </span>
             </div>
         </div>
         <div class="chart-card-body">
-            <div style="position:relative; height:320px;">
-                <canvas id="trendChart"></canvas>
+            <div style="position:relative;height:320px;" wire:ignore>
+                <canvas x-ref="canvas"></canvas>
             </div>
         </div>
     </div>
+
+
+
 
     {{-- ══════════════════════════════════════════
          BOTTOM ROW: Bar Chart + Donut
@@ -649,311 +826,6 @@
 
 </div>{{-- end .dashboard-wrap --}}
 
-{{-- ══════════════════════════════════════════
-     CHART.JS — Trend Area Chart
-══════════════════════════════════════════ --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script>
-(function () {
-    /* ── Data from PHP ── */
-    const labels   = @json($data['bulanan']->pluck('bulan'));
-    const events   = @json($data['bulanan']->pluck('total_event')->map(fn($v) => (int)$v));
-    const peserta  = @json($data['bulanan']->pluck('total_pengunjung')->map(fn($v) => (int)$v));
-    const komersil = @json($data['bulanan']->pluck('total_komersil')->map(fn($v) => (int)$v));
-    const nonKom   = @json($data['bulanan']->pluck('total_non_komersil')->map(fn($v) => (int)$v));
 
-    console.log('Chart Data:', { labels, events, peserta, komersil, nonKom });
-
-    /* ── Detect dark mode ── */
-    const isDark = document.documentElement.classList.contains('dark');
-    const gridColor  = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
-    const tickColor  = isDark ? '#6b7280' : '#9ca3af';
-    const tooltipBg  = isDark ? '#1f2937' : '#fff';
-    const tooltipBdr = isDark ? '#374151' : '#e5e7eb';
-    const tooltipTxt = isDark ? '#f9fafb' : '#111827';
-
-    /* ── Gradient helper ── */
-    function makeGradient(ctx, colorTop, colorBot) {
-        const g = ctx.createLinearGradient(0, 0, 0, 320);
-        g.addColorStop(0, colorTop);
-        g.addColorStop(1, colorBot);
-        return g;
-    }
-
-    function initChart() {
-        const canvas = document.getElementById('trendChart');
-        if (!canvas) {
-            console.error('Canvas #trendChart not found');
-            return;
-        }
-
-        // Destroy existing chart if any
-        if (window.analitikChartInstance) {
-            window.analitikChartInstance.destroy();
-        }
-
-        const ctx = canvas.getContext('2d');
-
-        const hoverLabelsPlugin = {
-            id: 'hoverLabels',
-            afterDatasetsDraw(chart) {
-                const { ctx, chartArea: { top, bottom, left, right } } = chart;
-                const activeElements = chart.getActiveElements();
-                
-                if (!activeElements || activeElements.length === 0) return;
-                
-                const index = activeElements[0].index;
-                const x = activeElements[0].element.x;
-                
-                // 1. Draw vertical reference line
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(x, top);
-                ctx.lineTo(x, bottom);
-                ctx.lineWidth = 1;
-                ctx.strokeStyle = document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
-                ctx.stroke();
-                ctx.restore();
-                
-                // 2. Collect visible dataset points
-                const tooltips = [];
-                chart.data.datasets.forEach((dataset, datasetIndex) => {
-                    const meta = chart.getDatasetMeta(datasetIndex);
-                    if (meta.hidden || !chart.isDatasetVisible(datasetIndex)) return;
-                    
-                    const element = meta.data[index];
-                    if (!element) return;
-                    
-                    const y = element.y;
-                    const value = dataset.data[index];
-                    const labelText = dataset.label + ': ' + Number(value).toLocaleString('id-ID');
-                    
-                    tooltips.push({
-                        y: y,
-                        origY: y,
-                        labelText: labelText,
-                        borderColor: dataset.borderColor
-                    });
-                });
-                
-                if (tooltips.length === 0) return;
-                
-                // Sort by Y position (ascending: top to bottom)
-                tooltips.sort((a, b) => a.origY - b.origY);
-                
-                // Solve overlaps by pushing overlapping boxes downwards
-                const boxHeight = 20;
-                const spacing = 4;
-                const minSpacing = boxHeight + spacing;
-                
-                for (let i = 1; i < tooltips.length; i++) {
-                    if (tooltips[i].y - tooltips[i-1].y < minSpacing) {
-                        tooltips[i].y = tooltips[i-1].y + minSpacing;
-                    }
-                }
-                
-                // Push upwards if the bottom-most box goes out of bounds
-                const maxBoundary = bottom - (boxHeight / 2) - 4;
-                if (tooltips[tooltips.length - 1].y > maxBoundary) {
-                    tooltips[tooltips.length - 1].y = maxBoundary;
-                    for (let i = tooltips.length - 2; i >= 0; i--) {
-                        if (tooltips[i+1].y - tooltips[i].y < minSpacing) {
-                            tooltips[i].y = tooltips[i+1].y - minSpacing;
-                        }
-                    }
-                }
-
-                // Push downwards if the top-most box goes out of bounds
-                const minBoundary = top + (boxHeight / 2) + 4;
-                if (tooltips[0].y < minBoundary) {
-                    tooltips[0].y = minBoundary;
-                    for (let i = 1; i < tooltips.length; i++) {
-                        if (tooltips[i].y - tooltips[i-1].y < minSpacing) {
-                            tooltips[i].y = tooltips[i-1].y + minSpacing;
-                        }
-                    }
-                }
-                
-                // Draw each resolved tooltip box
-                tooltips.forEach((t) => {
-                    ctx.save();
-                    ctx.font = 'bold 10px Inter, sans-serif';
-                    const textWidth = ctx.measureText(t.labelText).width;
-                    
-                    const paddingX = 8;
-                    const indicatorWidth = 3;
-                    const indicatorGap = 5;
-                    
-                    const boxWidth = textWidth + (paddingX * 2) + indicatorWidth + indicatorGap;
-                    
-                    const gap = 10;
-                    let boxX = x + gap;
-                    if (boxX + boxWidth > right) {
-                        boxX = x - boxWidth - gap;
-                    }
-                    const boxY = t.y - (boxHeight / 2);
-                    
-                    // Draw background box
-                    ctx.beginPath();
-                    const radius = 5;
-                    if (typeof ctx.roundRect === 'function') {
-                        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, radius);
-                    } else {
-                        ctx.rect(boxX, boxY, boxWidth, boxHeight);
-                    }
-                    ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'rgba(15, 23, 42, 0.95)' : 'rgba(30, 41, 59, 0.9)';
-                    ctx.fill();
-                    
-                    // Draw color indicator bar
-                    ctx.beginPath();
-                    if (typeof ctx.roundRect === 'function') {
-                        ctx.roundRect(boxX + paddingX, boxY + (boxHeight - 10) / 2, indicatorWidth, 10, 1);
-                    } else {
-                        ctx.rect(boxX + paddingX, boxY + (boxHeight - 10) / 2, indicatorWidth, 10);
-                    }
-                    ctx.fillStyle = t.borderColor;
-                    ctx.fill();
-                    
-                    // Draw text
-                    ctx.fillStyle = '#ffffff';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(t.labelText, boxX + paddingX + indicatorWidth + indicatorGap, boxY + (boxHeight / 2) + 0.5);
-                    ctx.restore();
-                });
-            }
-        };
-
-        window.analitikChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Event',
-                        data: events,
-                        borderColor: '#4f46e5',
-                        backgroundColor: makeGradient(ctx, 'rgba(79,70,229,.18)', 'rgba(79,70,229,.01)'),
-                        borderWidth: 2.5,
-                        fill: true,
-                        tension: 0.42,
-                        pointBackgroundColor: '#4f46e5',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        yAxisID: 'yLeft',
-                    },
-                    {
-                        label: 'Peserta',
-                        data: peserta,
-                        borderColor: '#10b981',
-                        backgroundColor: makeGradient(ctx, 'rgba(16,185,129,.15)', 'rgba(16,185,129,.01)'),
-                        borderWidth: 2.5,
-                        fill: true,
-                        tension: 0.42,
-                        pointBackgroundColor: '#10b981',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        yAxisID: 'yRight',
-                    },
-                    {
-                        label: 'Komersial',
-                        data: komersil,
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        borderDash: [6, 3],
-                        fill: false,
-                        tension: 0.42,
-                        pointBackgroundColor: '#f59e0b',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        yAxisID: 'yLeft',
-                    },
-                    {
-                        label: 'Non-Komersial',
-                        data: nonKom,
-                        borderColor: '#0ea5e9',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        borderDash: [6, 3],
-                        fill: false,
-                        tension: 0.42,
-                        pointBackgroundColor: '#0ea5e9',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        yAxisID: 'yLeft',
-                    },
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: false
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        border: { display: false },
-                        ticks: { color: tickColor, font: { size: 11, weight: '600' } }
-                    },
-                    yLeft: {
-                        position: 'left',
-                        grid: { color: gridColor, drawBorder: false },
-                        border: { display: false, dash: [4, 4] },
-                        ticks: {
-                            color: tickColor,
-                            font: { size: 11 },
-                            maxTicksLimit: 6,
-                            callback: v => v.toLocaleString('id-ID')
-                        }
-                    },
-                    yRight: {
-                        position: 'right',
-                        grid: { display: false },
-                        border: { display: false },
-                        ticks: {
-                            color: '#10b981',
-                            font: { size: 11 },
-                            maxTicksLimit: 6,
-                            callback: v => v.toLocaleString('id-ID')
-                        }
-                    }
-                }
-            },
-            plugins: [hoverLabelsPlugin]
-        });
-
-        console.log('Chart initialized successfully');
-    }
-
-    // Initialize on page load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initChart);
-    } else {
-        initChart();
-    }
-
-    // Re-initialize on Livewire updates
-    if (typeof Livewire !== 'undefined') {
-        Livewire.hook('commit', ({ succeed }) => {
-            succeed(() => {
-                setTimeout(initChart, 100);
-            });
-        });
-    }
-})();
-</script>
 
 </x-filament-panels::page>
