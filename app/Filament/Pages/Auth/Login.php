@@ -36,14 +36,55 @@ class Login extends BaseLogin
         return 'Email atau kata sandi yang Anda masukkan tidak sesuai. Silakan periksa kembali.';
     }
 
-    protected function throwFailureValidationException(): never
-    {
-        Notification::make()
-            ->danger()
-            ->title('Akses Ditolak')
-            ->body($this->getCredentialsDoNotMatchMessage())
-            ->send();
+    public int $loginAttempts = 0;
 
-        parent::throwFailureValidationException();
+    public function authenticate(): ?\Filament\Http\Responses\Auth\Contracts\LoginResponse
+    {
+        $this->loginAttempts++;
+
+        try {
+            $this->rateLimit(5);
+        } catch (\Filament\Http\Exceptions\TooManyRequestsException $exception) {
+            $this->getRateLimitedNotification($exception)?->send();
+
+            return null;
+        }
+
+        $data = $this->form->getState();
+
+        if (! \Filament\Facades\Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
+            Notification::make()
+                ->danger()
+                ->title('Akses Ditolak')
+                ->body($this->getCredentialsDoNotMatchMessage())
+                ->send();
+
+            $this->addError('auth_failed', '1');
+
+            return null;
+        }
+
+        $user = \Filament\Facades\Filament::auth()->user();
+
+        if (
+            ($user instanceof \Filament\Models\Contracts\FilamentUser) &&
+            (! $user->canAccessPanel(\Filament\Facades\Filament::getCurrentPanel()))
+        ) {
+            \Filament\Facades\Filament::auth()->logout();
+
+            Notification::make()
+                ->danger()
+                ->title('Akses Ditolak')
+                ->body($this->getCredentialsDoNotMatchMessage())
+                ->send();
+
+            $this->addError('auth_failed', '1');
+
+            return null;
+        }
+
+        session()->regenerate();
+
+        return app(\Filament\Http\Responses\Auth\Contracts\LoginResponse::class);
     }
 }
