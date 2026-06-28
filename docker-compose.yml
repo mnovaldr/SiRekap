@@ -1,0 +1,45 @@
+name: sirekap
+
+services:
+
+  db:
+    image: postgres:15
+    container_name: sirekap_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mcc_rekap
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5438:5432"
+    volumes:
+      - sirekap_pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: sirekap_app
+    restart: unless-stopped
+    ports:
+      - "8008:80"
+    depends_on:
+      - db
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: base64:lz8E40NnJ22yX66NfP8yS4k19d2Uf79D2k9V2i1o8v0=
+      APP_URL: http://10.10.20.5:8008
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: mcc_rekap
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret
+      DB_SSLMODE: prefer
+      SESSION_SECURE_COOKIE: "false"
+      CACHE_STORE: file
+      QUEUE_CONNECTION: database
+      SUPABASE_URL: ""
+      SUPABASE_KEY: ""
+
+volumes:
+  sirekap_pgdata:
