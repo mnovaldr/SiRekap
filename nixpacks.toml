@@ -7,20 +7,9 @@ cmds = [
     "mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs storage/app bootstrap/cache",
     "composer install --optimize-autoloader --no-dev --no-scripts",
     "composer dump-autoload --optimize",
-    "npm install && npm run build"
-]
-
-[phases.deploy]
-dependsOn = ["build"]
-cmds = [
-    "mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs storage/app bootstrap/cache",
-    "php artisan config:cache",
-    "php artisan route:cache",
-    "php artisan view:cache",
-    "php artisan icons:cache",
-    "php artisan storage:link --force",
-    "php artisan migrate --force"
+    "npm install && npm run build",
+    "chmod +x start.sh"
 ]
 
 [start]
-cmd = "php artisan serve --host 0.0.0.0 --port $PORT"
+cmd = "bash start.sh"
