@@ -3,8 +3,24 @@ nixPkgs = ["...", "php83", "php83Extensions.intl", "php83Extensions.gd", "php83E
 
 [phases.build]
 dependsOn = ["setup"]
-cmds = ["mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions bootstrap/cache", "composer install --optimize-autoloader --no-dev", "npm install && npm run build"]
+cmds = [
+    "mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs storage/app bootstrap/cache",
+    "composer install --optimize-autoloader --no-dev --no-scripts",
+    "composer dump-autoload --optimize",
+    "npm install && npm run build"
+]
 
 [phases.deploy]
 dependsOn = ["build"]
-cmds = ["php artisan migrate --force", "php artisan optimize", "php artisan icons:cache", "php artisan storage:link --force", "php artisan serve --host 0.0.0.0 --port $PORT"]
+cmds = [
+    "mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs storage/app bootstrap/cache",
+    "php artisan config:cache",
+    "php artisan route:cache",
+    "php artisan view:cache",
+    "php artisan icons:cache",
+    "php artisan storage:link --force",
+    "php artisan migrate --force"
+]
+
+[start]
+cmd = "php artisan serve --host 0.0.0.0 --port $PORT"
