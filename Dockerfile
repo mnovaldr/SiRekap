@@ -31,9 +31,8 @@ WORKDIR /var/www/html
 COPY . .
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
-# Regenerasi autoloader saja (tidak download dari internet)
-# vendor/ sudah dicopy dari lokal Windows
-RUN composer dump-autoload --optimize --no-scripts
+# Install composer dependencies
+RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
 
 RUN npm ci && npm run build
 
