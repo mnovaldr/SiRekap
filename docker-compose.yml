@@ -16,7 +16,9 @@ services:
       - sirekap_pgdata:/var/lib/postgresql/data
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.local
     container_name: sirekap_app
     restart: unless-stopped
     ports:
