@@ -80,69 +80,7 @@ class AdminPanelProvider extends PanelProvider
                         .dark ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.5); }
                         .dark ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 0.8); }
 
-                        /* ===== PREMIUM LOADING BAR ===== */
-                        #si-loading-bar {
-                            position: fixed;
-                            top: 0; left: 0;
-                            width: 0%;
-                            height: 3px;
-                            background: linear-gradient(90deg, #4f46e5, #7c3aed, #0d9488);
-                            background-size: 200% 100%;
-                            z-index: 99999;
-                            transition: width 0.3s ease, opacity 0.4s ease;
-                            border-radius: 0 2px 2px 0;
-                            animation: bar-shimmer 1.5s infinite linear;
-                            box-shadow: 0 0 8px rgba(79, 70, 229, 0.6), 0 0 20px rgba(79, 70, 229, 0.3);
-                        }
-                        @keyframes bar-shimmer {
-                            0%   { background-position: 200% 0; }
-                            100% { background-position: -200% 0; }
-                        }
-                        #si-loading-bar.done {
-                            width: 100% !important;
-                            opacity: 0;
-                            transition: width 0.2s ease, opacity 0.5s ease 0.15s;
-                        }
-
-                        /* ===== SINGLE CLICK PROTECTION ===== */
-                        .si-processing { cursor: wait !important; }
-                        .si-processing a, 
-                        .si-processing button { pointer-events: none !important; opacity: 0.7 !important; }
-                        
-                        button[data-si-loading="true"],
-                        button[data-si-loading="true"] * { 
-                            pointer-events: none !important; 
-                            color: transparent !important;
-                        }
-                        button[data-si-loading="true"] { 
-                            opacity: 0.8 !important; 
-                            position: relative !important; 
-                            min-width: 40px;
-                        }
-                        a[data-si-loading="true"] {
-                            pointer-events: none !important;
-                            opacity: 0.7 !important;
-                        }
-                        button[data-si-loading="true"]::after {
-                            content: "";
-                            position: absolute;
-                            top: 50%;
-                            left: 50%;
-                            width: 1.2rem;
-                            height: 1.2rem;
-                            margin-top: -0.6rem;
-                            margin-left: -0.6rem;
-                            border: 2px solid rgba(255,255,255,0.3);
-                            border-top-color: currentColor;
-                            border-radius: 50%;
-                            animation: si-spin 0.6s linear infinite;
-                            z-index: 10;
-                        }
-                        .si-btn-cancel[data-si-loading="true"]::after { border-top-color: #475569; }
-                        
-                        @keyframes si-spin {
-                            to { transform: rotate(360deg); }
-                        }
+                        /* Custom scrollbar kept */
 
                         /* ===== WIDGET SKELETON LOADING ===== */
                         .fi-wi-stats-overview-stat,
@@ -265,9 +203,7 @@ class AdminPanelProvider extends PanelProvider
                         }
                         .si-btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4); }
                     </style>
-
-                    <!-- Loading Bar Element -->
-                    <div id="si-loading-bar"></div>
+                    <!-- Removed custom loading bar -->
 
                     <!-- Premium Modal Template -->
                     <div id="si-premium-modal">
@@ -294,97 +230,7 @@ class AdminPanelProvider extends PanelProvider
 
                     <script>
                         (function() {
-                            const bar = document.getElementById("si-loading-bar");
-                            if (!bar) return;
-
-                            let timer = null;
-                            let progress = 0;
-                            window.siProcessing = false;
-
-                            function startBar() {
-                                window.siProcessing = true;
-                                document.body.classList.add("si-processing");
-                                bar.classList.remove("done");
-                                progress = 0;
-                                bar.style.opacity = "1";
-                                bar.style.width = "0%";
-                                clearInterval(timer);
-                                timer = setInterval(function() {
-                                    if (progress < 85) {
-                                        progress += (85 - progress) * 0.12;
-                                        bar.style.width = progress + "%";
-                                    }
-                                }, 80);
-                            }
-
-                            function finishBar() {
-                                clearInterval(timer);
-                                bar.classList.add("done");
-                                
-                                // Unlock UI and buttons immediately
-                                document.body.classList.remove("si-processing");
-                                window.siProcessing = false;
-                                document.querySelectorAll("[data-si-loading]").forEach(el => {
-                                    el.removeAttribute("data-si-loading");
-                                    if (el.tagName === "BUTTON") el.disabled = false;
-                                });
-
-                                setTimeout(function() {
-                                    bar.style.width = "0%";
-                                    bar.style.opacity = "0";
-                                }, 400);
-                            }
-
-                            // Livewire events
-                            document.addEventListener("livewire:navigate", startBar);
-                            document.addEventListener("livewire:navigated", finishBar);
-                            document.addEventListener("livewire:request", function(e) {
-                                startBar();
-                                // Try to find the element that triggered it and lock it
-                                if (e.detail && e.detail.dispatchedBy) {
-                                    e.detail.dispatchedBy.setAttribute("data-si-loading", "true");
-                                }
-                            });
-                            document.addEventListener("livewire:commit", finishBar);
-
-                            // Global Click Protector
-                            document.addEventListener("click", function(e) {
-                                const trigger = e.target.closest("a, button");
-                                if (!trigger) return;
-
-                                if (window.siProcessing) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    return false;
-                                }
-
-                                // Auto-trigger processing for regular navigation links and non-ajax buttons
-                                if (trigger.tagName === "A" && trigger.href && !trigger.href.includes("#") && !trigger.getAttribute("target") && !trigger.hasAttribute("wire:click") && !trigger.hasAttribute("wire:navigate") && !trigger.hasAttribute("download") && !trigger.hasAttribute("data-no-loading")) {
-                                    startBar();
-                                    trigger.setAttribute("data-si-loading", "true");
-                                }
-                            }, true);
-
-                            // Form submits
-                            document.addEventListener("submit", function(e) {
-                                if (window.siProcessing) {
-                                    e.preventDefault();
-                                    return false;
-                                }
-                                if (e.target.tagName === "FORM") {
-                                    // Don't start bar for logout as it's handled separately
-                                    const action = e.target.getAttribute("action") || "";
-                                    if (action.indexOf("logout") !== -1) return;
-
-                                    startBar();
-                                    // Disable all submit buttons in this form
-                                    const btn = e.target.querySelector('button[type="submit"]');
-                                    if (btn) {
-                                        btn.setAttribute("data-si-loading", "true");
-                                        setTimeout(() => btn.disabled = true, 50);
-                                    }
-                                }
-                            });
+                            // Custom loading bar logic removed to prevent conflicts with Filament's native loading states.
 
                             /* ===== PREMIUM MODAL SYSTEM ===== */
                             const modal = document.getElementById("si-premium-modal");
@@ -532,7 +378,6 @@ HTML
                                          );
 
                                          if (confirmed) {
-                                             if (typeof startBar === "function") startBar();
                                              window.location.href = "/do-logout";
                                          }
                                      });

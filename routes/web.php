@@ -113,6 +113,11 @@ Route::get('/download-template', function () {
     return $response;
 })->name('admin.download-template');
 
+use App\Http\Controllers\PublicVisitController;
+
+Route::get('/digisign', [PublicVisitController::class, 'digisign'])->name('public.digisign');
+Route::get('/share/{slug?}', [PublicVisitController::class, 'show'])->name('public.visit.show');
+
 Route::get('/admin/{any}', function () {
     return redirect('/');
 })->where('any', '.*');
