@@ -377,10 +377,19 @@
 
         async function fetchStats() {
             try {
-                const res = await fetch(`/api/public/stats?token=${TOKEN}`, {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    signal: AbortSignal.timeout(15000) // 15s timeout
-                });
+                let fetchOptions = {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                };
+
+                let timeoutId;
+                if (typeof AbortController !== 'undefined') {
+                    const controller = new AbortController();
+                    timeoutId = setTimeout(() => controller.abort(), 15000);
+                    fetchOptions.signal = controller.signal;
+                }
+
+                const res = await fetch(`/api/public/stats?token=${TOKEN}`, fetchOptions);
+                if (timeoutId) clearTimeout(timeoutId);
 
                 if (res.status === 403) {
                     // Token expired/invalid — tampilkan pesan, jangan reload
