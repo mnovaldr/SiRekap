@@ -143,10 +143,10 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col p-4 md:p-5 overflow-hidden xl:overflow-y-auto relative">
+<body class="min-h-screen flex flex-col p-4 md:p-5 overflow-y-auto md:overflow-hidden xl:overflow-y-auto relative">
 
     <!-- ===== HEADER ===== -->
-    <header class="card flex items-center justify-between px-6 py-4 mb-5 relative z-10">
+    <header class="card flex flex-wrap items-center justify-between px-4 md:px-6 py-4 mb-5 relative z-10 gap-4">
         <div class="flex items-center gap-4">
             <img id="logo-img" src="/images/logo.png" alt="Logo MCC" class="h-10 object-contain transition-all duration-300">
             <div class="h-9 w-px divider border-l"></div>
@@ -185,9 +185,9 @@
     <!-- ===== MAIN CONTENT ===== -->
     <main class="flex-1 flex flex-col gap-3 relative z-10 min-h-0">
         <!-- TOP ROW WRAPPER -->
-        <div class="flex gap-3 shrink-0 min-h-0 xl:h-[280px]">
+        <div class="flex flex-col md:flex-row gap-3 shrink-0 min-h-0 xl:h-[280px]">
             <!-- KOLOM ATAS KIRI: Donut Chart Sub-Sektor Ekraf -->
-            <section class="card w-2/3 p-4 flex flex-col min-h-0">
+            <section class="card w-full md:w-2/3 p-4 flex flex-col min-h-0">
             <!-- Section Header -->
             <div class="flex items-start justify-between mb-5">
                 <div>
@@ -223,7 +223,7 @@
             </section>
 
             <!-- KOLOM ATAS KANAN: Utilitas Ruangan -->
-            <section class="card w-1/3 p-4 flex flex-col min-h-0">
+            <section class="card w-full md:w-1/3 p-4 flex flex-col min-h-0 h-[300px] md:h-auto">
             <div class="mb-5">
                 <div class="flex items-center gap-2 mb-1">
                     <div class="h-4 w-1 rounded-full bg-violet-500"></div>
@@ -268,7 +268,7 @@
     </main>
 
     <!-- ===== FOOTER ===== -->
-    <footer class="card flex items-center justify-between px-6 py-3 mt-5 relative z-10">
+    <footer class="card flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-3 mt-5 relative z-10 gap-2 md:gap-0 text-center md:text-left">
         <div class="flex items-center gap-2 text-xs section-subtitle">
             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Sistem Terhubung</span>
