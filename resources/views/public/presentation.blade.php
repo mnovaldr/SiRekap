@@ -25,6 +25,14 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
 
+        /* GPU Hardware Acceleration Fixes for Smart TVs */
+        .sdg-card-item {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
         /* ============================
            LIGHT MODE (DEFAULT)
         ============================ */
@@ -615,7 +623,7 @@
                 const imagePath = `{{ asset('images/SDG-Icons') }}/Goal-${sdgNum}.jpe`;
 
                 cardsHTML += `
-                    <div class="shrink-0 w-[220px] xl:w-[140px] bg-white rounded-xl overflow-hidden relative flex flex-col shadow-lg border border-gray-100">
+                    <div class="sdg-card-item shrink-0 w-[220px] xl:w-[140px] bg-white rounded-xl overflow-hidden relative flex flex-col shadow-lg border border-gray-100">
                         <img src="${imagePath}" class="w-full aspect-square object-cover" alt="SDG ${sdgNum} - ${title}">
                         
                         <!-- Progress Bar Section -->
