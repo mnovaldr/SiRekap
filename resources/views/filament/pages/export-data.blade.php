@@ -1,4 +1,29 @@
 <x-filament-panels::page>
+
+    {{-- ══════════════════════════════════════════
+         FULLSCREEN LOADING OVERLAY (TELEPORTED TO BODY)
+    ══════════════════════════════════════════ --}}
+    <div x-data>
+        <template x-teleport="body">
+            <div wire:loading wire:target="export" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999999; display:none;">
+                <div class="dark:bg-slate-900/70" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background-color:rgba(255,255,255,0.70); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
+                    <div style="position:relative; width:80px; height:80px; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
+                        <div style="position:absolute; inset:0; border:4px solid #e0e7ff; border-radius:50%;"></div>
+                        <div style="position:absolute; inset:0; border:4px solid transparent; border-top-color:#4f46e5; border-radius:50%; animation:spin 1s linear infinite;"></div>
+                        <span style="font-size:2rem; z-index:10;">📥</span>
+                    </div>
+                    <div style="text-align:center;">
+                        <h3 style="font-size:1.5rem; font-weight:800; color:#111827; margin:0;" class="dark:text-white">Menyiapkan Berkas Ekspor</h3>
+                        <p style="font-size:0.9rem; color:#6b7280; margin-top:12px;" class="dark:text-gray-400">
+                            Sistem sedang mengompilasi data Anda ke dalam format 
+                            <span style="padding:4px 8px; background-color:#eef2ff; color:#4f46e5; font-weight:bold; border-radius:6px; text-transform:uppercase;">{{ strtoupper($selectedFormat) }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
 <div class="space-y-6 pb-8" style="font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;">
 
     <style data-navigate-once="true">
@@ -268,33 +293,15 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════
-         MAIN ENGINE LAYOUT WITH OVERLAY
-    ══════════════════════════════════════════ --}}
     <div class="relative">
-        <!-- Premium Glassmorphism Loading Overlay -->
-        <div wire:loading wire:target="export" class="absolute inset-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md z-50 flex flex-col items-center justify-center rounded-2xl transition-all duration-300" style="display: none;">
-            <div class="flex flex-col items-center gap-5 text-center max-w-sm p-8 bg-white dark:bg-slate-900 shadow-2xl rounded-3xl border border-gray-100 dark:border-slate-800" style="transform: scale(0.96); animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
-                <div class="relative w-16 h-16 flex items-center justify-center">
-                    <div class="absolute inset-0 border-4 border-indigo-100 dark:border-indigo-950 rounded-full"></div>
-                    <div class="absolute inset-0 border-4 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin"></div>
-                    <span class="text-2xl z-10">📥</span>
-                </div>
-                <div>
-                    <h3 class="text-base font-extrabold text-gray-900 dark:text-white tracking-tight">Menyiapkan Berkas Ekspor</h3>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-2 leading-relaxed">
-                        Sedang mengompilasi data ke dalam format <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-bold rounded text-[10px]">{{ strtoupper($selectedFormat) }}</span>. Silakan tunggu beberapa saat...
-                    </p>
-                </div>
-            </div>
-        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {{-- ══════════════════════════════════════════
                  CONFIGURATION PANEL (4/12)
             ══════════════════════════════════════════ --}}
             <div class="lg:col-span-4">
-                <div class="export-card" style="position:sticky; top:24px;">
+                <div class="export-card relative" style="position:sticky; top:24px;">
+
                     <div class="export-header">
                         <div style="font-size:1rem; font-weight:700; color:#111827;" class="dark:text-white">Export Configuration</div>
                         <div style="font-size:.8rem; color:#9ca3af; margin-top:2px;">Pilih parameter export</div>
@@ -304,78 +311,76 @@
                         {{-- Export Type Picker --}}
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <label style="font-size:.75rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Tipe Export</label>
-                            @foreach($exportTypes as $type)
-                                <label class="export-picker-card {{ $exportType === $type['id'] ? 'active' : '' }} hover:border-indigo-300 dark:hover:border-indigo-500">
-                                    <input type="radio" wire:model.live="exportType" value="{{ $type['id'] }}" style="display:none;">
-                                    <span style="font-size:1.5rem; margin-right:12px;">{{ $type['icon'] }}</span>
-                                    <div style="flex:1;">
-                                        <div style="font-size:.85rem; font-weight:700; color:#111827;" class="dark:text-white">{{ $type['name'] }}</div>
-                                        <div style="font-size:.75rem; color:#9ca3af; margin-top:2px;">{{ $type['desc'] }}</div>
-                                    </div>
-                                    @if($exportType === $type['id'])
-                                        <div style="width:20px; height:20px; background:#4f46e5; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-                                            <x-heroicon-o-check style="width:12px; height:12px; color:#fff; stroke-width:3;" />
+                            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
+                                @foreach($exportTypes as $type)
+                                    <label class="export-picker-card {{ $exportType === $type['id'] ? 'active' : '' }} hover:border-indigo-300 dark:hover:border-indigo-500">
+                                        <input type="radio" wire:model.live="exportType" value="{{ $type['id'] }}" style="display:none;">
+                                        <span style="font-size:1.5rem; margin-right:12px;">{{ $type['icon'] }}</span>
+                                        <div style="flex:1;">
+                                            <div style="font-size:.85rem; font-weight:700; color:#111827;" class="dark:text-white">{{ $type['name'] }}</div>
                                         </div>
-                                    @endif
-                                </label>
-                            @endforeach
-                        </div>
-
-                        {{-- Year Range Picker --}}
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <label style="font-size:.75rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Rentang Periode</label>
-                            <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center;">
-                                <select wire:model.live="selectedYearStart" class="export-select">
-                                    @foreach($this->getAvailableYears() as $year)
-                                        <option value="{{ $year }}">{{ $year }}</option>
-                                    @endforeach
-                                </select>
-                                <span style="font-size:.9rem; font-weight:700; color:#9ca3af;">—</span>
-                                <select wire:model.live="selectedYearEnd" class="export-select">
-                                    @foreach($this->getAvailableYears() as $year)
-                                        <option value="{{ $year }}">{{ $year }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div style="font-size:.7rem; color:#9ca3af; margin-top:2px;">
-                                @if($selectedYearStart === $selectedYearEnd)
-                                    📅 Tahun {{ $selectedYearEnd }}
-                                @else
-                                    📅 Periode {{ $selectedYearStart }} - {{ $selectedYearEnd }}
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- Month Picker (only for detail export) --}}
-                        @if($exportType === 'detail')
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <label style="font-size:.75rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Filter Bulan (Opsional)</label>
-                            <select wire:model.live="selectedMonth" class="export-select">
-                                @foreach($months as $value => $label)
-                                    <option value="{{ $value }}">{{ $label }}</option>
+                                        @if($exportType === $type['id'])
+                                            <div style="width:20px; height:20px; background:#4f46e5; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                                <x-heroicon-o-check style="width:12px; height:12px; color:#fff; stroke-width:3;" />
+                                            </div>
+                                        @endif
+                                    </label>
                                 @endforeach
-                            </select>
+                            </div>
                         </div>
-                        @endif
+
+                        {{-- Waktu (Year & Month) Grid --}}
+                        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
+                            {{-- Year Range Picker --}}
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                <label style="font-size:.75rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Rentang Periode</label>
+                                <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center;">
+                                    <select wire:model.live="selectedYearStart" class="export-select">
+                                        @foreach($this->getAvailableYears() as $year)
+                                            <option value="{{ $year }}">{{ $year }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span style="font-size:.9rem; font-weight:700; color:#9ca3af;">—</span>
+                                    <select wire:model.live="selectedYearEnd" class="export-select">
+                                        @foreach($this->getAvailableYears() as $year)
+                                            <option value="{{ $year }}">{{ $year }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            {{-- Month Picker (only for detail export) --}}
+                            @if($exportType === 'detail')
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                <label style="font-size:.75rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Filter Bulan</label>
+                                <select wire:model.live="selectedMonth" class="export-select">
+                                    @foreach($months as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+                        </div>
 
                         {{-- Format Picker --}}
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <label style="font-size:.75rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Format Output</label>
-                            @foreach($formats as $format)
-                                <label class="export-picker-card {{ $selectedFormat === $format['id'] ? 'active' : '' }} hover:border-indigo-300 dark:hover:border-indigo-500">
-                                    <input type="radio" wire:model.live="selectedFormat" value="{{ $format['id'] }}" style="display:none;">
-                                    <span style="font-size:1.5rem; margin-right:12px;">{{ $format['icon'] }}</span>
-                                    <div style="flex:1;">
-                                        <div style="font-size:.85rem; font-weight:700; color:#111827;" class="dark:text-white">{{ $format['name'] }}</div>
-                                        <div style="font-size:.75rem; color:#9ca3af; margin-top:2px;">{{ $format['desc'] }}</div>
-                                    </div>
-                                    @if($selectedFormat === $format['id'])
-                                        <div style="width:20px; height:20px; background:#4f46e5; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-                                            <x-heroicon-o-check style="width:12px; height:12px; color:#fff; stroke-width:3;" />
+                            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
+                                @foreach($formats as $format)
+                                    <label class="export-picker-card {{ $selectedFormat === $format['id'] ? 'active' : '' }} hover:border-indigo-300 dark:hover:border-indigo-500" style="padding:10px 14px;">
+                                        <input type="radio" wire:model.live="selectedFormat" value="{{ $format['id'] }}" style="display:none;">
+                                        <span style="font-size:1.3rem; margin-right:10px;">{{ $format['icon'] }}</span>
+                                        <div style="flex:1;">
+                                            <div style="font-size:.85rem; font-weight:700; color:#111827;" class="dark:text-white">{{ $format['name'] }}</div>
                                         </div>
-                                    @endif
-                                </label>
-                            @endforeach
+                                        @if($selectedFormat === $format['id'])
+                                            <div style="width:18px; height:18px; background:#4f46e5; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                                <x-heroicon-o-check style="width:10px; height:10px; color:#fff; stroke-width:3;" />
+                                            </div>
+                                        @endif
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
 
                         {{-- Export Button --}}

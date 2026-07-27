@@ -80,7 +80,37 @@ class EventResource extends Resource
                             ->maxLength(255),
                         Forms\Components\TextInput::make('judul_kegiatan')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                if (!$state) return;
+                                
+                                try {
+                                    // Memanggil Microservice Python FastAPI
+                                    $url = env('AI_SERVICE_URL', 'http://127.0.0.1:8001/api/predict-sdgs');
+                                    $response = \Illuminate\Support\Facades\Http::timeout(5)->post($url, [
+                                        'judul_kegiatan' => $state,
+                                        'nama_organisasi' => $get('nama_organisasi') ?? '',
+                                    ]);
+                                    
+                                    if ($response->successful()) {
+                                        $data = $response->json();
+                                        if (!empty($data['predicted_sdgs'])) {
+                                            // Set nilai kolom program_sdgs
+                                            $set('program_sdgs', $data['predicted_sdgs']);
+                                            
+                                            // Tampilkan notifikasi
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('AI Auto-Suggest')
+                                                ->body('Rekomendasi SDGs otomatis terpilih berdasarkan judul kegiatan.')
+                                                ->info()
+                                                ->send();
+                                        }
+                                    }
+                                } catch (\Exception $e) {
+                                    // Abaikan error (silent fail) jika microservice mati, biarkan admin isi manual
+                                }
+                            }),
                         Forms\Components\Select::make('bidang')
                             ->options([
                                 'Komunitas' => 'Komunitas',
@@ -114,8 +144,32 @@ class EventResource extends Resource
                                 'Lainnya' => 'Lainnya',
                             ])
                             ->required(),
-                        Forms\Components\TextInput::make('sub_sektor')
-                            ->maxLength(100),
+                        Forms\Components\Select::make('sub_sektor')
+                            ->options([
+                                'Kuliner' => 'Kuliner',
+                                'Kriya' => 'Kriya',
+                                'Seni Rupa' => 'Seni Rupa',
+                                'Seni Pertunjukan' => 'Seni Pertunjukan',
+                                'Musik' => 'Musik',
+                                'Modifikasi Otomotif' => 'Modifikasi Otomotif',
+                                'Fesyen' => 'Fesyen',
+                                'Arsitektur' => 'Arsitektur',
+                                'Desain Interior' => 'Desain Interior',
+                                'Desain Produk' => 'Desain Produk',
+                                'Teknologi Baru (AI, Blockchain, dll.)' => 'Teknologi Baru (AI, Blockchain, dll.)',
+                                'Konten Digital (Content Creator, Live Commerce)' => 'Konten Digital (Content Creator, Live Commerce)',
+                                'Aplikasi' => 'Aplikasi',
+                                'Pengembangan Permainan (Game)' => 'Pengembangan Permainan (Game)',
+                                'Desain Komunikasi Visual (DKV)' => 'Desain Komunikasi Visual (DKV)',
+                                'Sulih Suara (Voice Over)' => 'Sulih Suara (Voice Over)',
+                                'Film, Animasi, dan Video' => 'Film, Animasi, dan Video',
+                                'Fotografi' => 'Fotografi',
+                                'Periklanan' => 'Periklanan',
+                                'Penerbitan' => 'Penerbitan',
+                                'Televisi dan Radio' => 'Televisi dan Radio',
+                            ])
+                            ->searchable()
+                            ->placeholder('Pilih Sub Sektor Ekraf'),
                         Forms\Components\Select::make('komersial')
                             ->options([
                                 'Komersial' => 'Komersial',
@@ -126,10 +180,26 @@ class EventResource extends Resource
                         Forms\Components\Select::make('program_sdgs')
                             ->label('Program SDGs')
                             ->multiple()
-                            ->options(array_combine(
-                                array_map(fn($i) => "SDGS $i", range(1, 17)),
-                                array_map(fn($i) => "SDGS $i", range(1, 17))
-                            ))
+                            ->hint(new \Illuminate\Support\HtmlString('<span wire:loading wire:target="data.judul_kegiatan" class="text-primary-600 text-xs font-semibold flex items-center gap-1.5"><svg class="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> AI Sedang Menebak...</span>'))
+                            ->options([
+                                'SDGS 1' => 'SDGS 1 - Tanpa Kemiskinan',
+                                'SDGS 2' => 'SDGS 2 - Tanpa Kelaparan',
+                                'SDGS 3' => 'SDGS 3 - Kehidupan Sehat dan Sejahtera',
+                                'SDGS 4' => 'SDGS 4 - Pendidikan Berkualitas',
+                                'SDGS 5' => 'SDGS 5 - Kesetaraan Gender',
+                                'SDGS 6' => 'SDGS 6 - Air Bersih dan Sanitasi Layak',
+                                'SDGS 7' => 'SDGS 7 - Energi Bersih dan Terjangkau',
+                                'SDGS 8' => 'SDGS 8 - Pekerjaan Layak dan Pertumbuhan Ekonomi',
+                                'SDGS 9' => 'SDGS 9 - Industri, Inovasi dan Infrastruktur',
+                                'SDGS 10' => 'SDGS 10 - Berkurangnya Kesenjangan',
+                                'SDGS 11' => 'SDGS 11 - Kota dan Permukiman Berkelanjutan',
+                                'SDGS 12' => 'SDGS 12 - Konsumsi dan Produksi Bertanggung Jawab',
+                                'SDGS 13' => 'SDGS 13 - Penanganan Perubahan Iklim',
+                                'SDGS 14' => 'SDGS 14 - Ekosistem Lautan',
+                                'SDGS 15' => 'SDGS 15 - Ekosistem Daratan',
+                                'SDGS 16' => 'SDGS 16 - Perdamaian, Keadilan dan Kelembagaan yang Tangguh',
+                                'SDGS 17' => 'SDGS 17 - Kemitraan untuk Mencapai Tujuan',
+                            ])
                             ->placeholder('Pilih Program SDGs (bisa pilih lebih dari satu)')
                             ->formatStateUsing(function ($state) {
                                 if (is_array($state)) return $state;

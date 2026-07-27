@@ -120,7 +120,7 @@
             </div>
 
             <div class="stat-banner flex-1">
-                 <x-filament::button wire:click="analyze" icon="heroicon-o-arrow-path" color="gray" class="w-full h-full rounded-xl border-dashed">
+                 <x-filament::button wire:click="analyze" wire:loading.attr="disabled" icon="heroicon-o-arrow-path" color="gray" class="w-full h-full rounded-xl border-dashed">
                     Refresh Analysis
                 </x-filament::button>
             </div>
@@ -281,6 +281,7 @@
                                             />
                                             <x-filament::icon-button 
                                                 wire:click="validateRow('{{ $item['id'] }}')" 
+                                                wire:loading.attr="disabled"
                                                 icon="heroicon-o-check" 
                                                 color="success" 
                                                 size="sm"

@@ -25,14 +25,6 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
 
-        /* GPU Hardware Acceleration Fixes for Smart TVs */
-        .sdg-card-item {
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            -webkit-transform: translateZ(0);
-            transform: translateZ(0);
-        }
-
         /* ============================
            LIGHT MODE (DEFAULT)
         ============================ */
@@ -48,18 +40,21 @@
             border-radius: 16px;
             transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
         }
+        
+        /* GPU Hardware Acceleration Fixes for Smart TVs */
+        .sdg-card-item {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
         .stat-badge {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             color: #475569;
         }
-        .progress-track {
-            background: #e2e8f0;
-        }
         .section-subtitle { color: #64748b; }
         .section-title { color: #0f172a; }
-        .label-text { color: #374151; }
-        .value-text { color: #111827; }
         .divider { border-color: #e2e8f0; }
 
         /* ============================
@@ -79,13 +74,8 @@
             border: 1px solid rgba(99, 102, 241, 0.2);
             color: #94a3b8;
         }
-        .dark .progress-track {
-            background: rgba(255,255,255,0.06);
-        }
         .dark .section-subtitle { color: #94a3b8; }
         .dark .section-title { color: #f1f5f9; }
-        .dark .label-text { color: #cbd5e1; }
-        .dark .value-text { color: #f8fafc; }
         .dark .divider { border-color: rgba(255,255,255,0.07); }
 
         /* Grid accent lines in dark mode */
@@ -103,7 +93,7 @@
         /* ============================
            SCROLLBAR
         ============================ */
-        .scroll::-webkit-scrollbar { width: 4px; }
+        .scroll::-webkit-scrollbar { width: 4px; height: 4px; }
         .scroll::-webkit-scrollbar-track { background: transparent; }
         .scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 4px; }
 
@@ -132,21 +122,16 @@
             animation: shimmer 1.5s infinite;
         }
 
-        /* Progress bar fill animation */
-        .bar-fill {
-            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
         /* Theme toggle transition */
         #theme-toggle {
             transition: all 0.25s ease;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col p-4 md:p-5 overflow-y-auto md:overflow-hidden xl:overflow-y-auto relative">
+<body class="min-h-screen flex flex-col p-4 md:p-5 overflow-y-auto xl:overflow-hidden relative">
 
     <!-- ===== HEADER ===== -->
-    <header class="card flex flex-wrap items-center justify-between px-4 md:px-6 py-4 mb-5 relative z-10 gap-4">
+    <header class="card flex flex-wrap items-center justify-between px-4 md:px-6 py-4 mb-5 relative z-10 gap-4 shrink-0">
         <div class="flex items-center gap-4">
             <img id="logo-img" src="/images/logo.png" alt="Logo MCC" class="h-10 object-contain transition-all duration-300">
             <div class="h-9 w-px divider border-l"></div>
@@ -185,77 +170,62 @@
     <!-- ===== MAIN CONTENT ===== -->
     <main class="flex-1 flex flex-col gap-3 relative z-10 min-h-0">
         <!-- TOP ROW WRAPPER -->
-        <div class="flex flex-col md:flex-row gap-3 shrink-0 min-h-0 xl:h-[280px]">
-            <!-- KOLOM ATAS KIRI: Donut Chart Sub-Sektor Ekraf -->
+        <div class="flex flex-col md:flex-row gap-3 shrink-0 min-h-0 xl:h-[300px]">
+            <!-- KOLOM ATAS KIRI: Sub-Sektor Ekraf -->
             <section class="card w-full md:w-2/3 p-4 flex flex-col min-h-0">
-            <!-- Section Header -->
-            <div class="flex items-start justify-between mb-5">
-                <div>
+                <div class="mb-4 shrink-0">
                     <div class="flex items-center gap-2 mb-1">
                         <div class="h-4 w-1 rounded-full bg-blue-500"></div>
                         <h2 class="section-title text-sm font-bold uppercase tracking-wide">Sub-Sektor Ekraf</h2>
                     </div>
                     <p id="ekraf-subtitle" class="section-subtitle text-xs ml-3">Distribusi ekonomi kreatif aktif di MCC</p>
                 </div>
-            </div>
-
-            <!-- Wrapper Flex untuk merespons laptop (xl) -->
-            <div class="flex-1 flex flex-col justify-center xl:justify-start xl:flex-row min-h-0 relative z-10 xl:items-start xl:pt-2 gap-y-8 xl:gap-y-0">
-                <!-- Donut Chart -->
-                <div class="w-full xl:w-[45%] h-[200px] md:h-[260px] xl:h-[180px] shrink-0 flex items-center justify-center relative">
-                    <canvas id="ekraf-chart"></canvas>
-                    <div id="ekraf-center-text" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span id="ekraf-total-count" class="section-title text-2xl font-black">—</span>
-                        <span class="section-subtitle text-[10px] font-medium uppercase tracking-widest">Sub-Sektor</span>
+                
+                <div class="flex-1 flex flex-col min-h-0 items-center justify-start relative xl:flex-row">
+                    <div class="w-full xl:w-[45%] h-[200px] xl:h-full shrink-0 flex items-center justify-center relative mb-4 xl:mb-0">
+                        <canvas id="ekraf-chart"></canvas>
+                        <div id="ekraf-center-text" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span id="ekraf-total-count" class="section-title text-2xl font-black">—</span>
+                            <span class="section-subtitle text-[10px] font-medium uppercase tracking-widest">Sub-Sektor</span>
+                        </div>
+                    </div>
+                    <div id="ekraf-legend" class="w-full xl:w-[55%] flex flex-wrap justify-center xl:justify-start content-start gap-x-4 gap-y-2 overflow-y-auto scroll flex-1 min-h-0 px-2 xl:pl-4">
+                        <!-- Skeletons -->
+                        <div class="skeleton h-4 w-24"></div>
+                        <div class="skeleton h-4 w-32"></div>
+                        <div class="skeleton h-4 w-20"></div>
                     </div>
                 </div>
-
-                <!-- Custom Legend -->
-                <div id="ekraf-legend" class="mt-4 xl:mt-0 xl:w-[55%] flex flex-wrap justify-center xl:justify-start content-start gap-x-5 gap-y-2 overflow-y-auto flex-1 min-h-0">
-                    <!-- Skeleton loaders -->
-                    <div class="skeleton h-4 w-24"></div>
-                    <div class="skeleton h-4 w-32"></div>
-                    <div class="skeleton h-4 w-20"></div>
-                    <div class="skeleton h-4 w-28"></div>
-                    <div class="skeleton h-4 w-24"></div>
-                </div>
-            </div>
             </section>
 
             <!-- KOLOM ATAS KANAN: Utilitas Ruangan -->
             <section class="card w-full md:w-1/3 p-4 flex flex-col min-h-0 h-[300px] md:h-auto">
-            <div class="mb-5">
-                <div class="flex items-center gap-2 mb-1">
-                    <div class="h-4 w-1 rounded-full bg-violet-500"></div>
-                    <h2 class="section-title text-sm font-bold uppercase tracking-wide">Utilitas Ruangan</h2>
+                <div class="mb-4 shrink-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="h-4 w-1 rounded-full bg-violet-500"></div>
+                        <h2 class="section-title text-sm font-bold uppercase tracking-wide">Utilitas Ruangan</h2>
+                    </div>
+                    <p id="lokasi-subtitle" class="section-subtitle text-xs ml-3">Efektivitas penggunaan ruangan MCC (Top 10)</p>
                 </div>
-                <p id="lokasi-subtitle" class="section-subtitle text-xs ml-3">Efektivitas penggunaan ruangan MCC</p>
-            </div>
 
-            <div id="lokasi-container" class="flex-1 space-y-4 overflow-y-auto scroll pr-1">
-                <!-- Skeletons -->
-                <div class="skeleton h-8 w-full rounded-xl"></div>
-                <div class="skeleton h-8 w-full rounded-xl"></div>
-                <div class="skeleton h-8 w-5/6 rounded-xl"></div>
-                <div class="skeleton h-8 w-4/6 rounded-xl"></div>
-            </div>
+                <div class="flex-1 flex items-center justify-center min-h-0 relative w-full h-full pb-2">
+                    <canvas id="lokasi-chart"></canvas>
+                </div>
             </section>
         </div>
 
-        <!-- KOLOM BAWAH: Progress Bars SDGs -->
-        <section class="card shrink-0 p-4 flex flex-col min-h-0 overflow-hidden">
-            <div class="flex items-start justify-between mb-5 shrink-0">
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <div class="h-4 w-1 rounded-full bg-emerald-500"></div>
-                        <h2 class="section-title text-sm font-bold uppercase tracking-wide">Dampak SDGs</h2>
-                    </div>
-                    <p id="sdgs-subtitle" class="section-subtitle text-xs ml-3">Kontribusi aktivitas terhadap pencapaian SDGs</p>
+        <!-- KOLOM BAWAH: Dampak SDGs -->
+        <section class="card p-4 flex flex-col min-h-0 overflow-hidden flex-1">
+            <div class="mb-4 shrink-0">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="h-4 w-1 rounded-full bg-emerald-500"></div>
+                    <h2 class="section-title text-sm font-bold uppercase tracking-wide">Dampak SDGs</h2>
                 </div>
+                <p id="sdgs-subtitle" class="section-subtitle text-xs ml-3">Kontribusi aktivitas terhadap pencapaian SDGs</p>
             </div>
-
+            
             <!-- SDGs Marquee Wrapper -->
-            <div class="h-[280px] xl:h-[190px] overflow-hidden relative w-full sdg-slider-container">
+            <div class="h-[280px] xl:h-[190px] overflow-hidden relative w-full sdg-slider-container pb-2">
                 <div id="sdgs-container" class="flex gap-4 h-full absolute top-0 left-0 items-center transition-transform duration-[30ms] ease-linear" style="transform: translateX(0px);">
                     <!-- Skeletons -->
                     <div class="skeleton h-full w-[250px] shrink-0 rounded-xl"></div>
@@ -265,10 +235,11 @@
                 </div>
             </div>
         </section>
+        
     </main>
 
     <!-- ===== FOOTER ===== -->
-    <footer class="card flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-3 mt-5 relative z-10 gap-2 md:gap-0 text-center md:text-left">
+    <footer class="card flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-3 mt-5 relative z-10 gap-2 md:gap-0 text-center md:text-left shrink-0">
         <div class="flex items-center gap-2 text-xs section-subtitle">
             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Sistem Terhubung</span>
@@ -286,23 +257,21 @@
         // ==========================================
         const TOKEN = "{{ $token }}";
         let ekrafChart = null;
+        let sdgsChart = null;
+        let lokasiChart = null;
 
         const PALETTE = [
             '#6366f1','#10b981','#f59e0b','#3b82f6','#ec4899',
             '#06b6d4','#84cc16','#f43f5e','#a855f7','#14b8a6','#fb923c'
         ];
 
-        // SDGs color map
-        const SDG_COLORS = {
-            '1':  '#e5243b', '2':  '#dda63a', '3':  '#4c9f38',
-            '4':  '#c5192d', '5':  '#ff3a21', '6':  '#26bde2',
-            '7':  '#fcc30b', '8':  '#a21942', '9':  '#fd6925',
-            '10': '#dd1367', '11': '#fd9d24', '12': '#bf8b2e',
-            '13': '#3f7e44', '14': '#0a97d9', '15': '#56c02b',
-            '16': '#00689d', '17': '#19486a',
+        const SDG_COLORS_HEX = {
+            1: '#e5243b', 2: '#dda63a', 3: '#4c9f38', 4: '#c5192d', 5: '#ff3a21',
+            6: '#26bde2', 7: '#fcc30b', 8: '#a21942', 9: '#fd6925', 10: '#dd1367',
+            11: '#fd9d24', 12: '#bf8b2e', 13: '#3f7e44', 14: '#0a97d9', 15: '#56c02b',
+            16: '#00689d', 17: '#19486a'
         };
 
-        // SDGs description map
         const SDG_DESC = {
             '1':  'Tanpa Kemiskinan', '2':  'Tanpa Kelaparan', '3':  'Kehidupan Sehat & Sejahtera',
             '4':  'Pendidikan Berkualitas', '5':  'Kesetaraan Gender', '6':  'Air Bersih & Sanitasi',
@@ -311,11 +280,6 @@
             '13': 'Penanganan Perubahan Iklim', '14': 'Ekosistem Lautan', '15': 'Ekosistem Daratan',
             '16': 'Perdamaian, Keadilan & Kelembagaan', '17': 'Kemitraan untuk Mencapai Tujuan'
         };
-
-        function getSdgColor(label) {
-            const match = label.match(/\d+/);
-            return match ? (SDG_COLORS[match[0]] ?? '#6366f1') : '#6366f1';
-        }
 
         // ==========================================
         // THEME MANAGEMENT
@@ -350,15 +314,49 @@
         themeBtn.addEventListener('click', () => {
             const next = getTheme() === 'dark' ? 'light' : 'dark';
             applyTheme(next);
-            // Re-render charts so colors update
-            if (ekrafChart) {
-                const isDark = next === 'dark';
-                ekrafChart.options.plugins.tooltip.backgroundColor = isDark ? '#1e293b' : '#ffffff';
-                ekrafChart.options.plugins.tooltip.titleColor = isDark ? '#f1f5f9' : '#0f172a';
-                ekrafChart.options.plugins.tooltip.bodyColor  = isDark ? '#94a3b8' : '#475569';
-                ekrafChart.update();
-            }
+            updateChartsTheme();
         });
+
+        function updateChartsTheme() {
+            const isDark = getTheme() === 'dark';
+            const textColor = isDark ? '#94a3b8' : '#475569';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            const tooltipBg = isDark ? '#1e293b' : '#ffffff';
+            const tooltipTitle = isDark ? '#f1f5f9' : '#0f172a';
+            const tooltipBody = isDark ? '#94a3b8' : '#475569';
+            const tooltipBorder = isDark ? 'rgba(99,102,241,0.2)' : '#e2e8f0';
+
+            [ekrafChart, sdgsChart, lokasiChart].forEach(chart => {
+                if (chart) {
+                    // Update tooltips
+                    if (chart.options.plugins.tooltip) {
+                        chart.options.plugins.tooltip.backgroundColor = tooltipBg;
+                        chart.options.plugins.tooltip.titleColor = tooltipTitle;
+                        chart.options.plugins.tooltip.bodyColor = tooltipBody;
+                        chart.options.plugins.tooltip.borderColor = tooltipBorder;
+                    }
+                    
+                    // Update scales
+                    if (chart.options.scales) {
+                        if (chart.options.scales.x) {
+                            chart.options.scales.x.ticks.color = textColor;
+                            if (chart.options.scales.x.grid) chart.options.scales.x.grid.color = gridColor;
+                        }
+                        if (chart.options.scales.y) {
+                            chart.options.scales.y.ticks.color = textColor;
+                            if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = gridColor;
+                        }
+                    }
+
+                    // Donut specific border
+                    if (chart.config.type === 'doughnut') {
+                        chart.data.datasets[0].borderColor = isDark ? '#161b26' : '#ffffff';
+                    }
+
+                    chart.update();
+                }
+            });
+        }
 
         // ==========================================
         // REAL-TIME CLOCK
@@ -400,8 +398,7 @@
                 if (timeoutId) clearTimeout(timeoutId);
 
                 if (res.status === 403) {
-                    // Token expired/invalid — tampilkan pesan, jangan reload
-                    showErrorState('⛔ Link presentasi telah kedaluwarsa atau dinonaktifkan.', false);
+                    console.error('Link presentasi telah kedaluwarsa atau dinonaktifkan.');
                     return;
                 }
 
@@ -426,58 +423,11 @@
             } catch (e) {
                 consecutiveErrors++;
                 console.warn(`Fetch error #${consecutiveErrors}:`, e.message);
-
-                if (consecutiveErrors >= 5) {
-                    // Setelah 5 kegagalan berturut-turut, tampilkan pesan
-                    showErrorState('⚠️ Koneksi terputus. Halaman akan mencoba terhubung kembali...');
-                }
-                // Tidak reload — biarkan setInterval mencoba ulang
             }
         }
 
-        function showErrorState(msg, canRetry = true) {
-            const containers = ['sdgs-container', 'lokasi-container', 'ekraf-legend'];
-            containers.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = `<div class="section-subtitle text-xs text-center py-6">${msg}</div>`;
-            });
-        }
-
         fetchStats();
-
-        // Auto-refresh khusus digisign karena dipasang di TV/Layar tanpa interaksi
-        setInterval(fetchStats, 60000);
-
-        // Auto-scroll logic for Digisign (non-touchscreen)
-        function autoScroll() {
-            const scrollables = document.querySelectorAll('.scroll');
-            scrollables.forEach(el => {
-                // Only scroll if content is taller than container
-                if (el.scrollHeight > el.clientHeight) {
-                    // Check if we reached the bottom (add 2px margin of error)
-                    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
-                        // Pause at bottom, then reset to top
-                        if (!el.dataset.paused) {
-                            el.dataset.paused = "true";
-                            setTimeout(() => {
-                                el.scrollTop = 0;
-                                setTimeout(() => { el.dataset.paused = ""; }, 1500); // Pause at top
-                            }, 3000);
-                        }
-                    } else {
-                        // Scroll down if not paused
-                        if (!el.dataset.paused) {
-                            el.scrollTop += 1;
-                        }
-                    }
-                }
-            });
-        }
-          
-        // Start auto-scroll after a short delay
-        setTimeout(() => {
-            setInterval(autoScroll, 50);
-        }, 3000);
+        setInterval(fetchStats, 60000); // Refresh data every 60 seconds
 
         // ==========================================
         // RENDER ALL
@@ -510,7 +460,7 @@
                         backgroundColor: bgColors,
                         borderColor: isDark ? '#161b26' : '#ffffff',
                         borderWidth: 3,
-                        hoverOffset: 12,
+                        hoverOffset: 8,
                     }]
                 },
                 options: {
@@ -526,7 +476,7 @@
                             borderColor: isDark ? 'rgba(99,102,241,0.2)' : '#e2e8f0',
                             borderWidth: 1,
                             padding: 10,
-                            cornerRadius: 10,
+                            cornerRadius: 8,
                             callbacks: {
                                 label: ctx => ` ${ctx.label}: ${ctx.raw}%`
                             }
@@ -547,13 +497,12 @@
                 const el = document.createElement('div');
                 el.className = 'flex items-center gap-1.5 animate-in';
                 el.style.animationDelay = `${idx * 40}ms`;
-                // Display absolute count if available, otherwise display percentage
                 const displayValue = item.count ? item.count.toLocaleString() : item.percentage + '%';
                 
                 el.innerHTML = `
                     <span class="h-3 w-3 rounded-full shrink-0" style="background:${color}"></span>
-                    <span class="text-[11px] whitespace-nowrap text-slate-800 font-semibold" style="color: #1e293b;">
-                        ${item.sub_sektor} <span class="font-bold opacity-100 tabular-nums text-slate-900">(${displayValue})</span>
+                    <span class="text-[11px] whitespace-nowrap dark:text-slate-200 text-slate-800 font-semibold">
+                        ${item.sub_sektor} <span class="font-bold opacity-100 tabular-nums dark:text-white text-slate-900">(${displayValue})</span>
                     </span>
                 `;
                 legendEl.appendChild(el);
@@ -563,33 +512,6 @@
         // ------------------------------------------
         // 2. SDGs CAROUSEL
         // ------------------------------------------
-        const SDG_ICONS = {
-            1: 'fa-solid fa-users',
-            2: 'fa-solid fa-bowl-food',
-            3: 'fa-solid fa-heart-pulse',
-            4: 'fa-solid fa-book-open',
-            5: 'fa-solid fa-venus-mars',
-            6: 'fa-solid fa-droplet',
-            7: 'fa-solid fa-sun',
-            8: 'fa-solid fa-arrow-trend-up',
-            9: 'fa-solid fa-industry',
-            10: 'fa-solid fa-scale-balanced',
-            11: 'fa-solid fa-city',
-            12: 'fa-solid fa-recycle',
-            13: 'fa-solid fa-earth-americas',
-            14: 'fa-solid fa-fish',
-            15: 'fa-solid fa-tree',
-            16: 'fa-solid fa-dove',
-            17: 'fa-solid fa-handshake'
-        };
-
-        const SDG_COLORS_HEX = {
-            1: '#e5243b', 2: '#dda63a', 3: '#4c9f38', 4: '#c5192d', 5: '#ff3a21',
-            6: '#26bde2', 7: '#fcc30b', 8: '#a21942', 9: '#fd6925', 10: '#dd1367',
-            11: '#fd9d24', 12: '#bf8b2e', 13: '#3f7e44', 14: '#0a97d9', 15: '#56c02b',
-            16: '#00689d', 17: '#19486a'
-        };
-        
         let currentTranslateX = 0;
         let marqueeInterval = null;
 
@@ -601,8 +523,6 @@
             }
             el.innerHTML = '';
             
-            const defaultIcon = "{{ asset('images/icon-1.png') }}";
-
             // Sort items by SDG number (1 to 17)
             const sortedItems = [...items].sort((a, b) => {
                 const numA = parseInt((a.program.match(/\d+/) || [99])[0]);
@@ -660,37 +580,84 @@
         }
 
         // ------------------------------------------
-        // 3. UTILITAS RUANGAN
+        // 3. UTILITAS RUANGAN HORIZONTAL BAR CHART
         // ------------------------------------------
         function renderLokasi(items) {
-            const el = document.getElementById('lokasi-container');
-            if (!items.length) {
-                el.innerHTML = `<div class="section-subtitle text-xs text-center py-10">Belum ada data ruangan</div>`;
-                return;
-            }
-            el.innerHTML = '';
-            items.forEach((item, idx) => {
-                const pct   = Math.min(item.percentage, 100);
-                const color = pct >= 80 ? '#10b981' : pct >= 50 ? '#6366f1' : '#f59e0b';
-                const row   = document.createElement('div');
-                row.className = 'animate-in';
-                row.style.animationDelay = `${idx * 50}ms`;
-                row.innerHTML = `
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="label-text text-xs font-medium truncate max-w-[72%]">${item.lokasi}</span>
-                        <span class="text-xs font-black tabular-nums" style="color:${color}">${pct}%</span>
-                    </div>
-                    <div class="progress-track w-full rounded-full h-1.5 overflow-hidden">
-                        <div class="bar-fill h-1.5 rounded-full" style="width:0%;background:${color};"
-                             data-target="${pct}"></div>
-                    </div>
-                `;
-                el.appendChild(row);
+            const isDark = getTheme() === 'dark';
+            const ctx = document.getElementById('lokasi-chart').getContext('2d');
+
+            if (lokasiChart) lokasiChart.destroy();
+
+            // items are already sorted by percentage and top 10
+            const labels = items.map(item => item.lokasi.length > 20 ? item.lokasi.substring(0, 20) + '...' : item.lokasi);
+            const fullLabels = items.map(item => item.lokasi);
+            const values = items.map(item => Math.min(item.percentage, 100));
+            
+            const bgColors = values.map(pct => {
+                return pct >= 80 ? '#10b981' : pct >= 50 ? '#6366f1' : '#f59e0b';
             });
-            requestAnimationFrame(() => {
-                el.querySelectorAll('[data-target]').forEach(bar => {
-                    bar.style.width = bar.dataset.target + '%';
-                });
+
+            lokasiChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Utilitas (%)',
+                        data: values,
+                        backgroundColor: bgColors,
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                            titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                            bodyColor:  isDark ? '#94a3b8' : '#475569',
+                            borderColor: isDark ? 'rgba(99,102,241,0.2)' : '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    return fullLabels[tooltipItems[0].dataIndex];
+                                },
+                                label: ctx => ` Utilitas: ${ctx.raw}%`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                color: isDark ? '#94a3b8' : '#475569',
+                                stepSize: 20,
+                                callback: function(value) { return value + "%" }
+                            },
+                            grid: {
+                                color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                drawBorder: false
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: isDark ? '#94a3b8' : '#475569',
+                                font: { size: 11 }
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            }
+                        }
+                    },
+                    animation: { duration: 1000, easing: 'easeOutQuart' }
+                }
             });
         }
 

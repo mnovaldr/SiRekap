@@ -87,4 +87,15 @@ class Login extends BaseLogin
 
         return app(\Filament\Http\Responses\Auth\Contracts\LoginResponse::class);
     }
+
+    protected function getAuthenticateFormAction(): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('authenticate')
+            ->label('Masuk')
+            ->submit('authenticate')
+            ->extraAttributes([
+                'wire:loading.attr' => 'disabled',
+                'wire:target' => 'authenticate',
+            ]);
+    }
 }

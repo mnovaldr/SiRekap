@@ -80,6 +80,49 @@ class OrganizerResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('merge')
+                        ->label('Gabungkan Data (Merge)')
+                        ->icon('heroicon-o-arrows-pointing-in')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Gabungkan Penyelenggara')
+                        ->modalDescription('Pilih nama penyelenggara utama. Semua event dari penyelenggara yang digabungkan akan dipindahkan ke nama utama ini, dan data ganda akan dihapus.')
+                        ->form(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            return [
+                                Forms\Components\Select::make('primary_organizer_id')
+                                    ->label('Penyelenggara Utama')
+                                    ->options($records->pluck('nama', 'id'))
+                                    ->required(),
+                            ];
+                        })
+                        ->action(function (array $data, \Illuminate\Database\Eloquent\Collection $records): void {
+                            $primaryId = $data['primary_organizer_id'];
+                            $primaryOrganizer = $records->firstWhere('id', $primaryId);
+                            
+                            if (!$primaryOrganizer) return;
+
+                            $duplicates = $records->filter(fn ($record) => $record->id != $primaryId);
+                            
+                            foreach ($duplicates as $duplicate) {
+                                // Pindahkan semua event ke nama organisasi utama
+                                \App\Models\Event::where('nama_organisasi', $duplicate->nama)
+                                    ->update(['nama_organisasi' => $primaryOrganizer->nama]);
+                                    
+                                // Hapus data penyelenggara duplikat
+                                $duplicate->delete();
+                            }
+                            
+                            // Hitung ulang total events untuk penyelenggara utama
+                            $primaryOrganizer->total_events = \App\Models\Event::where('nama_organisasi', $primaryOrganizer->nama)->count();
+                            $primaryOrganizer->save();
+                            
+                            \Filament\Notifications\Notification::make()
+                                ->title('Berhasil digabungkan')
+                                ->body($duplicates->count() . ' data penyelenggara telah digabungkan ke "' . $primaryOrganizer->nama . '".')
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ]);
     }

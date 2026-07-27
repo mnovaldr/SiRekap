@@ -328,6 +328,7 @@
                     @foreach($this->getAvailableYears() as $y)
                         <button 
                             wire:click="$set('selectedYear', '{{ $y }}')"
+                            wire:loading.attr="disabled"
                             @class([
                                 'px-6 py-2 rounded-xl text-sm font-black transition-all duration-300',
                                 'bg-white dark:bg-gray-900 text-primary-600 shadow-md ring-1 ring-black/5 dark:ring-white/10 scale-105 z-10' => $selectedYear == $y,

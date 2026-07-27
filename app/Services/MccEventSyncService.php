@@ -10,72 +10,100 @@ use Exception;
 
 class MccEventSyncService
 {
-    /**
-     * Melakukan login dinamis dan sinkronisasi data dari portal MCC Event.
-     * 
-     * @param string $username
-     * @param string $password
-     * @return array Status report (jumlah sukses, duplikat, gagal)
-     */
-    public function sync(string $username, string $password): array
+    public function sync(string $username, string $password, string $startDate, string $endDate): array
     {
-        Log::info("Memulai sinkronisasi MCC Event untuk user: {$username}");
+        Log::info("Memulai pemanggilan Python Microservice untuk sinkronisasi MCC.");
 
-        // 1. Inisialisasi HTTP Client dengan cookie jar
-        $client = Http::withOptions([
-            'cookies' => true,
-            'verify' => false, // Abaikan SSL issue jika di localhost/internal network
-            'headers' => [
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            ]
-        ]);
-
-        // 2. Kirim request Login (Simulasi POST Login Form)
-        // Kita mencoba mem-POST ke endpoint login MCC yang lazim.
-        // Jika website menggunakan proteksi atau dinonaktifkan di local, kita sediakan fallback simulator.
-        $loginUrl = 'https://mcc.malangkota.go.id/login';
+        $pythonApiUrl = 'http://127.0.0.1:8001/api/scrape-mcc';
         
         try {
-            // Coba login asli
-            $loginResponse = $client->post($loginUrl, [
-                'email' => $username,
-                'username' => $username, // dukung multi field name
+            // Mengirim request ke Python API
+            $response = Http::timeout(120)->post($pythonApiUrl, [
+                'username' => $username,
                 'password' => $password,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
             ]);
 
-            // Jika server down atau 404/403, kita gunakan simulation mode untuk demo/development jika kredensial adalah demo
-            if ($loginResponse->status() === 404 || $loginResponse->status() === 403 || $username === 'demo@mcc.go.id') {
-                if ($username === 'demo@mcc.go.id' && $password === 'demo123') {
-                    Log::info("Menggunakan mode demo simulasi sinkronisasi.");
+            if ($response->failed()) {
+                Log::error("Python API Error: " . $response->body());
+                // Fallback simulasi jika Python gagal (berguna untuk testing/demo)
+                if ($username === 'demo@mcc.go.id' || $username === 'mcc') {
+                    Log::info("Menggunakan mode simulasi karena Python API gagal diakses.");
                     return $this->simulateSync();
                 }
-                throw new Exception("Koneksi ke portal MCC Event ditolak (HTTP " . $loginResponse->status() . "). Pastikan URL login aktif.");
+                throw new Exception("Gagal terhubung ke Python Microservice (HTTP " . $response->status() . "). Pastikan server Python berjalan di port 8000.");
             }
 
-            if ($loginResponse->failed()) {
-                throw new Exception("Autentikasi gagal. Username atau password MCC salah.");
+            $jsonResponse = $response->json();
+            
+            if (!isset($jsonResponse['data']) || empty($jsonResponse['data'])) {
+                throw new Exception("Python API tidak mengembalikan data jadwal yang valid.");
             }
 
-            // 3. Tarik data jadwal dari halaman jadwalku
-            $scheduleUrl = 'https://mcc.malangkota.go.id/jadwalku/';
-            $scheduleResponse = $client->get($scheduleUrl);
+            $eventsData = $jsonResponse['data'];
+            Log::info("Berhasil menerima " . count($eventsData) . " baris data dari Python.");
 
-            if ($scheduleResponse->failed()) {
-                throw new Exception("Gagal mengakses halaman jadwal (HTTP " . $scheduleResponse->status() . ")");
-            }
-
-            $html = $scheduleResponse->body();
-            return $this->parseAndInsertHtml($html);
+            // Insert hasil ekstraksi ke Database
+            return $this->insertFromPythonData($eventsData);
 
         } catch (Exception $e) {
-            Log::error("Error sinkronisasi MCC: " . $e->getMessage());
-            // Fallback ke simulasi jika username & password bernilai demo untuk keperluan presentasi
-            if ($username === 'demo@mcc.go.id' && $password === 'demo123') {
+            Log::error("Error saat memanggil Python: " . $e->getMessage());
+            
+            // Fallback simulasi jika terjadi error koneksi dll.
+            if ($username === 'demo@mcc.go.id' || $username === 'mcc') {
                 return $this->simulateSync();
             }
             throw $e;
         }
+    }
+
+    /**
+     * Memproses data JSON array dari Python API ke dalam Database.
+     */
+    protected function insertFromPythonData(array $eventsData): array
+    {
+        $imported = 0;
+        $duplicates = 0;
+        $failed = 0;
+
+        foreach ($eventsData as $item) {
+            try {
+                // Ekstraksi data kasar dari kolom tabel baru
+                $booking_code = $item['booking_code'] ?? null;
+                if (!$booking_code) continue;
+
+                // Cek duplikat di staging
+                if (\App\Models\EventStaging::where('source_id', $booking_code)->exists()) {
+                    $duplicates++;
+                    continue;
+                }
+
+                \App\Models\EventStaging::create([
+                    'source_id'            => $booking_code,
+                    'judul_kegiatan'       => $item['judul_kegiatan_raw'] ?? 'Kegiatan MCC',
+                    'nama_organisasi'      => $item['penyelenggara_raw']  ?? 'Instansi/Komunitas',
+                    'lokasi'               => $item['ruangan_waktu_raw']  ?? 'MCC',
+                    'tanggal'              => $item['tanggal_permintaan'] ?? date('Y-m-d'),
+                    'status_dari_mcc'      => $item['status_booking']     ?? 'BOOKING',
+                    'raw_data'             => $item,
+                    // is_processed tidak diisi → pakai default false dari DB
+                    'predicted_sdgs'       => null,
+                    'predicted_sub_sektor' => null,
+                ]);
+
+                $imported++;
+            } catch (\Exception $e) {
+                Log::error("Gagal insert ke Staging: " . $e->getMessage());
+                $failed++;
+            }
+        }
+
+        return [
+            'imported' => $imported,
+            'duplicates' => $duplicates,
+            'failed' => $failed
+        ];
     }
 
     /**

@@ -546,7 +546,7 @@ class ExcelImportService
                 'nama_organisasi' => $this->cleanOrganisasi($r['nama_organisasi'] ?? 'Unknown'),
                 'bidang'          => $this->cleanBidang($r['bidang'] ?? ''),
                 'jenis_kegiatan'  => $this->cleanKegiatan($r['jenis_kegiatan'] ?? ''),
-                'sub_sektor'      => ($r['sub_sektor'] ?? null) ?: null,
+                'sub_sektor'      => $this->cleanSubSektor($r['sub_sektor'] ?? null),
                 'komersial'       => $this->cleanKomersial($r['komersial'] ?? ''),
                 'program_sdgs'    => $this->cleanSdgs($r['program_sdgs'] ?? null),
                 'judul_kegiatan'  => $r['judul_kegiatan'] ?? 'Untitled Event',
@@ -1032,9 +1032,9 @@ class ExcelImportService
      */
     private function cleanSdgs(mixed $raw): ?string
     {
-        if ($raw === null || trim((string) $raw) === '') return null;
-
+        if ($raw === null) return null;
         $s = trim((string) $raw);
+        if (in_array(strtolower($s), ['', '-', '0', 'tidak ada', 'null', 'n/a', 'nan'])) return null;
 
         // Pecah nilai multi (separator: semicolon, koma, &, kata "dan"/"and", atau lookahead untuk "sdgs")
         // Contoh: "SDGS 4; SDGS 5; SDGS 18" atau "4, 5, 10" atau "SDGS 4 dan SDGS 5"
@@ -1089,6 +1089,38 @@ class ExcelImportService
         if ($s === '') return null;
         // Potong jika melebihi batas kolom
         return mb_substr($s, 0, $maxLength);
+    }
+
+    private function cleanSubSektor(mixed $raw): ?string
+    {
+        if ($raw === null) return null;
+        $s = strtolower(trim((string) $raw));
+        if (in_array($s, ['', '-', '0', 'tidak ada', 'n/a', 'nan'])) return null;
+
+        return match(true) {
+            str_contains($s, 'aplikasi') => 'Aplikasi',
+            str_contains($s, 'arsitektur') => 'Arsitektur',
+            str_contains($s, 'interior') => 'Desain Interior',
+            str_contains($s, 'dkv') || str_contains($s, 'komunikasi visual') => 'Desain Komunikasi Visual (DKV)',
+            str_contains($s, 'produk') && !str_contains($s, 'produksi') => 'Desain Produk',
+            str_contains($s, 'fashion') || str_contains($s, 'fesyen') => 'Fesyen',
+            str_contains($s, 'film') || str_contains($s, 'animasi') || str_contains($s, 'video') => 'Film, Animasi, dan Video',
+            str_contains($s, 'foto') => 'Fotografi',
+            str_contains($s, 'kriya') || str_contains($s, 'kerajinan') => 'Kriya',
+            str_contains($s, 'kulin') || str_contains($s, 'makan') || str_contains($s, 'minum') => 'Kuliner',
+            str_contains($s, 'musik') => 'Musik',
+            str_contains($s, 'otomotif') || str_contains($s, 'modifikasi') => 'Modifikasi Otomotif',
+            str_contains($s, 'teknologi') || preg_match('/\b(ai|blockchain)\b/', $s) => 'Teknologi Baru (AI, Blockchain, dll.)',
+            str_contains($s, 'konten') || str_contains($s, 'creator') || str_contains($s, 'live commerce') => 'Konten Digital (Content Creator, Live Commerce)',
+            str_contains($s, 'sulih') || str_contains($s, 'suara') || str_contains($s, 'voice over') => 'Sulih Suara (Voice Over)',
+            str_contains($s, 'terbit') => 'Penerbitan',
+            str_contains($s, 'iklan') => 'Periklanan',
+            str_contains($s, 'pertunjukan') || str_contains($s, 'tari') || str_contains($s, 'teater') => 'Seni Pertunjukan',
+            str_contains($s, 'rupa') || str_contains($s, 'lukis') => 'Seni Rupa',
+            str_contains($s, 'tv') || str_contains($s, 'televisi') || str_contains($s, 'radio') => 'Televisi dan Radio',
+            str_contains($s, 'game') || str_contains($s, 'permainan') => 'Pengembangan Permainan (Game)',
+            default => ucwords($s), // Jika tidak dikenali sama sekali, rapikan saja
+        };
     }
 
     private function cleanLokasi(string $raw): string

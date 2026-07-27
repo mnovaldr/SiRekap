@@ -449,11 +449,13 @@ class ExportData extends Page
     // ── PDF Export ──
     protected function exportPdf(string $filename): StreamedResponse
     {
-        $data = $this->getBaseQuery()->get($this->getExportColumns())->toArray();
+        // Batasi PDF Detail maksimal 1.000 baris untuk mencegah memory leak & rendering lambat di DomPDF.
+        // Untuk data masif (10.000+ baris), gunakan format Excel (.xlsx) atau CSV (.csv).
+        $data = $this->getBaseQuery()->take(1000)->get($this->getExportColumns())->toArray();
         
         $periodLabel = $this->selectedMonth !== 'Semua'
             ? $this->months[$this->selectedMonth] . ' ' . $this->selectedYearEnd
-            : 'Tahun ' . $this->selectedYearEnd;
+            : 'Tahun ' . ($this->selectedYearStart == $this->selectedYearEnd ? $this->selectedYearEnd : $this->selectedYearStart . ' - ' . $this->selectedYearEnd);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.events-pdf', [
             'data' => $data,
@@ -461,8 +463,8 @@ class ExportData extends Page
         ])
         ->setPaper('a4', 'landscape')
         ->setOption('isHtml5ParserEnabled', true)
-        ->setOption('isRemoteEnabled', true)
-        ->setOption('defaultFont', 'DejaVu Sans');
+        ->setOption('isRemoteEnabled', false)
+        ->setOption('defaultFont', 'Helvetica');
 
         return response()->streamDownload(
             fn() => print($pdf->output()),
@@ -504,7 +506,7 @@ class ExportData extends Page
                         } elseif ($key === 'jumlah_peserta' && is_numeric($value)) {
                             $value = number_format($value, 0, ',', '.');
                         }
-                        $formattedRow[] = $value ?? '-';
+                        $formattedRow[] = $value ?? '';
                     }
                     fputcsv($output, $formattedRow);
                 }
@@ -718,10 +720,11 @@ class ExportData extends Page
         foreach ($data as $row) {
             $formattedRow = [];
             foreach ($columns as $col) {
-                $value = $row[$col] ?? '-';
+                // Jangan gunakan '-' untuk nilai kosong agar tidak merusak data training
+                $value = isset($row[$col]) && $row[$col] !== '' ? $row[$col] : '';
                 
                 // Format specific columns
-                if ($col === 'tanggal' && $value !== '-') {
+                if ($col === 'tanggal' && $value !== '') {
                     $value = date('d/m/Y', strtotime($value));
                 } elseif ($col === 'jumlah_peserta' && is_numeric($value)) {
                     $value = number_format($value, 0, ',', '.');

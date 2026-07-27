@@ -1519,7 +1519,7 @@
                 <x-filament::button tag="a" href="{{ route('filament.admin.resources.events.index') }}" class="rounded-xl">
                     Lihat Data Event
                 </x-filament::button>
-                <x-filament::button wire:click="resetImport" color="gray" variant="outline" class="rounded-xl">
+                <x-filament::button wire:click="resetImport" wire:loading.attr="disabled" color="gray" variant="outline" class="rounded-xl">
                     Import File Lagi
                 </x-filament::button>
             </div>
