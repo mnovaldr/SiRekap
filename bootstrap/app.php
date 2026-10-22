@@ -12,8 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $trustedProxies = env('TRUSTED_PROXIES', '127.0.0.1,REMOTE_ADDR');
-        $middleware->trustProxies(at: $trustedProxies === '*' ? '*' : array_map('trim', explode(',', $trustedProxies)));
+        $middleware->trustProxies(at: '*');
         
         // Tambahkan security headers & optimasi response
         $middleware->append(\App\Http\Middleware\OptimizeResponse::class);
@@ -30,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // Livewire request → kembalikan JSON agar Livewire redirect ke login
             if ($request->hasHeader('X-Livewire')) {
                 return response()->json([
-                    'effects' => ['redirect' => '/admin/login?logged_out=1'],
+                    'effects' => ['redirect' => '/login?logged_out=1'],
                 ]);
             }
 
@@ -38,11 +37,11 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'Sesi Anda telah berakhir. Silakan login kembali.',
-                    'redirect' => '/admin/login?logged_out=1',
+                    'redirect' => '/login?logged_out=1',
                 ], 419);
             }
 
             // Request biasa (form submit, navigasi) → redirect ke login
-            return redirect('/admin/login?logged_out=1');
+            return redirect('/login?logged_out=1');
         });
     })->create();

@@ -49,45 +49,12 @@ class OptimizeResponse
             $response->headers->set('Cache-Control', 'public, max-age=86400');
         }
 
-        // Compress response jika browser support gzip (hanya untuk GET requests)
-        if ($request->isMethod('GET') && $this->shouldCompress($request, $response)) {
-            $content = $response->getContent();
-            if ($content && strlen($content) > 1024) { // Only compress if > 1KB
-                $compressed = gzencode($content, 6); // Level 6 balance speed/size
-                if ($compressed !== false) {
-                    $response->setContent($compressed);
-                    $response->headers->set('Content-Encoding', 'gzip');
-                    $response->headers->set('Content-Length', strlen($compressed));
-                }
-            }
-        }
+        // Catatan: Kompresi GZIP/Brotli ditangani langsung oleh web server (Apache / Cloudflare).
+        // Jangan melakukan gzencode() di middleware Laravel karena akan mengubah
+        // $response->getContent() menjadi binary sebelum event RequestHandled dieksekusi,
+        // sehingga Livewire v3 gagal menginjeksi <script src="/livewire/livewire.js">
+        // dan menyebabkan form login error "405 Method Not Allowed".
 
         return $response;
-    }
-
-    private function shouldCompress(Request $request, Response $response): bool
-    {
-        // Check if browser accepts gzip
-        $acceptEncoding = $request->header('Accept-Encoding', '');
-        if (stripos($acceptEncoding, 'gzip') === false) {
-            return false;
-        }
-
-        // Check if response is already compressed
-        if ($response->headers->has('Content-Encoding')) {
-            return false;
-        }
-
-        // Only compress text-based content
-        $contentType = $response->headers->get('Content-Type', '');
-        $compressibleTypes = ['text/', 'application/json', 'application/javascript', 'application/xml'];
-        
-        foreach ($compressibleTypes as $type) {
-            if (stripos($contentType, $type) !== false) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
