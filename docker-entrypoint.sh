@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "==> Memeriksa versi PHP runtime..."
+php -v
+
 echo "==> Membersihkan cache lama..."
 rm -f bootstrap/cache/*.php
 
@@ -11,7 +14,8 @@ mkdir -p storage/framework/sessions
 mkdir -p storage/app/livewire-tmp
 mkdir -p storage/logs
 
-chmod -R 777 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache
 
 echo "==> Menunggu database siap..."
 sleep 5

@@ -394,7 +394,7 @@
                     fetchOptions.signal = controller.signal;
                 }
 
-                const res = await fetch(`/api/public/stats?token=${TOKEN}`, fetchOptions);
+                const res = await fetch(`/api/public/stats?token=${encodeURIComponent(TOKEN)}`, fetchOptions);
                 if (timeoutId) clearTimeout(timeoutId);
 
                 if (res.status === 403) {
@@ -428,6 +428,15 @@
 
         fetchStats();
         setInterval(fetchStats, 60000); // Refresh data every 60 seconds
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         // ==========================================
         // RENDER ALL
@@ -497,12 +506,12 @@
                 const el = document.createElement('div');
                 el.className = 'flex items-center gap-1.5 animate-in';
                 el.style.animationDelay = `${idx * 40}ms`;
-                const displayValue = item.count ? item.count.toLocaleString() : item.percentage + '%';
+                const displayValue = item.count ? Number(item.count).toLocaleString() : Number(item.percentage || 0) + '%';
                 
                 el.innerHTML = `
-                    <span class="h-3 w-3 rounded-full shrink-0" style="background:${color}"></span>
+                    <span class="h-3 w-3 rounded-full shrink-0" style="background:${escapeHtml(color)}"></span>
                     <span class="text-[11px] whitespace-nowrap dark:text-slate-200 text-slate-800 font-semibold">
-                        ${item.sub_sektor} <span class="font-bold opacity-100 tabular-nums dark:text-white text-slate-900">(${displayValue})</span>
+                        ${escapeHtml(item.sub_sektor)} <span class="font-bold opacity-100 tabular-nums dark:text-white text-slate-900">(${escapeHtml(displayValue)})</span>
                     </span>
                 `;
                 legendEl.appendChild(el);
@@ -533,11 +542,11 @@
             // Generate cards HTML
             let cardsHTML = '';
             sortedItems.forEach((item) => {
-                const match = item.program.match(/\d+/);
-                const sdgNum = match ? parseInt(match[0]) : 1;
+                const match = String(item.program ?? '').match(/\d+/);
+                const sdgNum = match ? Math.min(Math.max(parseInt(match[0], 10), 1), 17) : 1;
                 const bgColor = SDG_COLORS_HEX[sdgNum] || '#000000';
-                const title = SDG_DESC[sdgNum] || item.program;
-                const pct = Math.min(item.percentage, 100);
+                const title = escapeHtml(SDG_DESC[sdgNum] || item.program);
+                const pct = Math.min(Math.max(Number(item.percentage) || 0, 0), 100);
                 
                 // Gunakan file .jpe berbahasa Indonesia dengan format Goal-1.jpe
                 const imagePath = `{{ asset('images/SDG-Icons') }}/Goal-${sdgNum}.jpe`;

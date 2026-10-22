@@ -2,6 +2,9 @@
 # exit on error
 set -o errexit
 
+echo "==> Memeriksa versi PHP (Patch CVE-2026-109618 & CVE-2026-109619)..."
+php -v
+
 echo "==> Menginstall dependensi PHP (Composer)..."
 composer install --optimize-autoloader --no-dev
 
@@ -16,7 +19,8 @@ mkdir -p storage/framework/sessions
 mkdir -p storage/logs
 mkdir -p storage/app/livewire-tmp
 mkdir -p bootstrap/cache
-chmod -R 777 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache
 
 echo "==> Clear & Cache config, routes, views..."
 php artisan optimize:clear

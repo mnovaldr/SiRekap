@@ -476,6 +476,24 @@ class ExportData extends Page
         );
     }
 
+    /**
+     * Sanitasi nilai string terhadap CSV / Spreadsheet Formula Injection (OWASP).
+     * Mencegah eksekusi formula berbahaya (=, +, -, @, Tab, CR) saat dibuka di Excel.
+     */
+    protected function sanitizeSpreadsheetValue(mixed $value): mixed
+    {
+        if (!is_string($value) || $value === '') {
+            return $value;
+        }
+
+        $firstChar = $value[0];
+        if (in_array($firstChar, ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return "'" . $value;
+        }
+
+        return $value;
+    }
+
     // ── CSV Export ──
     protected function exportCsv(string $filename): StreamedResponse
     {
@@ -496,7 +514,7 @@ class ExportData extends Page
                 );
                 fputcsv($output, $headers);
                 
-                // Write data with formatting
+                // Write data with formatting & formula injection sanitization
                 foreach ($data as $row) {
                     $formattedRow = [];
                     foreach ($row as $key => $value) {
@@ -506,7 +524,7 @@ class ExportData extends Page
                         } elseif ($key === 'jumlah_peserta' && is_numeric($value)) {
                             $value = number_format($value, 0, ',', '.');
                         }
-                        $formattedRow[] = $value ?? '';
+                        $formattedRow[] = $this->sanitizeSpreadsheetValue($value ?? '');
                     }
                     fputcsv($output, $formattedRow);
                 }
@@ -730,7 +748,7 @@ class ExportData extends Page
                     $value = number_format($value, 0, ',', '.');
                 }
                 
-                $formattedRow[] = $value;
+                $formattedRow[] = $this->sanitizeSpreadsheetValue($value);
             }
             $formattedData[] = $formattedRow;
         }
@@ -928,7 +946,7 @@ class ExportData extends Page
             $percentage = $total > 0 ? ($item->total / $total * 100) : 0;
             $tableData[] = [
                 $index + 1,
-                $item->label,
+                $this->sanitizeSpreadsheetValue($item->label),
                 number_format($item->total),
                 number_format($percentage, 2) . '%'
             ];
@@ -1032,7 +1050,7 @@ class ExportData extends Page
         ])
         ->setPaper('a4', 'portrait')
         ->setOption('isHtml5ParserEnabled', true)
-        ->setOption('isRemoteEnabled', true)
+        ->setOption('isRemoteEnabled', false)
         ->setOption('defaultFont', 'DejaVu Sans');
 
         return response()->streamDownload(
@@ -1065,7 +1083,7 @@ class ExportData extends Page
             fputcsv($output, ['SUB SEKTOR']);
             fputcsv($output, ['No', 'Kategori', 'Jumlah']);
             foreach ($data['kategoriEkraf'] as $index => $item) {
-                fputcsv($output, [$index + 1, $item->label, $item->total]);
+                fputcsv($output, [$index + 1, $this->sanitizeSpreadsheetValue($item->label), $item->total]);
             }
             fputcsv($output, []);
             

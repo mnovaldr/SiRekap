@@ -126,9 +126,9 @@ class KelolaDatabase extends Page
         // 3. Generate Nama Berkas Cadangan
         $fileName = "pemusnahan_{$year}_" . time() . ".enc";
         
-        // 4. Periksa kredensial Supabase
-        $supabaseUrl = env('SUPABASE_URL');
-        $supabaseKey = env('SUPABASE_KEY');
+        // 4. Periksa kredensial Supabase (gunakan config agar tetap berjalan saat config:cache aktif)
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.key');
         $storageMethod = "Lokal (Offline Fallback)";
         
         if ($supabaseUrl && $supabaseKey) {

@@ -1,4 +1,7 @@
-FROM php:8.3-apache
+FROM php:8.3.36-apache
+
+# Verifikasi versi PHP (Patch CVE-2026-109618 & CVE-2026-109619 >= 8.3.36)
+RUN php -v
 
 # Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
@@ -36,7 +39,8 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev --no-script
 
 RUN npm ci && npm run build
 
-RUN chmod -R 777 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 80
 

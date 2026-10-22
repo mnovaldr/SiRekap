@@ -3,19 +3,27 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-// GET-based logout route (no CSRF needed) - always works even on expired sessions
-Route::get('/do-logout', function () {
+// Logout route (supports POST and safe GET fallback with Same-Origin / Referer check)
+Route::match(['get', 'post'], '/do-logout', function (\Illuminate\Http\Request $request) {
+    // Jika dipanggil via GET dari halaman eksternal (cross-site), tolak untuk mencegah CSRF Forced Logout
+    if ($request->isMethod('get')) {
+        $secFetchSite = $request->header('Sec-Fetch-Site');
+        if ($secFetchSite && !in_array($secFetchSite, ['same-origin', 'none'], true)) {
+            return redirect('/');
+        }
+    }
+
     Auth::logout();
     
     try {
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     } catch (\Exception $e) {
         // session may already be invalid, ignore
     }
 
     return redirect('/login?logged_out=1');
-})->name('admin.do-logout');
+})->middleware('throttle:30,1')->name('admin.do-logout');
 
 // Redirect legacy /admin path to root
 Route::get('/admin', function () {
@@ -111,12 +119,12 @@ Route::get('/download-template', function () {
     $response->headers->set('Cache-Control', 'max-age=0');
     
     return $response;
-})->name('admin.download-template');
+})->middleware(['auth', 'throttle:10,1'])->name('admin.download-template');
 
 use App\Http\Controllers\PublicVisitController;
 
-Route::get('/digisign', [PublicVisitController::class, 'digisign'])->name('public.digisign');
-Route::get('/share/{slug?}', [PublicVisitController::class, 'show'])->name('public.visit.show');
+Route::get('/digisign', [PublicVisitController::class, 'digisign'])->middleware('throttle:60,1')->name('public.digisign');
+Route::get('/share/{slug?}', [PublicVisitController::class, 'show'])->middleware('throttle:60,1')->name('public.visit.show');
 
 Route::get('/admin/{any}', function () {
     return redirect('/');

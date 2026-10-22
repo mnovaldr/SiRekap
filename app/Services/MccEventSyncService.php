@@ -14,11 +14,17 @@ class MccEventSyncService
     {
         Log::info("Memulai pemanggilan Python Microservice untuk sinkronisasi MCC.");
 
-        $pythonApiUrl = 'http://127.0.0.1:8001/api/scrape-mcc';
+        $pythonApiUrl = config('services.ai_service.scrape_url', 'http://127.0.0.1:8001/api/scrape-mcc');
+        $internalToken = config('services.ai_service.internal_token');
         
         try {
+            $request = Http::timeout(120);
+            if (!empty($internalToken)) {
+                $request = $request->withHeaders(['X-Internal-Token' => $internalToken]);
+            }
+
             // Mengirim request ke Python API
-            $response = Http::timeout(120)->post($pythonApiUrl, [
+            $response = $request->post($pythonApiUrl, [
                 'username' => $username,
                 'password' => $password,
                 'start_date' => $startDate,
@@ -26,13 +32,13 @@ class MccEventSyncService
             ]);
 
             if ($response->failed()) {
-                Log::error("Python API Error: " . $response->body());
-                // Fallback simulasi jika Python gagal (berguna untuk testing/demo)
-                if ($username === 'demo@mcc.go.id' || $username === 'mcc') {
+                Log::error("Python API Error: Status " . $response->status());
+                // Fallback simulasi hanya diizinkan pada environment local/testing
+                if (app()->environment(['local', 'testing']) && ($username === 'demo@mcc.go.id' || $username === 'mcc')) {
                     Log::info("Menggunakan mode simulasi karena Python API gagal diakses.");
                     return $this->simulateSync();
                 }
-                throw new Exception("Gagal terhubung ke Python Microservice (HTTP " . $response->status() . "). Pastikan server Python berjalan di port 8000.");
+                throw new Exception("Gagal terhubung ke Python Microservice (HTTP " . $response->status() . "). Pastikan server Python berjalan.");
             }
 
             $jsonResponse = $response->json();
@@ -50,8 +56,8 @@ class MccEventSyncService
         } catch (Exception $e) {
             Log::error("Error saat memanggil Python: " . $e->getMessage());
             
-            // Fallback simulasi jika terjadi error koneksi dll.
-            if ($username === 'demo@mcc.go.id' || $username === 'mcc') {
+            // Fallback simulasi hanya diizinkan pada environment local/testing
+            if (app()->environment(['local', 'testing']) && ($username === 'demo@mcc.go.id' || $username === 'mcc')) {
                 return $this->simulateSync();
             }
             throw $e;

@@ -17,11 +17,17 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Admin MCC',
-            'email' => 'admin@mcc.com',
-            'password' => bcrypt('Admin@12345'),
-        ]);
+        $adminEmail = env('ADMIN_DEFAULT_EMAIL', 'admin@mcc.com');
+        $adminPassword = env('ADMIN_DEFAULT_PASSWORD', 'password');
+
+        User::firstOrCreate(
+            ['email' => $adminEmail],
+            [
+                'name' => 'Admin MCC',
+                'password' => bcrypt($adminPassword),
+                'email_verified_at' => now(),
+            ]
+        );
 
         // Seed master data
         $this->call(MasterDataSeeder::class);

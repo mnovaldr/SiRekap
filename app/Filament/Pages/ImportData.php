@@ -394,11 +394,23 @@ class ImportData extends Page
 
     protected function getTempFilePath(string $uuid): string
     {
+        if (!\Illuminate\Support\Str::isUuid($uuid)) {
+            abort(400, 'Invalid import session identifier.');
+        }
+
         $dir = storage_path('app/private/import-temp');
         if (!file_exists($dir)) {
             mkdir($dir, 0755, true);
         }
-        return $dir . '/' . $uuid . '.json';
+
+        // Bersihkan file temporary import yang sudah lebih dari 2 jam (garbage collection)
+        foreach (glob($dir . '/*.json') ?: [] as $oldFile) {
+            if (is_file($oldFile) && filemtime($oldFile) < (time() - 7200)) {
+                @unlink($oldFile);
+            }
+        }
+
+        return $dir . '/' . basename($uuid) . '.json';
     }
 
     protected function writeTempData(string $uuid, array $data): void

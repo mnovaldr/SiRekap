@@ -86,9 +86,14 @@ class EventResource extends Resource
                                 if (!$state) return;
                                 
                                 try {
-                                    // Memanggil Microservice Python FastAPI
-                                    $url = env('AI_SERVICE_URL', 'http://127.0.0.1:8001/api/predict-sdgs');
-                                    $response = \Illuminate\Support\Facades\Http::timeout(5)->post($url, [
+                                    // Memanggil Microservice Python FastAPI melalui config (aman terhadap config:cache)
+                                    $url = config('services.ai_service.predict_url', 'http://127.0.0.1:8001/api/predict-sdgs');
+                                    $internalToken = config('services.ai_service.internal_token');
+                                    $http = \Illuminate\Support\Facades\Http::timeout(5);
+                                    if (!empty($internalToken)) {
+                                        $http = $http->withHeaders(['X-Internal-Token' => $internalToken]);
+                                    }
+                                    $response = $http->post($url, [
                                         'judul_kegiatan' => $state,
                                         'nama_organisasi' => $get('nama_organisasi') ?? '',
                                     ]);

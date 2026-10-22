@@ -43,6 +43,6 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true; // Perbolehkan semua user login di local
+        return !empty($this->email) && filter_var($this->email, FILTER_VALIDATE_EMAIL) !== false;
     }
 }

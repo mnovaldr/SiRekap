@@ -35,4 +35,21 @@ return [
         ],
     ],
 
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'key' => env('SUPABASE_KEY'),
+    ],
+
+    'mcc_sync' => [
+        'url' => env('MCC_SYNC_URL', 'https://mcc.malangkota.go.id/jadwalku/'),
+        'username' => env('MCC_SYNC_USERNAME'),
+        'password' => env('MCC_SYNC_PASSWORD'),
+    ],
+
+    'ai_service' => [
+        'predict_url' => env('AI_SERVICE_URL', 'http://127.0.0.1:8001/api/predict-sdgs'),
+        'scrape_url' => env('AI_SCRAPE_URL', 'http://127.0.0.1:8001/api/scrape-mcc'),
+        'internal_token' => env('AI_INTERNAL_TOKEN'),
+    ],
+
 ];

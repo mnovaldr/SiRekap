@@ -15,6 +15,12 @@ class OptimizeResponse
     {
         $response = $next($request);
 
+        // Security Headers
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
         // Skip optimization untuk Livewire/AJAX requests
         if ($request->isXmlHttpRequest() || 
             $request->header('X-Livewire') || 

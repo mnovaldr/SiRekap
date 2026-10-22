@@ -29,9 +29,18 @@ class MccSyncController extends Controller
     public function syncFromApi()
     {
         try {
-            // Memanggil API dengan Basic Auth menggunakan kredensial
-            $response = Http::withBasicAuth('mcc', 'mccmBois!')
-                            ->get('https://mcc.malangkota.go.id/jadwalku/');
+            $syncUrl = config('services.mcc_sync.url', 'https://mcc.malangkota.go.id/jadwalku/');
+            $username = config('services.mcc_sync.username');
+            $password = config('services.mcc_sync.password');
+
+            if (!$username || !$password) {
+                return redirect()->back()->with('error', 'Kredensial sinkronisasi API MCC belum dikonfigurasi di environment (.env).');
+            }
+
+            // Memanggil API dengan Basic Auth menggunakan kredensial dari konfigurasi
+            $response = Http::timeout(30)
+                            ->withBasicAuth($username, $password)
+                            ->get($syncUrl);
 
             if ($response->failed()) {
                 return redirect()->back()->with('error', 'Gagal terhubung ke API MCC. Status: ' . $response->status());

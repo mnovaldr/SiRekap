@@ -12,11 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $trustedProxies = env('TRUSTED_PROXIES', '127.0.0.1,REMOTE_ADDR');
+        $middleware->trustProxies(at: $trustedProxies === '*' ? '*' : array_map('trim', explode(',', $trustedProxies)));
         
-        // Add response optimization middleware (disabled temporarily if causing issues)
-        // Uncomment line below to enable GZIP compression and cache headers
-        // $middleware->append(\App\Http\Middleware\OptimizeResponse::class);
+        // Tambahkan security headers & optimasi response
+        $middleware->append(\App\Http\Middleware\OptimizeResponse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Tangani CSRF token mismatch (error 419) - redirect ke login tanpa menampilkan halaman error

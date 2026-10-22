@@ -31,25 +31,26 @@ class RestoreBackup extends Command
     public function handle()
     {
         $file = $this->argument('file');
+        $safeFileName = basename($file);
         $encryptedContent = null;
 
         // 1. Cari file di local storage (folder storage/app/backups)
-        if (Storage::disk('local')->exists('backups/' . $file)) {
-            $encryptedContent = Storage::disk('local')->get('backups/' . $file);
+        if (Storage::disk('local')->exists('backups/' . $safeFileName)) {
+            $encryptedContent = Storage::disk('local')->get('backups/' . $safeFileName);
             $this->info("Menemukan berkas cadangan di penyimpanan lokal (storage/app/backups).");
         } 
-        // 2. Jika tidak ada di local, coba cari langsung di path eksternal/absolut
-        elseif (file_exists($file)) {
+        // 2. Jika tidak ada di local, coba cari langsung di path eksternal/absolut (hanya file .enc)
+        elseif (str_ends_with(strtolower($file), '.enc') && is_file($file)) {
             $encryptedContent = file_get_contents($file);
             $this->info("Menemukan berkas cadangan di path eksternal.");
         }
         // 3. Jika tidak ada, coba download dari Supabase Storage
         else {
-            $supabaseUrl = env('SUPABASE_URL');
-            $supabaseKey = env('SUPABASE_KEY');
+            $supabaseUrl = config('services.supabase.url');
+            $supabaseKey = config('services.supabase.key');
 
             if ($supabaseUrl && $supabaseKey) {
-                $downloadUrl = rtrim($supabaseUrl, '/') . '/storage/v1/object/backups/' . $file;
+                $downloadUrl = rtrim($supabaseUrl, '/') . '/storage/v1/object/backups/' . rawurlencode($safeFileName);
                 $this->info("Mencoba mengunduh berkas cadangan dari Supabase Storage...");
                 
                 $response = Http::withHeaders([

@@ -177,7 +177,7 @@
     <div class="header">
         <div class="logo-container">
             @php
-                $logoPath = 'D:/Kuliah/Magang/SPK/mcc-rekap-backend/public/images/logo.png';
+                $logoPath = public_path('images/logo.png');
                 $logoData = '';
                 if (file_exists($logoPath)) {
                     $logoData = base64_encode(file_get_contents($logoPath));

@@ -7,11 +7,11 @@ services:
     container_name: sirekap_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: mcc_rekap
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${DB_DATABASE:-mcc_rekap}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
     ports:
-      - "5438:5432"
+      - "127.0.0.1:5438:5432"
     volumes:
       - sirekap_pgdata:/var/lib/postgresql/data
 
@@ -26,23 +26,25 @@ services:
     depends_on:
       - db
     environment:
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_KEY: base64:lz8E40NnJ22yX66NfP8yS4k19d2Uf79D2k9V2i1o8v0=
-      APP_URL: http://10.10.20.5:8008
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_KEY: ${APP_KEY}
+      APP_URL: ${APP_URL:-http://localhost:8008}
       DB_CONNECTION: pgsql
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_DATABASE: mcc_rekap
-      DB_USERNAME: postgres
-      DB_PASSWORD: secret
-      DB_SSLMODE: prefer
-      SESSION_SECURE_COOKIE: "false"
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${DB_DATABASE:-mcc_rekap}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      DB_SSLMODE: ${DB_SSLMODE:-prefer}
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
+      SESSION_ENCRYPT: "true"
       CACHE_STORE: file
       QUEUE_CONNECTION: database
-      SUPABASE_URL: ""
-      SUPABASE_KEY: ""
-      AI_SERVICE_URL: "http://ai_service:8001/api/predict-sdgs"
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_KEY: ${SUPABASE_KEY:-}
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai_service:8001/api/predict-sdgs}
+      AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN:-}
 
   ai_service:
     build:
@@ -50,8 +52,10 @@ services:
       dockerfile: Dockerfile
     container_name: sirekap_ai
     restart: unless-stopped
+    environment:
+      AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN:-}
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
 
 volumes:
   sirekap_pgdata:
